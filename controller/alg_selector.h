@@ -13,7 +13,7 @@ class AlgorithmSelector {
 
     private:
         const map<unsigned, AlgorithmContainer > names = {
-            {0, AlgorithmContainer(new GA()) }
+            {0, AlgorithmContainer(GeneticAlgorithm, GeneticAlgorithmData()) }
         };
 
         AlgorithmSelector() {};
@@ -26,14 +26,10 @@ class AlgorithmSelector {
                 
                 TestInstances test;
                 AlgorithmContainer choice = instance.names.at(key);
+                
                 choice.execute(test);
 
             }
-        }
-
-        ~AlgorithmSelector() {
-            for(auto& el : names)
-                delete el.second.getImpl();
         }
 };
 

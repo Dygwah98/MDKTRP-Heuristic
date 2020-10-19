@@ -1156,7 +1156,7 @@ public:
 		// cout<<"\n";
 	}
 
-	void sanity_check()
+	bool sanity_check()
 	{
 		int v = 0;
 		for (int i = 0; i < customers + vehicles; ++i)
@@ -1168,14 +1168,14 @@ public:
 		}
 		if (v > vehicles)
 		{
-			cout << "TROPPI VEICOLI!!!\n";
+			return false;
 		}
 
 		for (int i = 0; i < vehicles; ++i)
 		{
 			if (tours[depot_positions[i]] >= depots)
 			{
-				cout << "ERRORE!!!!\n";
+				return false;
 			}
 		}
 
@@ -1192,10 +1192,11 @@ public:
 			}
 			if (!found)
 			{
-				cout << "CUSTOMER " << i << " NON TROVATO!!!\n";
-				exit(0);
+				return false;
 			}
 		}
+
+		return true;
 	}
 
 	void calculate_cost()

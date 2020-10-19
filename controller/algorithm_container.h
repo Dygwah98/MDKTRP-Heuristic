@@ -2,21 +2,25 @@
 #define ALG_CONT_H
 
 #include<vector>
-#include"../implementations/base_algorithm.h"
+#include"../implementations/GA.h"
 
 class AlgorithmContainer {
 
     private:
+        using Algorithm = double(*)(const Test&, const Individual&, const BaseData&);
+
         double r;
-        BaseAlgorithm* algorithm;
         unsigned depots;
         unsigned customers;
         double **coordinate_matrix;
         const string dir = "./dat/";
         unsigned dpc;
+        
+        Algorithm algorithm;
+        const BaseData& data;
 
     public:
-        AlgorithmContainer( BaseAlgorithm* param ): algorithm(param) {}
+        AlgorithmContainer( Algorithm alg, const BaseData& param ): algorithm(alg), data(param) {}
 
         void execute(const TestInstances& t) {
 
@@ -44,7 +48,7 @@ class AlgorithmContainer {
 
                 std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
                 
-                r = (*algorithm)(instance, startingIndividual);
+                r = (*algorithm)(instance, startingIndividual, data);
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
@@ -54,8 +58,6 @@ class AlgorithmContainer {
                 free_matrix(coordinate_matrix, depots+customers);
             }
         }
-
-        BaseAlgorithm* getImpl() const { return algorithm; }
 
         double getResult() const { return r; }
 };
