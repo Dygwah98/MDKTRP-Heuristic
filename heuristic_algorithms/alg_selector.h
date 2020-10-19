@@ -2,6 +2,7 @@
 #include<map>
 #include<vector>
 #include<algorithm>
+#include"algorithm_container.h"
 using namespace std;
 
 class Test {
@@ -89,12 +90,13 @@ class AlgorithmSelector {
         AlgorithmSelector() {};
 
     public:
-        static void execute(string key, TestIstances test) {
+        static void execute(string key) {
 
             AlgorithmSelector instance;
             const map<string, string>& n = instance.names;
             if(find(n.begin(), n.end(), key) != n.end()) {
                 
+                TestIstances test;
                 string choice = instance.names[key];
                 //execute algorithm.execute(test);
 
