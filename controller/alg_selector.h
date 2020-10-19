@@ -12,21 +12,21 @@ using namespace std;
 class AlgorithmSelector {
 
     private:
-        map<string, AlgorithmContainer > names = {
-            {"0", AlgorithmContainer(new GA()) }
+        map<unsigned, AlgorithmContainer > names = {
+            {0, AlgorithmContainer(new GA()) }
         };
 
         AlgorithmSelector() {};
 
     public:
-        static void execute(string key) {
+        static void execute(const unsigned key) {
 
             AlgorithmSelector instance;
             if(instance.names.find(key) != instance.names.end()) {
                 
                 TestInstances test;
                 AlgorithmContainer choice = instance.names.at(key);
-                //execute algorithm.execute(test);
+                choice.execute(test);
 
             }
         }

@@ -7,6 +7,10 @@
 
 class BaseAlgorithm {
 
+    protected:
+        double cost;
+        double global_best;
+
     public:
         virtual double operator()(Test t, Individual ind) = 0;
 };

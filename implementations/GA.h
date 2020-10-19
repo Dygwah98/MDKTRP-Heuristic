@@ -16,6 +16,7 @@ class GA : public BaseAlgorithm {
         unsigned mutator = SWAP2;
         unsigned crossover = TWO_POINT;
         unsigned max_evaluations_GA = 40000000 / 3;
+        unsigned max_evaluations;
 
         double body(Test instance, Individual ind) {
             double best_cost = std::numeric_limits<double>::max();
@@ -154,6 +155,34 @@ class GA : public BaseAlgorithm {
 
     double operator()(Test instance, Individual ind) override {
 
+        tries = 1;
+        lambda = 250;
+        mutator = SWAP2;
+        crossover = TWO_POINT;
+        max_evaluations = max_evaluations_GA * instance.factor_valuations;
+
+        max_g = (max_evaluations / tries) / lambda;
+        cost = body(instance, ind);
+        global_best = cost;
+        if ((unsigned)global_best == instance.known_solution)
+        {
+            cout << "known_solution";
+            return global_best;
+        }
+
+        for (unsigned i = 1; i < tries; i++)
+        {
+            cost = body(instance, ind);
+            if (cost < global_best)
+            {
+                global_best = cost;
+                if ((unsigned)global_best == instance.known_solution)
+                {
+                    cout << "known_solution";
+                    return global_best;
+                }
+            }
+        }
         return body(instance, ind);
     }
 };

@@ -9,7 +9,7 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
-    AlgorithmSelector::execute( {argv[1][0]} );
+    AlgorithmSelector::execute( argv[1][0] - '0' );
 
     return 0;
 }
