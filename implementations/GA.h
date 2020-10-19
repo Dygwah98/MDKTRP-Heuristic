@@ -4,21 +4,19 @@
 #include<vector>
 #include"base_algorithm.h"
 
-const int population_size = 250;
-
 class GA : public BaseAlgorithm {
     
     private:
-        unsigned tries = 1;
+        const unsigned tries = 1;
+        const unsigned population_size = 250;
+        const unsigned mutator = SWAP2;
+        const unsigned crossover = TWO_POINT;
+        const unsigned max_evaluations_GA = 40000000 / 3;
         unsigned mu;
-        unsigned lambda = 250;
         unsigned max_g;
-        unsigned mutator = SWAP2;
-        unsigned crossover = TWO_POINT;
-        unsigned max_evaluations_GA = 40000000 / 3;
         unsigned max_evaluations;
 
-        double body(Test instance, Individual ind) {
+        double body(const Test& instance, const Individual& ind) {
             double best_cost = std::numeric_limits<double>::max();
 
             //vettore che contiene la popolazione
@@ -40,6 +38,7 @@ class GA : public BaseAlgorithm {
 
                     if ((unsigned)best_individual.get_cost() == instance.known_solution)
                     {
+                        best_individual.sanity_check();
                         return best_individual.get_cost();
                     }
                 }
@@ -64,13 +63,13 @@ class GA : public BaseAlgorithm {
                 //elitismo al 10%
                 const unsigned s = (10 * population_size) / 100;
                 unsigned i = 0;
-                for (; i < s; i++)
+                for (; i < s; ++i)
                     new_generation_a[i] = individuals_a[i];
 
                 //dobbiamo inserire il rimanente 90% della popolazione
                 const unsigned s2 = (90 * population_size) / 100;
                 const unsigned s3 = s2 + s;
-                for (; i < s3; i++)
+                for (; i < s3; ++i)
                 {
                     const unsigned p1 = random_parent(mt);
                     unsigned p2 = random_parent(mt);
@@ -134,6 +133,7 @@ class GA : public BaseAlgorithm {
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
                         {
+                            best_individual.sanity_check();
                             return best_individual.get_cost();
                         }
                     }
@@ -148,20 +148,18 @@ class GA : public BaseAlgorithm {
                 g++;
             }
 
+            best_individual.sanity_check();
+
             return best_individual.get_cost();
         }
 
     public:
 
-    double operator()(Test instance, Individual ind) override {
+    double operator()(const Test& instance, const Individual& ind) override {
 
-        tries = 1;
-        lambda = 250;
-        mutator = SWAP2;
-        crossover = TWO_POINT;
         max_evaluations = max_evaluations_GA * instance.factor_valuations;
-
-        max_g = (max_evaluations / tries) / lambda;
+        max_g = (max_evaluations / tries) / population_size;
+        
         cost = body(instance, ind);
         global_best = cost;
         if ((unsigned)global_best == instance.known_solution)

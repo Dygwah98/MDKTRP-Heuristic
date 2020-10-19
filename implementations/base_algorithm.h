@@ -12,7 +12,7 @@ class BaseAlgorithm {
         double global_best;
 
     public:
-        virtual double operator()(Test t, Individual ind) = 0;
+        virtual double operator()(const Test& t, const Individual& ind) = 0;
 };
 
 #endif

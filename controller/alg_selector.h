@@ -12,7 +12,7 @@ using namespace std;
 class AlgorithmSelector {
 
     private:
-        map<unsigned, AlgorithmContainer > names = {
+        const map<unsigned, AlgorithmContainer > names = {
             {0, AlgorithmContainer(new GA()) }
         };
 

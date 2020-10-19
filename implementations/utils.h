@@ -217,9 +217,9 @@ void read_file_ruiz(string file, unsigned &depots, unsigned &customers, double *
 	instance.close();
 }
 
-double euclidean_distance(const int x1, const int y1, const int x2, const int y2)
+inline double euclidean_distance(const int x1, const int y1, const int x2, const int y2)
 {
-	return sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2));
+	return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
 }
 
 void calculate_distance_matrix(double **distance_matrix, const double *const *const coordinate_matrix, const int depots, const int customers)
@@ -242,7 +242,7 @@ void calculate_distance_matrix(double **distance_matrix, const double *const *co
 	}
 }
 
-void print_matrix(auto **matrix, int R, int C)
+void print_matrix(double **matrix, int R, int C)
 {
 	for (int i = 0; i < R; i++)
 	{
@@ -264,6 +264,14 @@ double** get_distance_matrix(const int depots, const int customers, double** coo
 	calculate_distance_matrix(matrix, coordinate_matrix, depots, customers);
 
     return matrix;
+}
+
+void free_matrix(double **& matrix, const int rows) {
+	for (int i = 0; i < rows; i++)
+	{
+		delete[] matrix[i];
+	}
+    delete[] matrix;
 }
 
 #endif

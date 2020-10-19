@@ -15,23 +15,25 @@ class Individual
 {
 public:
 
-	Individual(const unsigned vehicles_, const unsigned depots_, const unsigned customers_, const double *const *const distance_matrix_) : vehicles(vehicles_), depots(depots_), customers(customers_), cost(0), distance_matrix(distance_matrix_)
+	Individual(const unsigned vehicles_, const unsigned depots_, const unsigned customers_, const double *const *const distance_matrix_)
+		: vehicles(vehicles_), depots(depots_), customers(customers_), cost(0), distance_matrix(distance_matrix_)
 	{
 		tours = new unsigned[vehicles + customers];
 		depot_positions = new unsigned[vehicles];
 	}
 
-	Individual(const Individual &o) : vehicles(o.vehicles), depots(o.depots), customers(o.customers), cost(o.cost), distance_matrix(o.distance_matrix)
+	Individual(const Individual &o)
+		: vehicles(o.vehicles), depots(o.depots), customers(o.customers), cost(o.cost), distance_matrix(o.distance_matrix)
 	{
 		tours = new unsigned[vehicles + customers];
 		depot_positions = new unsigned[vehicles];
 
-		for (unsigned i = 0; i < vehicles + customers; i++)
+		for (unsigned i = 0; i < vehicles + customers; ++i)
 		{
 			tours[i] = o.tours[i];
 		}
 
-		for (unsigned v = 0; v < vehicles; v++)
+		for (unsigned v = 0; v < vehicles; ++v)
 		{
 			depot_positions[v] = o.depot_positions[v];
 		}
@@ -56,13 +58,13 @@ public:
 		unsigned *const tours = this->tours;
 
 		//piazza casualmente i depots per i veicoli
-		for (unsigned v = 0; v < vehicles; v++)
+		for (unsigned v = 0; v < vehicles; ++v)
 		{
 			tours[v] = dist(mt);
 		}
 
 		//piazza i customer in modo sequenziale
-		for (unsigned c = 0; c < customers; c++)
+		for (unsigned c = 0; c < customers; ++c)
 		{
 			tours[c + vehicles] = c + depots;
 		}
@@ -72,7 +74,7 @@ public:
 		//se il primo elemento è un customer swappalo con il primo depot che trovi
 		if (tours[0] >= depots)
 		{
-			for (int i = 0; i < vehicles + customers; i++)
+			for (int i = 0; i < vehicles + customers; ++i)
 			{
 				if (tours[i] < depots)
 				{
@@ -86,13 +88,13 @@ public:
 
 		//indica le posizioni dei vari depot
 		unsigned v = 0;
-		for (unsigned i = 0; i < vehicles + customers; i++)
+		for (unsigned i = 0; i < vehicles + customers; ++i)
 		{
 			if (tours[i] < depots)
 			{
 				//start_routes_positions.insert(i);
 				depot_positions[v] = i;
-				v++;
+				++v;
 			}
 		}
 	}
@@ -125,7 +127,7 @@ public:
 			{
 				unsigned v = 0;
 				while (depot_positions[v] != second)
-					v++;
+					++v;
 				depot_positions[v] = first;
 
 				//elimino la posizione precedente
@@ -186,7 +188,7 @@ public:
 				unsigned i = 0;
 				while (depot_positions[i] != second)
 				{
-					i++;
+					++i;
 				}
 				depot_positions[i] = first;
 			}
@@ -196,7 +198,7 @@ public:
 			{
 				unsigned i = 0;
 				while (depot_positions[i] != third)
-					i++;
+					++i;
 				depot_positions[i] = second;
 			}
 
@@ -241,7 +243,7 @@ public:
 
 			//aggiorno la posizione degli altri depot
 			unsigned i = first;
-			for (unsigned v = 0; v < vehicles; v++)
+			for (unsigned v = 0; v < vehicles; ++v)
 			{
 				//controllo se il depot è nel range dell'inversione
 				if (depot_positions[v] >= first && depot_positions[v] <= second)
@@ -249,10 +251,10 @@ public:
 					//cerco il depot all'interno dell'inversione
 					while (tours[i] >= depots)
 					{
-						i++;
+						++i;
 					}
 					depot_positions[v] = i;
-					i++;
+					++i;
 				}
 			}
 		}
@@ -290,7 +292,7 @@ public:
 
 			//aggiorno la posizione degli altri depot
 			unsigned i = first;
-			for (unsigned v = 0; v < vehicles; v++)
+			for (unsigned v = 0; v < vehicles; ++v)
 			{
 				//controllo se il depot è nel range dello scrumble
 				if (depot_positions[v] >= first && depot_positions[v] <= second)
@@ -298,10 +300,10 @@ public:
 					//cerco il depot all'interno dello scrumble
 					while (tours[i] >= depots)
 					{
-						i++;
+						++i;
 					}
 					depot_positions[v] = i;
-					i++;
+					++i;
 				}
 			}
 		}
@@ -325,7 +327,7 @@ public:
 				//prova tutti i depot e vedi quale fornisce la latenza migliore
 				double min_latency = calculate_tour_latency(position);
 				unsigned best_depot = node;
-				for (unsigned d = 0; d < depots; d++)
+				for (unsigned d = 0; d < depots; ++d)
 				{
 					if (d != node)
 					{
@@ -352,7 +354,7 @@ public:
 				unsigned last_tour_position = position - 1;
 				while (last_tour_position >= depots)
 				{
-					last_tour_position--;
+					--last_tour_position;
 				}
 
 				//cerca la posizione migliore del depot all'interno del tour
@@ -379,7 +381,7 @@ public:
 					tours[p] = tours[position];
 					tours[position] = node;
 
-					p++;
+					++p;
 				}
 
 				p = position - 1;
@@ -402,7 +404,7 @@ public:
 					tours[p] = tours[position];
 					tours[position] = node;
 
-					p--;
+					--p;
 				}
 
 				//facciamo lo swap migliore
@@ -413,7 +415,7 @@ public:
 				unsigned v = 0;
 				while (depot_positions[v] != position)
 				{
-					v++;
+					++v;
 				}
 				depot_positions[v] = best_position;
 			}
@@ -424,7 +426,7 @@ public:
 			unsigned start_tour = position - 1;
 			while (tours[start_tour] >= depots)
 			{
-				start_tour--;
+				--start_tour;
 			}
 
 			double min_latency = calculate_tour_latency(start_tour);
@@ -449,7 +451,7 @@ public:
 				tours[p] = tours[position];
 				tours[position] = node;
 
-				p--;
+				--p;
 			}
 
 			const unsigned N = customers + vehicles;
@@ -473,7 +475,7 @@ public:
 				tours[p] = tours[position];
 				tours[position] = node;
 
-				p++;
+				++p;
 			}
 
 			//swap nella posizione migliore trovata
@@ -491,7 +493,7 @@ public:
 		unsigned tries = 0;
 		while (tries < 5 && !insertion())
 		{
-			tries++;
+			++tries;
 		}
 
 		//sanity_check();
@@ -507,9 +509,9 @@ public:
 		unsigned len = 0;
 		while (p1 < N && tours[p1] >= depots)
 		{
-			len++;
+			++len;
 
-			p1++;
+			++p1;
 		}
 
 		double latency = 0;
@@ -519,9 +521,9 @@ public:
 		{
 			latency += distance_matrix[tours[last]][tours[next]] * len;
 
-			len--;
+			--len;
 			last = next;
-			next++;
+			++next;
 		}
 
 		return latency;
@@ -535,7 +537,7 @@ public:
 
 		const unsigned l = customers + depots;
 		bool *customers_not_inserted = new bool[l];
-		for (unsigned i = depots; i < l; i++)
+		for (unsigned i = depots; i < l; ++i)
 		{
 			customers_not_inserted[i] = true;
 		}
@@ -547,13 +549,13 @@ public:
 		//copia interamente la prima metà di elementi
 		unsigned index_child = 0;
 		unsigned vehicles_inserted = 0;
-		for (; index_child < cutting_point; index_child++)
+		for (; index_child < cutting_point; ++index_child)
 		{
 			tours[index_child] = tours_p1[index_child];
 			if (tours[index_child] < depots)
 			{
 				depot_positions[vehicles_inserted] = index_child;
-				vehicles_inserted++;
+				++vehicles_inserted;
 			}
 			else
 			{
@@ -575,8 +577,8 @@ public:
 					tours[index_child] = node;
 					depot_positions[vehicles_inserted] = index_child;
 
-					index_child++;
-					vehicles_inserted++;
+					++index_child;
+					++vehicles_inserted;
 				}
 			}
 			//è un customer
@@ -586,13 +588,13 @@ public:
 				if (customers_not_inserted[node])
 				{
 					tours[index_child] = node;
-					index_child++;
+					++index_child;
 
 					customers_not_inserted[node] = false;
 				}
 			}
 
-			index_parent++;
+			++index_parent;
 		}
 
 		delete[] customers_not_inserted;
@@ -607,7 +609,7 @@ public:
 
 		const unsigned l = customers + depots;
 		bool *customers_not_inserted = new bool[l];
-		for (unsigned i = depots; i < l; i++)
+		for (unsigned i = depots; i < l; ++i)
 		{
 			customers_not_inserted[i] = true;
 		}
@@ -628,13 +630,13 @@ public:
 
 		unsigned vehicles_inserted = 0;
 		unsigned index_child = cutting_point1;
-		for (; index_child < cutting_point2; index_child++)
+		for (; index_child < cutting_point2; ++index_child)
 		{
 			tours[index_child] = tours_p1[index_child];
 			if (tours[index_child] < depots)
 			{
 				depot_positions[vehicles_inserted] = index_child;
-				vehicles_inserted++;
+				++vehicles_inserted;
 			}
 			else
 			{
@@ -657,8 +659,8 @@ public:
 					tours[index_child] = node;
 					depot_positions[vehicles_inserted] = index_child;
 
-					index_child++;
-					vehicles_inserted++;
+					++index_child;
+					++vehicles_inserted;
 				}
 			}
 			//è un customer
@@ -668,13 +670,13 @@ public:
 				if (customers_not_inserted[node])
 				{
 					tours[index_child] = node;
-					index_child++;
+					++index_child;
 
 					customers_not_inserted[node] = false;
 				}
 			}
 
-			index_parent++;
+			++index_parent;
 		}
 
 		//parte a destra della parte centrale
@@ -690,8 +692,8 @@ public:
 					tours[index_child] = node;
 					depot_positions[vehicles_inserted] = index_child;
 
-					index_child++;
-					vehicles_inserted++;
+					++index_child;
+					++vehicles_inserted;
 				}
 			}
 			//è un customer
@@ -700,13 +702,13 @@ public:
 				if (customers_not_inserted[node])
 				{
 					tours[index_child] = node;
-					index_child++;
+					++index_child;
 
 					customers_not_inserted[node] = false;
 				}
 			}
 
-			index_parent++;
+			++index_parent;
 		}
 
 		delete[] customers_not_inserted;
@@ -724,7 +726,7 @@ public:
 
 		const unsigned l = customers + depots;
 		bool *customers_in_sequence = new bool[l];
-		for (unsigned i = depots; i < l; i++)
+		for (unsigned i = depots; i < l; ++i)
 		{
 			customers_in_sequence[i] = false;
 		}
@@ -743,14 +745,14 @@ public:
 		if (value_sequence == 0)
 		{
 			//copia interamente la sequenza dal genitore principale
-			for (unsigned i = 0; i < cutting_point_1; i++)
+			for (unsigned i = 0; i < cutting_point_1; ++i)
 			{
 				const unsigned node = p1.tours[i];
 				tours[i] = node;
 				if (node < depots)
 				{
 					depot_positions[v] = i;
-					v++;
+					++v;
 				}
 			}
 		}
@@ -765,12 +767,12 @@ public:
 
 			//conta il numero di depot presenti nella sequenza
 			unsigned vehicles_insertable = 0;
-			for (unsigned i = 0; i < cutting_point_1; i++)
+			for (unsigned i = 0; i < cutting_point_1; ++i)
 			{
 				const unsigned node = p1.tours[i];
 				if (node < depots)
 				{
-					vehicles_insertable++;
+					++vehicles_insertable;
 				}
 				else
 				{
@@ -779,7 +781,7 @@ public:
 			}
 
 			unsigned index_child = 0;
-			for (unsigned i_p2 = 0; i_p2 < J && index_child < cutting_point_1; i_p2++)
+			for (unsigned i_p2 = 0; i_p2 < J && index_child < cutting_point_1; ++i_p2)
 			{
 				const unsigned node = other_tours[i_p2];
 				if (node < depots)
@@ -787,13 +789,13 @@ public:
 					//voglio inserire un depot
 					if (vehicles_insertable > 0)
 					{
-						vehicles_insertable--;
+						--vehicles_insertable;
 
 						tours[index_child] = node;
 						depot_positions[v] = index_child;
 
-						v++;
-						index_child++;
+						++v;
+						++index_child;
 					}
 				}
 				else
@@ -802,7 +804,7 @@ public:
 					if (customers_in_sequence[node])
 					{
 						tours[index_child] = node;
-						index_child++;
+						++index_child;
 
 						customers_in_sequence[node] = false;
 					}
@@ -821,14 +823,14 @@ public:
 			if (value_sequence == 0)
 			{
 				//copia interamente la sequenza dal genitore principale
-				for (unsigned i = last_cutting_point; i < next_cutting_point; i++)
+				for (unsigned i = last_cutting_point; i < next_cutting_point; ++i)
 				{
 					const unsigned node = p1.tours[i];
 					tours[i] = node;
 					if (node < depots)
 					{
 						depot_positions[v] = i;
-						v++;
+						++v;
 					}
 				}
 			}
@@ -843,12 +845,12 @@ public:
 
 				//conta il numero di depot presenti nella sequenza
 				unsigned vehicles_insertable = 0;
-				for (unsigned i = last_cutting_point; i < next_cutting_point; i++)
+				for (unsigned i = last_cutting_point; i < next_cutting_point; ++i)
 				{
 					const unsigned node = p1.tours[i];
 					if (node < depots)
 					{
-						vehicles_insertable++;
+						++vehicles_insertable;
 					}
 					else
 					{
@@ -857,7 +859,7 @@ public:
 				}
 
 				unsigned index_child = last_cutting_point;
-				for (unsigned i_p2 = 0; i_p2 < J && index_child < next_cutting_point; i_p2++)
+				for (unsigned i_p2 = 0; i_p2 < J && index_child < next_cutting_point; ++i_p2)
 				{
 					const unsigned node = other_tours[i_p2];
 					if (node < depots)
@@ -865,13 +867,13 @@ public:
 						//voglio inserire un depot
 						if (vehicles_insertable > 0)
 						{
-							vehicles_insertable--;
+							--vehicles_insertable;
 
 							tours[index_child] = node;
 							depot_positions[v] = index_child;
 
-							v++;
-							index_child++;
+							++v;
+							++index_child;
 						}
 					}
 					else
@@ -880,7 +882,7 @@ public:
 						if (customers_in_sequence[node])
 						{
 							tours[index_child] = node;
-							index_child++;
+							++index_child;
 
 							customers_in_sequence[node] = false;
 						}
@@ -904,7 +906,7 @@ public:
 				if (node < depots)
 				{
 					depot_positions[v] = i;
-					v++;
+					++v;
 				}
 			}
 		}
@@ -919,12 +921,12 @@ public:
 
 			//conta il numero di depot presenti nella sequenza
 			unsigned vehicles_insertable = 0;
-			for (unsigned i = last_cutting_point; i < J; i++)
+			for (unsigned i = last_cutting_point; i < J; ++i)
 			{
 				const unsigned node = p1.tours[i];
 				if (node < depots)
 				{
-					vehicles_insertable++;
+					++vehicles_insertable;
 				}
 				else
 				{
@@ -933,7 +935,7 @@ public:
 			}
 
 			unsigned index_child = last_cutting_point;
-			for (unsigned i_p2 = 0; i_p2 < J && index_child < J; i_p2++)
+			for (unsigned i_p2 = 0; i_p2 < J && index_child < J; ++i_p2)
 			{
 				const unsigned node = other_tours[i_p2];
 				if (node < depots)
@@ -941,13 +943,13 @@ public:
 					//voglio inserire un depot
 					if (vehicles_insertable > 0)
 					{
-						vehicles_insertable--;
+						--vehicles_insertable;
 
 						tours[index_child] = node;
 						depot_positions[v] = index_child;
 
-						v++;
-						index_child++;
+						++v;
+						++index_child;
 					}
 				}
 				else
@@ -956,7 +958,7 @@ public:
 					if (customers_in_sequence[node])
 					{
 						tours[index_child] = node;
-						index_child++;
+						++index_child;
 
 						customers_in_sequence[node] = false;
 					}
@@ -978,7 +980,7 @@ public:
 	{
 		const unsigned l = customers + depots;
 		bool *customers_not_inserted = new bool[l];
-		for (unsigned i = depots; i < l; i++)
+		for (unsigned i = depots; i < l; ++i)
 		{
 			customers_not_inserted[i] = true;
 		}
@@ -990,7 +992,7 @@ public:
 		const unsigned N = customers + vehicles - 1;
 
 		unsigned *const positions = new unsigned[N + 1];
-		for (unsigned i = 0; i <= N; i++)
+		for (unsigned i = 0; i <= N; ++i)
 		{
 			positions[i] = i;
 		}
@@ -998,7 +1000,7 @@ public:
 		std::shuffle(positions + 1, positions + customers + vehicles, mt);
 
 		unsigned v = 0;
-		for (unsigned i = 0; i < n_positions; i++)
+		for (unsigned i = 0; i < n_positions; ++i)
 		{
 			const unsigned position = positions[i];
 			const unsigned node = p2.tours[position];
@@ -1007,7 +1009,7 @@ public:
 			if (node < depots)
 			{
 				depot_positions[v] = position;
-				v++;
+				++v;
 			}
 			else
 			{
@@ -1016,7 +1018,7 @@ public:
 		}
 		//const unsigned * const p1_tours = p1.tours;
 		unsigned index_parent = 0;
-		for (unsigned i = n_positions; i <= N; i++)
+		for (unsigned i = n_positions; i <= N; ++i)
 		{
 			while (true)
 			{
@@ -1028,8 +1030,8 @@ public:
 						tours[positions[i]] = node;
 
 						depot_positions[v] = positions[i];
-						v++;
-						index_parent++;
+						++v;
+						++index_parent;
 						break;
 					}
 				}
@@ -1038,14 +1040,14 @@ public:
 					if (customers_not_inserted[node])
 					{
 						tours[positions[i]] = node;
-						index_parent++;
+						++index_parent;
 
 						customers_not_inserted[node] = false;
 						break;
 					}
 				}
 
-				index_parent++;
+				++index_parent;
 			}
 		}
 
@@ -1069,7 +1071,7 @@ public:
 
 		const unsigned l = customers + depots;
 		bool *customers_not_inserted = new bool[l];
-		for (unsigned i = depots; i < l; i++)
+		for (unsigned i = depots; i < l; ++i)
 		{
 			customers_not_inserted[i] = true;
 		}
@@ -1087,10 +1089,10 @@ public:
 						if (v < vehicles)
 						{
 							tours[i] = node;
-							index_p1++;
+							++index_p1;
 
 							depot_positions[v] = i;
-							v++;
+							++v;
 							break;
 						}
 					}
@@ -1099,14 +1101,14 @@ public:
 						if (customers_not_inserted[node])
 						{
 							tours[i] = node;
-							index_p1++;
+							++index_p1;
 
 							customers_not_inserted[node] = false;
 							break;
 						}
 					}
 
-					index_p1++;
+					++index_p1;
 				}
 			}
 			else
@@ -1120,10 +1122,10 @@ public:
 						if (v < vehicles)
 						{
 							tours[i] = node;
-							index_p2++;
+							++index_p2;
 
 							depot_positions[v] = i;
-							v++;
+							++v;
 							break;
 						}
 					}
@@ -1132,14 +1134,14 @@ public:
 						if (customers_not_inserted[node])
 						{
 							tours[i] = node;
-							index_p2++;
+							++index_p2;
 
 							customers_not_inserted[node] = false;
 							break;
 						}
 					}
 
-					index_p2++;
+					++index_p2;
 				}
 			}
 		}
@@ -1157,11 +1159,11 @@ public:
 	void sanity_check()
 	{
 		int v = 0;
-		for (int i = 0; i < customers + vehicles; i++)
+		for (int i = 0; i < customers + vehicles; ++i)
 		{
 			if (tours[i] < depots)
 			{
-				v++;
+				++v;
 			}
 		}
 		if (v > vehicles)
@@ -1169,7 +1171,7 @@ public:
 			cout << "TROPPI VEICOLI!!!\n";
 		}
 
-		for (int i = 0; i < vehicles; i++)
+		for (int i = 0; i < vehicles; ++i)
 		{
 			if (tours[depot_positions[i]] >= depots)
 			{
@@ -1177,10 +1179,10 @@ public:
 			}
 		}
 
-		for (int i = depots; i < customers + depots; i++)
+		for (int i = depots; i < customers + depots; ++i)
 		{
 			bool found = false;
-			for (int j = 0; j < customers + vehicles; j++)
+			for (int j = 0; j < customers + vehicles; ++j)
 			{
 				if (tours[j] == i)
 				{
@@ -1253,7 +1255,7 @@ public:
 		double sum = 0;
 		const unsigned N = vehicles + customers;
 		const unsigned vehicles_n = vehicles - 1;
-		for (unsigned v = 0; v < vehicles_n; v++)
+		for (unsigned v = 0; v < vehicles_n; ++v)
 		{
 			unsigned first = depot_positions[v];
 			const unsigned second = depot_positions[v + 1];
@@ -1261,8 +1263,8 @@ public:
 			unsigned len = second - first - 1;
 
 			unsigned last = first;
-			first++;
-			for (; first < second; first++)
+			++first;
+			for (; first < second; ++first)
 			{
 				sum += distance_matrix[tours[last]][tours[first]] * len;
 
@@ -1274,8 +1276,8 @@ public:
 		unsigned first = depot_positions[vehicles_n];
 		unsigned len = N - first - 1;
 		unsigned last = first;
-		first++;
-		for (; first < N; first++)
+		++first;
+		for (; first < N; ++first)
 		{
 			sum += distance_matrix[tours[last]][tours[first]] * len;
 
@@ -1296,7 +1298,7 @@ public:
 	void print_tour_matrix() const
 	{
 		//std::cout << "TOUR ARRAY\n";
-		for (unsigned i = 0; i < vehicles + customers; i++)
+		for (unsigned i = 0; i < vehicles + customers; ++i)
 		{
 			std::cout << tours[i] << " ";
 		}
@@ -1309,12 +1311,12 @@ public:
 			return *this;
 
 		cost = m.cost;
-		for (unsigned i = 0; i < vehicles + customers; i++)
+		for (unsigned i = 0; i < vehicles + customers; ++i)
 		{
 			tours[i] = m.tours[i];
 		}
 
-		for (unsigned v = 0; v < vehicles; v++)
+		for (unsigned v = 0; v < vehicles; ++v)
 		{
 			depot_positions[v] = m.depot_positions[v];
 		}
@@ -1338,7 +1340,7 @@ public:
 		const unsigned N = vehicles + customers;
 		const unsigned *const tours = this->tours;
 		const unsigned *const tours_o = o.tours;
-		for (unsigned i = 0; i < N; i++)
+		for (unsigned i = 0; i < N; ++i)
 		{
 			if (tours[i] != tours_o[i])
 			{
