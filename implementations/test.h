@@ -1,8 +1,8 @@
+#ifndef TEST_H
+#define TEST_H
+
 #include<string>
-#include<map>
 #include<vector>
-#include<algorithm>
-#include"algorithm_container.h"
 using namespace std;
 
 class Test {
@@ -31,7 +31,7 @@ class Test {
         }
 };
 
-class TestIstances {
+class TestInstances {
 
     public:
         vector<Test> tests = {
@@ -80,26 +80,4 @@ class TestIstances {
         };
 };
 
-class AlgorithmSelector {
-
-    private:
-        map<string, string> names = {
-            {"0", "GA"}
-        };
-
-        AlgorithmSelector() {};
-
-    public:
-        static void execute(string key) {
-
-            AlgorithmSelector instance;
-            const map<string, string>& n = instance.names;
-            if(find(n.begin(), n.end(), key) != n.end()) {
-                
-                TestIstances test;
-                string choice = instance.names[key];
-                //execute algorithm.execute(test);
-
-            }
-        }
-};
+#endif

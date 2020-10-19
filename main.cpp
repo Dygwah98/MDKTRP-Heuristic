@@ -1,5 +1,5 @@
 #include<iostream>
-#include"heuristic_algorithms/alg_selector.h"
+#include"controller/alg_selector.h"
 
 int main(int argc, char const *argv[])
 {
@@ -9,7 +9,7 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
-    AlgorithmSelector.execute(argv[1][0]);
+    AlgorithmSelector::execute( {argv[1][0]} );
 
     return 0;
 }
