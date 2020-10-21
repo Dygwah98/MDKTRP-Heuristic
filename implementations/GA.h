@@ -23,13 +23,13 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind, const BaseD
 
     const GeneticAlgorithmData& gdata = (const GeneticAlgorithmData&)data;
     
-    unsigned max_evaluations = gdata.max_evaluations_GA * instance.factor_valuations;
-    unsigned max_g = (max_evaluations / gdata.tries) / gdata.population_size;
-
+    const unsigned max_evaluations = gdata.max_evaluations_GA * instance.factor_valuations;
+    const unsigned max_g = (max_evaluations / gdata.tries) / gdata.population_size;
+    
     double cost = -1;
     double global_best = -1;
 
-    for (unsigned i = 0; i < gdata.tries; i++)
+    for (unsigned i = 0; i < gdata.tries; ++i)
     {
         double best_cost = std::numeric_limits<double>::max();
 
@@ -51,13 +51,17 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind, const BaseD
 
                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                 {
-                    if(!best_individual.sanity_check())
-                        cout << "unfeasible solution ";
                     cout << "known solution ";
                     return best_individual.get_cost();                    
                 }
             }
         }
+
+        //std::sort(individuals.begin(), individuals.end());
+
+        const unsigned s = (10 * gdata.population_size) / 100;
+        const unsigned s2 = (90 * gdata.population_size) / 100;
+        const unsigned s3 = s2 + s;  
 
         std::uniform_int_distribution<unsigned> random_parent(0, gdata.population_size / 2);
         std::uniform_int_distribution<unsigned> random_mut(0, 4);
@@ -69,6 +73,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind, const BaseD
         std::vector<Individual> *individuals_p = &individuals;
 
         unsigned g = 0;
+        
+        unsigned p1;
+        unsigned p2; 
         while (g < max_g)
         {
             //cout<<"G: "<<g<<"\n";
@@ -76,18 +83,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind, const BaseD
             std::vector<Individual> &new_generation_a = *new_generation_p;
 
             //elitismo al 10%
-            const unsigned s = (10 * gdata.population_size) / 100;
             unsigned i = 0;
             for (; i < s; ++i)
                 new_generation_a[i] = individuals_a[i];
 
             //dobbiamo inserire il rimanente 90% della popolazione
-            const unsigned s2 = (90 * gdata.population_size) / 100;
-            const unsigned s3 = s2 + s;
             for (; i < s3; ++i)
             {
-                const unsigned p1 = random_parent(mt);
-                unsigned p2 = random_parent(mt);
+                p1 = random_parent(mt);
+                p2 = random_parent(mt);
                 while (p1 == p2)
                 {
                     p2 = random_parent(mt);
@@ -148,8 +152,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind, const BaseD
 
                     if ((unsigned)best_individual.get_cost() == instance.known_solution)
                     {
-                        if(!best_individual.sanity_check())
-                            cout << "unfeasible solution ";
                         cout << "known solution ";
                         return best_individual.get_cost();
                     }
@@ -162,7 +164,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind, const BaseD
 
             std::sort((*individuals_p).begin(), (*individuals_p).end());
 
-            g++;
+            ++g;
         }
 
         cost = best_individual.get_cost();
@@ -172,8 +174,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind, const BaseD
             global_best = cost;
             if ((unsigned)global_best == instance.known_solution)
             {
-                if(!best_individual.sanity_check())
-                    cout << "unfeasible solution ";
                 cout << "known_solution ";
                 return global_best;
             }
