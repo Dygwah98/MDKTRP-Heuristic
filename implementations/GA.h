@@ -65,6 +65,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         const unsigned s3 = s2 + s;  
 
         std::uniform_int_distribution<unsigned> random_parent(0, gdata.population_size / 2);
+        std::uniform_int_distribution<unsigned> random_mut(0, gdata.mut_rate);
 
         std::vector<Individual> new_generation;
         new_generation.assign(gdata.population_size, ind);
