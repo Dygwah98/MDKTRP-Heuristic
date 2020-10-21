@@ -11,6 +11,34 @@ using namespace std;
 std::uint_least64_t seed(11363585407706497491);     
 std::mt19937 mt(seed);
 
+class AbstractIndividual {
+
+	public:
+		virtual void initialize() = 0;
+		virtual void swap2() = 0;
+		virtual void swap3() = 0;
+		virtual void inversion() = 0;
+		virtual void scrumble() = 0;
+		virtual void insertion() = 0;
+		virtual void insertion_repeated() = 0;
+		virtual double calculate_tour_latency(const unsigned ) = 0;
+		virtual void one_point_cross_over(const BaseIndividual&, const BaseIndividual&) = 0;
+		virtual void two_point_cross_over(const BaseIndividual&, const BaseIndividual&) = 0;
+		virtual void best_order_cross_over(const BaseIndividual&, const BaseIndividual&) = 0;
+		virtual void position_base_cross_over(const Individual &, const Individual &, const Individual &) = 0;
+		virtual void uniform_cross_over(const BaseIndividual&, const BaseIndividual&) = 0;
+		virtual void calculate_cost() = 0;
+		virtual double get_cost() const = 0;
+				
+		virtual bool operator<(const BaseIndividual&) = 0;
+		virtual bool operator==(const BaseIndividual&) = 0;
+
+		BaseIndividual() {}
+		BaseIndividual& operator=(const BaseIndividual&o) { return *this; }
+		virtual ~BaseIndividual() {}
+
+};
+
 class Individual
 {
 public:
