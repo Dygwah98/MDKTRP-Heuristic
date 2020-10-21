@@ -1,26 +1,10 @@
-#ifndef GA_H
-#define GA_H
+#ifndef GA_AD_H
+#define GA_AD_H
 
-#include<vector>
-#include"individual/test.h"
-#include"individual/individual.h"
-#include"individual/utils.h"
+#include"GA.h"
 
-class GeneticAlgorithmData {
 
-    public:
-        const unsigned tries = 1;
-        const unsigned population_size = 250;
-        const unsigned mutator = SWAP2;
-        const unsigned crossover = TWO_POINT;
-        const unsigned max_evaluations_GA = 40000000 / 3;
-        const unsigned mut_rate = 4;
-
-        GeneticAlgorithmData() {}
-        virtual ~GeneticAlgorithmData() {}
-};
-
-double GeneticAlgorithm(const Test& instance, const Individual& ind) {
+double AdaptiveGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
     const GeneticAlgorithmData gdata;
     
@@ -65,6 +49,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         const unsigned s3 = s2 + s;  
 
         std::uniform_int_distribution<unsigned> random_parent(0, gdata.population_size / 2);
+        std::uniform_int_distribution<unsigned> random_mut(0, gdata.mut_rate);
 
         std::vector<Individual> new_generation;
         new_generation.assign(gdata.population_size, ind);
@@ -74,8 +59,19 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         unsigned g = 0;
         
+        unsigned score_mutators[] = {1, 1, 1, 1};
+        double mprob = 1 / (double)4;
+        double probabilities_mutators[] = {mprob, mprob, mprob, mprob};
+        double total_good_mutation = 4;
+
+        unsigned score_cross_overs[] = {1, 1, 1, 1, 1};
+        double cprob = 1 / (double)5;
+        double probabilities_cross[] = {cprob, cprob, cprob, cprob, cprob};
+        double total_good_cross = 5;
+
         unsigned p1;
         unsigned p2; 
+        unsigned mut;
         while (g < max_g)
         {
             //cout<<"G: "<<g<<"\n";
@@ -99,47 +95,55 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 //Individual child(instance.vehicles, depots, customers, distance_matrix);
 
-                switch (gdata.crossover)
-                {
-                case 0:
-                    new_generation_a[i].one_point_cross_over(individuals_a[p1], individuals_a[p2]);
-                    break;
-                case 1:
-                    new_generation_a[i].two_point_cross_over(individuals_a[p1], individuals_a[p2]);
-                    break;
-                case 2:
-                    new_generation_a[i].best_order_cross_over(individuals_a[p1], individuals_a[p2], best_individual);
-                    break;
-                case 3:
-                    new_generation_a[i].position_base_cross_over(individuals_a[p1], individuals_a[p2]);
-                    break;
-                case 4:
-                    new_generation_a[i].uniform_cross_over(individuals_a[p1], individuals_a[p2]);
-                    break;
+                std::discrete_distribution<unsigned> dist1{probabilities_cross[0], probabilities_cross[1], probabilities_cross[2], probabilities_cross[3], probabilities_cross[4]};
+                const unsigned cr = dist1(mt);
+                switch(cr) {
+                    case 0:
+                        new_generation_a[i].two_point_cross_over(individuals_a[p1], individuals_a[p2]);
+                        break;
+
+                    case 1:
+                        new_generation_a[i].best_order_cross_over(individuals_a[p1], individuals_a[p2], best_individual);
+                        break;
+
+                    case 2:
+                        new_generation_a[i].one_point_cross_over(individuals_a[p1], individuals_a[p2]);
+                        break;
+
+                    case 3:
+                        new_generation_a[i].uniform_cross_over(individuals_a[p1], individuals_a[p2]);
+                        break;
+
+                    case 4:
+                        new_generation_a[i].position_base_cross_over(individuals_a[p1], individuals_a[p2]);
+                        break;
                 }
 
-                //mutazione genetica solo con un certo rateo
-                if (random_mut(mt) == 0)
-                {
-                    switch (gdata.mutator)
-                    {
+            //mutazione genetica solo con un certo rateo
+            const unsigned rate = random_mut(mt);
+            if (rate == 0)
+            {
+                std::discrete_distribution<unsigned> dist{probabilities_mutators[0], probabilities_mutators[1], probabilities_mutators[2], probabilities_mutators[3]};
+                mut = dist(mt);
+                switch(mut) {
+                    
                     case 0:
                         new_generation_a[i].swap2();
                         break;
+
                     case 1:
                         new_generation_a[i].swap3();
                         break;
+
                     case 2:
                         new_generation_a[i].scrumble();
                         break;
+
                     case 3:
                         new_generation_a[i].inversion();
                         break;
-                    case 4:
-                        new_generation_a[i].insertion();
-                        break;
-                    }
                 }
+            }
 
                 new_generation_a[i].calculate_cost();
 
@@ -155,6 +159,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         cout << "known solution ";
                         return best_individual.get_cost();
                     }
+
+                    score_cross_overs[cr]++;
+                    total_good_cross++;
+
+                    if (rate == 0)
+                    {
+                        score_mutators[mut]++;
+                        total_good_mutation++;
+                    }
                 }
             }
 
@@ -165,11 +178,21 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             std::sort((*individuals_p).begin(), (*individuals_p).end());
 
             ++g;
+
+            for (unsigned i = 0; i < 4; i++)
+            {
+                probabilities_mutators[i] = score_mutators[i] / total_good_mutation;
+            }
+
+            for (unsigned i = 0; i < 5; i++)
+            {
+                probabilities_cross[i] = score_cross_overs[i] / total_good_cross;
+            }
         }
 
         cost = best_individual.get_cost();
 
-        if (cost < global_best)
+         if (cost < global_best)
         {
             global_best = cost;
             if ((unsigned)global_best == instance.known_solution)

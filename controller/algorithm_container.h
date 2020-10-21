@@ -3,27 +3,29 @@
 
 #include<vector>
 #include"../implementations/GA.h"
+#include"../implementations/GA_adaptive.h"
+#include"../implementations/GA_all_equal.h"
 
 class AlgorithmContainer {
 
     private:
-        using Algorithm = double(*)(const Test&, const Individual&, const BaseData&);
+        using Algorithm = double(*)(const Test&, const Individual&);
 
         double r;
         unsigned depots;
         unsigned customers;
         double **coordinate_matrix;
+        double **distance_matrix;
         const string dir = "./dat/";
         unsigned dpc;
         
         Algorithm algorithm;
-        const BaseData& data;
 
     public:
-        AlgorithmContainer( Algorithm alg, const BaseData& param ): algorithm(alg), data(param) {}
+        AlgorithmContainer( Algorithm alg): algorithm(alg) {}
 
         void execute(const TestInstances& t) {
-
+            
             for(auto& instance : t.tests) {
     
                 depots = 0;
@@ -40,22 +42,23 @@ class AlgorithmContainer {
                 }
                 string file = dir + instance.prefix + number_instance + ".txt";
 
-                read_file_ruiz(file, depots, customers, coordinate_matrix);
-                dpc = depots + customers;
-                double **distance_matrix = get_distance_matrix(depots, customers, coordinate_matrix);
-
-                Individual startingIndividual(instance.vehicles, depots, customers, distance_matrix);
-
                 std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
                 
-                r = (*algorithm)(instance, startingIndividual, data);
+                read_file_ruiz(file, depots, customers, coordinate_matrix);
+                dpc = depots + customers;
+                distance_matrix = get_distance_matrix(depots, customers, coordinate_matrix);
+                
+                Individual startingIndividual(instance.vehicles, depots, customers, distance_matrix);
+                
+                r = (*algorithm)(instance, startingIndividual);
+
+                free_matrix(distance_matrix, depots+customers);
+                free_matrix(coordinate_matrix, depots+customers);
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
                 cout << instance.prefix + number_instance << ":" << r << ":" << (double)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / (double)1000 << "\n";
 
-                free_matrix(distance_matrix, depots+customers);
-                free_matrix(coordinate_matrix, depots+customers);
             }
         }
 

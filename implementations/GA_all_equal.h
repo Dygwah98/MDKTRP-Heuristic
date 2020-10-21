@@ -1,28 +1,21 @@
-#ifndef GA_H
-#define GA_H
+#ifndef GA_EQ_H
+#define GA_EQ_H
 
-#include<vector>
-#include"individual/test.h"
-#include"individual/individual.h"
-#include"individual/utils.h"
+#include"GA.h"
 
-class GeneticAlgorithmData {
+class AllEqualGAData : public GeneticAlgorithmData {
 
     public:
-        const unsigned tries = 1;
-        const unsigned population_size = 250;
-        const unsigned mutator = SWAP2;
-        const unsigned crossover = TWO_POINT;
-        const unsigned max_evaluations_GA = 40000000 / 3;
         const unsigned mut_rate = 4;
+        const unsigned cross_rate = 4;
+        const unsigned mutator_rate = 4;
 
-        GeneticAlgorithmData() {}
-        virtual ~GeneticAlgorithmData() {}
+        AllEqualGAData(): GeneticAlgorithmData() {}
 };
 
-double GeneticAlgorithm(const Test& instance, const Individual& ind) {
+double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
-    const GeneticAlgorithmData gdata;
+    const AllEqualGAData gdata;
     
     const unsigned max_evaluations = gdata.max_evaluations_GA * instance.factor_valuations;
     const unsigned max_g = (max_evaluations / gdata.tries) / gdata.population_size;
@@ -65,6 +58,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         const unsigned s3 = s2 + s;  
 
         std::uniform_int_distribution<unsigned> random_parent(0, gdata.population_size / 2);
+        std::uniform_int_distribution<unsigned> random_mut(0, gdata.mut_rate);
+        std::uniform_int_distribution<unsigned> random_cross(0, gdata.cross_rate);
+        std::uniform_int_distribution<unsigned> random_mutator(0, gdata.mutator_rate);
 
         std::vector<Individual> new_generation;
         new_generation.assign(gdata.population_size, ind);
@@ -99,7 +95,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 //Individual child(instance.vehicles, depots, customers, distance_matrix);
 
-                switch (gdata.crossover)
+                const unsigned cross = random_cross(mt);
+                switch (cross)
                 {
                 case 0:
                     new_generation_a[i].one_point_cross_over(individuals_a[p1], individuals_a[p2]);
@@ -121,23 +118,24 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 //mutazione genetica solo con un certo rateo
                 if (random_mut(mt) == 0)
                 {
-                    switch (gdata.mutator)
+                    const unsigned mut = random_mutator(mt);
+                    switch (mut)
                     {
-                    case 0:
-                        new_generation_a[i].swap2();
-                        break;
-                    case 1:
-                        new_generation_a[i].swap3();
-                        break;
-                    case 2:
-                        new_generation_a[i].scrumble();
-                        break;
-                    case 3:
-                        new_generation_a[i].inversion();
-                        break;
-                    case 4:
-                        new_generation_a[i].insertion();
-                        break;
+                        case 0:
+                            new_generation_a[i].swap2();
+                            break;
+                        case 1:
+                            new_generation_a[i].swap3();
+                            break;
+                        case 2:
+                            new_generation_a[i].scrumble();
+                            break;
+                        case 3:
+                            new_generation_a[i].inversion();
+                            break;
+                        case 4:
+                            new_generation_a[i].insertion();
+                            break;
                     }
                 }
 
@@ -168,8 +166,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         }
 
         cost = best_individual.get_cost();
-
-        if (cost < global_best)
+        
+         if (cost < global_best)
         {
             global_best = cost;
             if ((unsigned)global_best == instance.known_solution)
@@ -177,7 +175,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 cout << "known_solution ";
                 return global_best;
             }
-        } 
+        }
     }
 
     return cost;

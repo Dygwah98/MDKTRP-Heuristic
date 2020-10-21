@@ -6,14 +6,21 @@
 #include<vector>
 #include<algorithm>
 #include"algorithm_container.h"
-#include"../implementations/GA.h"
 using namespace std;
 
 class AlgorithmSelector {
 
     private:
-        const map<unsigned, AlgorithmContainer > names = {
-            {0, AlgorithmContainer(GeneticAlgorithm, GeneticAlgorithmData()) }
+        const map<unsigned, AlgorithmContainer > funcs = {
+            {0, AlgorithmContainer(GeneticAlgorithm)   },
+            {1, AlgorithmContainer(AdaptiveGeneticAlgorithm) },
+            {2, AlgorithmContainer(AllEqualGeneticAlgorithm) }
+        };
+
+        const map<unsigned, string > names = {
+            {0, "GeneticAlgorithm"},
+            {1, "AdaptiveGeneticAlgorithm"},
+            {2, "AllEqualGeneticAlgorithm"}
         };
 
         AlgorithmSelector() {};
@@ -22,11 +29,12 @@ class AlgorithmSelector {
         static void execute(const unsigned key) {
 
             AlgorithmSelector instance;
-            if(instance.names.find(key) != instance.names.end()) {
+            if(instance.funcs.find(key) != instance.funcs.end()) {
                 
                 TestInstances test;
-                AlgorithmContainer choice = instance.names.at(key);
+                AlgorithmContainer choice = instance.funcs.at(key);
                 
+                cout << instance.names.at(key) << endl;
                 choice.execute(test);
 
             }
