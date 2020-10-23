@@ -116,6 +116,8 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                 case 4:
                     new_generation_a[i].uniform_cross_over(individuals_a[p1], individuals_a[p2]);
                     break;
+                default:
+                    break;
                 }
 
                 //mutazione genetica solo con un certo rateo
@@ -138,6 +140,8 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                             break;
                         case 4:
                             new_generation_a[i].insertion();
+                            break;
+                        default:
                             break;
                     }
                 }
