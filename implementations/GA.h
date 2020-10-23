@@ -2,9 +2,9 @@
 #define GA_H
 
 #include<vector>
-#include"individual/test.h"
+#include"test.h"
+#include"utils.h"
 #include"individual/individual.h"
-#include"individual/utils.h"
 
 class GeneticAlgorithmData {
 
@@ -15,9 +15,6 @@ class GeneticAlgorithmData {
         const unsigned crossover = TWO_POINT;
         const unsigned max_evaluations_GA = 40000000 / 3;
         const unsigned mut_rate = 4;
-
-        GeneticAlgorithmData() {}
-        virtual ~GeneticAlgorithmData() {}
 };
 
 double GeneticAlgorithm(const Test& instance, const Individual& ind) {
@@ -27,8 +24,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     const unsigned max_evaluations = gdata.max_evaluations_GA * instance.factor_valuations;
     const unsigned max_g = (max_evaluations / gdata.tries) / gdata.population_size;
     
-    double cost = -1;
-    double global_best = -1;
+    double cost = std::numeric_limits<double>::max();
+    double global_best = std::numeric_limits<double>::max();
 
     for (unsigned i = 0; i < gdata.tries; ++i)
     {

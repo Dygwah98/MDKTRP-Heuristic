@@ -3,25 +3,28 @@
 
 #include"GA.h"
 
-class AllEqualGAData : public GeneticAlgorithmData {
+class AllEqualGeneticAlgorithmData {
 
     public:
+        const unsigned tries = 1;
+        const unsigned population_size = 250;
+        const unsigned mutator = SWAP2;
+        const unsigned crossover = TWO_POINT;
+        const unsigned max_evaluations_GA = 40000000 / 3;
         const unsigned mut_rate = 4;
         const unsigned cross_rate = 4;
         const unsigned mutator_rate = 4;
-
-        AllEqualGAData(): GeneticAlgorithmData() {}
 };
 
 double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
-    const AllEqualGAData gdata;
+    const AllEqualGeneticAlgorithmData gdata;
     
     const unsigned max_evaluations = gdata.max_evaluations_GA * instance.factor_valuations;
     const unsigned max_g = (max_evaluations / gdata.tries) / gdata.population_size;
     
-    double cost = -1;
-    double global_best = -1;
+    double cost = std::numeric_limits<double>::max();
+    double global_best = std::numeric_limits<double>::max();
 
     for (unsigned i = 0; i < gdata.tries; ++i)
     {
