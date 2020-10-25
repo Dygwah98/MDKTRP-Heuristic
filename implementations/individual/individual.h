@@ -976,7 +976,7 @@ public:
 		delete[] customers_in_sequence;
 	}
 
-	void position_base_cross_over(const Individual &p1, const Individual &p2)
+	void position_based_cross_over(const Individual &p1, const Individual &p2)
 	{
 		const unsigned l = customers + depots;
 		bool *customers_not_inserted = new bool[l];

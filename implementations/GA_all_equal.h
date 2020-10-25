@@ -111,7 +111,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                     new_generation_a[i].best_order_cross_over(individuals_a[p1], individuals_a[p2], best_individual);
                     break;
                 case 3:
-                    new_generation_a[i].position_base_cross_over(individuals_a[p1], individuals_a[p2]);
+                    new_generation_a[i].position_based_cross_over(individuals_a[p1], individuals_a[p2]);
                     break;
                 case 4:
                     new_generation_a[i].uniform_cross_over(individuals_a[p1], individuals_a[p2]);

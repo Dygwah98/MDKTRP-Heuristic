@@ -125,7 +125,7 @@ double AdaptiveGeneticAlgorithm(const Test& instance, const Individual& ind) {
                         break;
 
                     case 4:
-                        new_generation_a[i].position_base_cross_over(individuals_a[p1], individuals_a[p2]);
+                        new_generation_a[i].position_based_cross_over(individuals_a[p1], individuals_a[p2]);
                         break;
                 }
 
