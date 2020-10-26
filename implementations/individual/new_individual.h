@@ -19,11 +19,10 @@ class IndividualSet {
 
     friend Individual;
     public:
-        IndividualSet(unsigned pop_size, Individual seed, distTable& ct, distTable& dt, const double *const ac):
+        IndividualSet(unsigned pop_size, Individual seed, distTable& dt, const double *const ac):
             individuals(pop_size, seed),
             activation_costs( ac ),
-            customer_table( ct ),
-            depot_table( dt ),
+            distance_table( dt ),
             random_cell( 0, seed.N-1 ),
             random_depot( 0, seed.depots-1 ),
             random_bit( 0, 1 ) 
@@ -34,9 +33,7 @@ class IndividualSet {
         //costi di attivazione per ogni depot
         const double *const activation_costs;
         //tabella di hash contente le distanze depot <-> customer
-        distTable& depot_table;
-        //tabella di hash contente le distanze customer <-> customer
-        distTable& customer_table;
+        distTable& distance_table;
         //generatori di numeri casuali
         std::uniform_int_distribution<unsigned> random_cell;
 		std::uniform_int_distribution<unsigned> random_depot;
@@ -104,7 +101,10 @@ class Individual {
 		
         void two_point_cross_over(const Individual&, const Individual&);
 		
-        void best_order_cross_over(const Individual&, const Individual&);
+        void best_order_cross_over(const Individual&p1, const Individual&p2, const Individual& best) {
+
+
+        }
 		
         void position_based_cross_over(const Individual&p1, const Individual&p2) {
 
@@ -244,16 +244,27 @@ class Individual {
             const unsigned *const pv = this->vehicles_positions;
             const double *const ac = this->parent->activation_costs;
             const unsigned *const dv = this->depot_vehicles;
-            distTable& dt = this->parent->customer_table;
+            distTable& dt = this->parent->distance_table;
 
             double sum = 0;
             for(unsigned v = 0; v < vehicles_n; ++v) {
                 
                 unsigned first = pv[v];
                 const unsigned last = pv[v+1]-1;
-                unsigned len = last - first;
+                unsigned len = last - first + 1;
                 
                 sum += ac[ dv[v] ];
+                const unsigned depot_first_customer = getIndex( tours[ dv[v] ], tours[ first] );
+                if(dt.find(depot_first_customer) != dt.end()) {
+            
+                            sum += dt.at(depot_first_customer) * len;
+            
+                } else {
+            
+                        //calcola distanza e inseriscila nella table
+                }
+
+                --len;
 
                 for(; first < last; ++first) {
                     
@@ -271,12 +282,23 @@ class Individual {
                 }
             }
 
-            sum += ac[ dv[vehicles_n] ];
-
             unsigned first = pv[vehicles_n];
             const unsigned last = pv[vehicles_n+1] - 1;
-            unsigned len = last - first;
+            unsigned len = last - first + 1;
             
+            sum += ac[ dv[vehicles_n] ];
+            const unsigned depot_first_customer = getIndex( tours[ dv[vehicles_n] ], tours[ first] );
+            if(dt.find(depot_first_customer) != dt.end()) {
+        
+                        sum += dt.at(depot_first_customer) * len;
+        
+            } else {
+        
+                    //calcola distanza e inseriscila nella table
+            }
+
+            --len;
+
             for(; first < last; ++first) {
                 
                 const unsigned index = getIndex( tours[first], tours[first+1] );
