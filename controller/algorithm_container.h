@@ -2,9 +2,9 @@
 #define ALG_CONT_H
 
 #include<vector>
-#include"../implementations/GA.h"
-#include"../implementations/GA_adaptive.h"
-#include"../implementations/GA_all_equal.h"
+#include"../n_implementations/GA.h"
+#include"../n_implementations/GA_adaptive.h"
+#include"../n_implementations/GA_all_equal.h"
 
 class AlgorithmContainer {
 
@@ -15,7 +15,8 @@ class AlgorithmContainer {
         unsigned depots;
         unsigned customers;
         double **coordinate_matrix;
-        double **distance_matrix;
+        distTable distances;
+        double *activation_costs = nullptr;
         const string dir = "./dat/";
         unsigned dpc;
         
@@ -46,20 +47,83 @@ class AlgorithmContainer {
                 
                 read_file_ruiz(file, depots, customers, coordinate_matrix);
                 dpc = depots + customers;
-                distance_matrix = get_distance_matrix(depots, customers, coordinate_matrix);
                 
-                Individual startingIndividual(instance.vehicles, depots, customers, distance_matrix);
+                distances.clear();
+                #ifndef BASE
+                    calculate_activation_costs();
+                #endif
+
+                Individual startingIndividual(instance.vehicles, depots, customers, distances, activation_costs, coordinate_matrix);
                 
+                //cout << "   starting algorithm...\n";
                 r = (*algorithm)(instance, startingIndividual);
 
-                free_matrix(distance_matrix, depots+customers);
                 free_matrix(coordinate_matrix, depots+customers);
+
+                delete[] activation_costs;
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-                cout << instance.prefix + number_instance << ":" << r << ":" << (double)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / (double)1000 << "\n";
-
+                cout << instance.prefix + number_instance << " : " << r <<  " : " << (double)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / (double)1000 << "\n";
+                
             }
+        }
+
+        inline unsigned getCustomerIndex(unsigned x, unsigned y) {
+            return depots*customers + x*customers + y;
+        }
+
+        inline unsigned getDepotIndex(unsigned x, unsigned y) {
+            return x*customers + y;
+        }
+
+        void calculate_activation_costs() {
+
+            activation_costs = new double[depots];
+
+            //per ogni depot
+            for(unsigned i = 0; i < depots; ++i) {
+
+                double mean = 0;
+
+                double max_cost = euclidean_distance(coordinate_matrix[i][0], coordinate_matrix[i][1],
+													 coordinate_matrix[0][0], coordinate_matrix[0][1]);
+                
+                //si inserisce la distanza fra il depot e il primo cliente
+                unsigned index = getDepotIndex(i, 0);
+                distances[index] = max_cost;
+
+                mean += max_cost;
+                
+                //per ogni cliente dopo il primo
+                for(unsigned j = depots + 1; j < depots + customers; ++j) {
+                    
+                    double cost = euclidean_distance(coordinate_matrix[i][0], coordinate_matrix[i][1],
+													 coordinate_matrix[j][0], coordinate_matrix[j][1]);
+
+                    mean += cost;
+                    //si inserisce la distanza fra il depot e il cliente
+                    index = getDepotIndex(i, j - depots);
+                    distances[index] = cost;
+
+                    //se è la distanza massima trovata finora, conservala
+                    if(cost > max_cost) {
+                        max_cost = cost;
+                    }
+                }
+
+                //calcolo della media e formula del costo d'attivazione
+                mean /= (double)customers;
+                double result = (max_cost - mean) * customers;
+
+                //il costo d'attivazione viene salvato
+                activation_costs[i] = result;
+            }
+
+            //cout << "   activation costs:\n";
+            //for(unsigned i = 0; i < depots; ++i) {
+            //    cout << "       depot: " << i << " " << activation_costs[i] << endl;
+            //}
         }
 
         double getResult() const { return r; }

@@ -12,7 +12,7 @@ class AlgorithmSelector {
 
     private:
         const map<unsigned, AlgorithmContainer > funcs = {
-            {0, AlgorithmContainer(GeneticAlgorithm)   },
+            {0, AlgorithmContainer(GeneticAlgorithm)         },
             {1, AlgorithmContainer(AdaptiveGeneticAlgorithm) },
             {2, AlgorithmContainer(AllEqualGeneticAlgorithm) }
         };
@@ -34,6 +34,7 @@ class AlgorithmSelector {
                 TestInstances test;
                 AlgorithmContainer choice = instance.funcs.at(key);
                 
+                cout << "seed " << seed << endl;
                 cout << instance.names.at(key) << endl;
                 choice.execute(test);
 

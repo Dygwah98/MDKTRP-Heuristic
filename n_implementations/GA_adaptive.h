@@ -37,7 +37,7 @@ double AdaptiveGeneticAlgorithm(const Test& instance, const Individual& ind) {
         //inizializzazione della popolazione
         for (Individual &i : individuals)
         {
-            i.random_inizialize();
+            i.random_initialize();
             i.calculate_cost();
             if (i.get_cost() < best_cost)
             {
@@ -146,7 +146,7 @@ double AdaptiveGeneticAlgorithm(const Test& instance, const Individual& ind) {
                         break;
 
                     case 2:
-                        new_generation_a[i].scrumble();
+                        new_generation_a[i].scramble();
                         break;
 
                     case 3:
