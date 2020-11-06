@@ -57,6 +57,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                 {
                     cout << "known solution ";
+                    delete individuals_ptr;
                     //best_individual.print_tour();
                     return best_individual.get_cost();                    
                 }
@@ -165,6 +166,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     if ((unsigned)best_individual.get_cost() == instance.known_solution)
                     {
                         cout << "known solution ";
+
+                        delete individuals_ptr;
+                        delete new_generation_ptr;
                         //best_individual.print_tour();
                         return cost;
                     }
@@ -192,14 +196,19 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             if(cost == instance.known_solution)
             {
                 cout << "known solution ";
+                delete individuals_ptr;
+                delete new_generation_ptr;
                 //best_individual.print_tour();
                 return cost;
             }
         } 
-        
+    
+        delete individuals_ptr;
+        delete new_generation_ptr;
     }
 
     //best_individual2.print_tour();
+                
     return cost;
 }
 

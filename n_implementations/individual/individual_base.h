@@ -87,6 +87,7 @@ class Individual {
 
         ~Individual() {
             delete[] tours;
+            delete[] inserted;
         }
     	
         void swap2()   {
