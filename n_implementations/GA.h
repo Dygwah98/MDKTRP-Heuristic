@@ -36,12 +36,12 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         double best_cost = std::numeric_limits<double>::max();
 
         //vettore che contiene la popolazione
-        std::vector<Individual> individuals_ptr = std::vector<Individual>(gdata.population_size, ind);
+        std::vector<Individual>* individuals_ptr = new std::vector<Individual>(gdata.population_size, ind);
 
         Individual best_individual(best_individual2);
         
         //inizializzazione della popolazione
-        for (Individual &i : (individuals_ptr) )
+        for (Individual &i : (*individuals_ptr) )
         {
             i.random_initialize();
             if (i.get_cost() < best_cost)
@@ -53,6 +53,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                 {
                     cout << "known solution ";
+                    delete individuals_ptr;
                     //best_individual.print_tour();
                     return best_individual.get_cost();                    
                 }
@@ -62,14 +63,14 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         //std::sort(individuals.begin(), individuals.end());
 
-        const unsigned s  = (10 * gdata.population_size) / 100;
+        const unsigned s  = (unsigned)floor( (10.0 * gdata.population_size) / 100.0);
         const unsigned s3 = gdata.population_size;  
 
         std::uniform_int_distribution<unsigned> random_parent(1, gdata.population_size / 2);
         std::uniform_int_distribution<unsigned> random_mut(0, gdata.mut_rate);
         std::uniform_int_distribution<unsigned> random_choice(0, 1);
 
-        std::vector<Individual> new_generation_ptr = std::vector<Individual>(gdata.population_size, ind);
+        std::vector<Individual>* new_generation_ptr = new std::vector<Individual>(gdata.population_size, ind);
 
         unsigned g = 0;
         
@@ -80,8 +81,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         while (g < max_g)
         {
             //cout<<"G: "<<g<<"\n";
-            const std::vector<Individual>& individuals = individuals_ptr;
-            std::vector<Individual>& new_generation = new_generation_ptr;
+            const std::vector<Individual>& individuals = *individuals_ptr;
+            std::vector<Individual>& new_generation = *new_generation_ptr;
             //elitismo al 10%
             unsigned i = 0;
             for (; i < s; ++i) {
@@ -162,6 +163,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     {
                         cout << "known solution ";
 
+                        delete individuals_ptr;
+                        delete new_generation_ptr;
                         //best_individual.print_tour();
                         return cost;
                     }
@@ -175,7 +178,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             //for(auto& i : individuals)
             //    i.print_tour();
 
-            std::sort(individuals_ptr.begin(), individuals_ptr.end());
+            std::sort(individuals_ptr->begin(), individuals_ptr->end());
             
             //cout << "       iteration " << g << ": entire population sorted\n";
             ++g;
@@ -189,10 +192,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             if(cost == instance.known_solution)
             {
                 cout << "known solution ";
+                delete individuals_ptr;
+                delete new_generation_ptr;
                 //best_individual.print_tour();
                 return cost;
             }
         } 
+    
+        delete individuals_ptr;
+        delete new_generation_ptr;
     }
 
     //best_individual2.print_tour();
