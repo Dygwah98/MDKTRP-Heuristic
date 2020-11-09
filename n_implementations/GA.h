@@ -5,11 +5,8 @@
 #include<utility>
 #include"test.h"
 #include"utils.h"
-#ifdef BASE
-    #include"individual/individual_base.h"
-#else
-    #include"individual/individual.h"
-#endif
+#include"individual/individual.h"
+
 
 class GeneticAlgorithmData {
 

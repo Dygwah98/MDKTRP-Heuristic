@@ -16,7 +16,9 @@ class AlgorithmContainer {
         unsigned customers;
         double **coordinate_matrix;
         distTable distances;
+    #ifndef BASE
         double *activation_costs = nullptr;
+    #endif
         const string dir = "./dat/";
         unsigned dpc;
         
@@ -48,19 +50,24 @@ class AlgorithmContainer {
                 read_file_ruiz(file, depots, customers, coordinate_matrix);
                 dpc = depots + customers;
                 
-                distances.clear();
-                #ifndef BASE
-                    calculate_activation_costs();
-                #endif
-
+                distTable().swap(distances);
+            #ifndef BASE
+                calculate_activation_costs();
                 Individual startingIndividual(instance.vehicles, depots, customers, distances, activation_costs, coordinate_matrix);
+            #else
+                Individual startingIndividual(instance.vehicles, depots, customers, distances, coordinate_matrix);
+            #endif
+
+                
                 
                 //cout << "   starting algorithm...\n";
                 r = (*algorithm)(instance, startingIndividual);
 
                 free_matrix(coordinate_matrix, depots+customers);
 
+            #ifndef BASE
                 delete[] activation_costs;
+            #endif
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
@@ -77,6 +84,7 @@ class AlgorithmContainer {
             return x*customers + y;
         }
 
+    #ifndef BASE
         void calculate_activation_costs() {
 
             activation_costs = new double[depots];
@@ -125,6 +133,7 @@ class AlgorithmContainer {
             //    cout << "       depot: " << i << " " << activation_costs[i] << endl;
             //}
         }
+    #endif
 
         double getResult() const { return r; }
 };

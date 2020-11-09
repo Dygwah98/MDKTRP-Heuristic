@@ -20,7 +20,10 @@ class Individual {
 
     public:
         Individual(const unsigned v, const unsigned d, const unsigned c, distTable& dt, 
-        double *const ac, double **const _coordinate_matrix):
+    #ifndef BASE    
+        double *const ac, 
+    #endif    
+        double **const _coordinate_matrix):
             vehicles( v ), 
             depots( d ), 
             customers( c ), 
@@ -29,7 +32,9 @@ class Individual {
             tours( new unsigned[c] ),
 	        tours_start(),
             coordinate_matrix(_coordinate_matrix),
+        #ifndef BASE
             activation_costs( ac ),
+        #endif
             distance_table( dt ),
             random_cell( 0, c-1 ),
             random_depot( 0, d-1 ),
@@ -47,7 +52,9 @@ class Individual {
             tours( new unsigned[o.customers] ),
             tours_start(o.tours_start),
             coordinate_matrix(o.coordinate_matrix),
+        #ifndef BASE
             activation_costs( o.activation_costs ),
+        #endif
             distance_table( o.distance_table ),
             random_cell( 0, o.customers-1 ),
             random_depot( 0, o.depots-1 ),
@@ -64,12 +71,6 @@ class Individual {
             if(this == &m)
                 return *this;
 
-            if(m.cost != 0) {
-                cost = m.cost;
-            }
-            else
-                calculate_cost();
-
             unsigned *const tours_t = this->tours;
             const unsigned *const tours_m = m.tours;
             
@@ -83,6 +84,12 @@ class Individual {
             random_cell = m.random_cell;
             random_depot = m.random_depot;
             random_bit = m.random_bit;
+
+            if(m.cost != 0) {
+                cost = m.cost;
+            }
+            else
+                calculate_cost();
 
             return *this;
         }
@@ -656,8 +663,8 @@ class Individual {
             //cout << "           individual " << this << " random tour:\n";
             //print_tour();
 
-            improvement_algorithm();
             repair();
+            improvement_algorithm();
             calculate_cost();
 
             //cout << "           individual " << this << " randomly initialized\n";
@@ -699,6 +706,7 @@ class Individual {
             //    print_tour();
             //}
 
+            repair();
         }
 
         inline void repair()   {
@@ -759,7 +767,9 @@ class Individual {
 
             auto& ts = this->tours_start;
             auto& dc = this->distance_table;
+        #ifndef BASE
             const double *const ac = this->activation_costs;
+        #endif
 
             unsigned start = start_pos;
             const unsigned end = end_pos;
@@ -767,8 +777,9 @@ class Individual {
             unsigned len = end - start;
 
             double sum = 0;
-
+        #ifndef BASE
             sum += ac[ depot ];
+        #endif
             const unsigned di = getDepotIndex(depot, tours[start]);
             if(dc.find(di) == dc.end()) {
                dc[di] = euclidean_distance(coordinate_matrix[depot][0], coordinate_matrix[depot][1],
@@ -805,9 +816,7 @@ class Individual {
             //print_tour();
 
             double sum = 0;
-            double sum_without_activation = 0;
             auto& ts = this->tours_start;
-            const double *const ac = this->activation_costs;
             
             auto it = tours_start.begin();
             auto end = tours_start.end();
@@ -829,8 +838,6 @@ class Individual {
 
                 //cout << "sum : " << sum << endl;
             }
-            
-            sum_without_activation += sum;
 
             double oldcost = cost;
             cost = sum;
@@ -939,8 +946,10 @@ class Individual {
         unsigned* tours;
         //associa ad ogni inizio subtour il suo depot
         map<unsigned, unsigned> tours_start;
+    #ifndef BASE    
         //costi di attivazione per ogni depot
         double *const activation_costs;
+    #endif
         //matrice delle coordinate (per calcolare le distanze)
         double**const coordinate_matrix;
         //tabella di hash contente le distanze node <-> customer
