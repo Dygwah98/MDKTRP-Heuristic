@@ -155,6 +155,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 //cout << "       iteration " << g << ": individual " << &(new_generation[i]) <<": mutation executed\n";
 
+                new_generation[i].improvement_algorithm();
                 new_generation[i].calculate_cost();
 
                 if (new_generation[i].get_cost() < best_cost)
@@ -199,7 +200,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         
     }
 
-    //best_individual2.print_tour();
+    best_individual2.print_tour();
     return cost;
 }
 

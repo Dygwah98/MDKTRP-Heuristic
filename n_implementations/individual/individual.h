@@ -41,6 +41,7 @@ class Individual {
             random_bit( 0, 1 )
         {
             //cout << "           default constructor called\n";
+            random_initialize();
         }
 
         Individual(const Individual& o):
@@ -673,29 +674,55 @@ class Individual {
         void improvement_algorithm()   {
             
             unsigned *const tours = this->tours;
-
-            calculate_cost();
-            double best_cost = this->cost;
-
+            auto& dt = this->distance_table;
             //il neighboor è definito qui come:
             //un tour ottenibile tramite un 2-swap di nodi nell'originale
             bool improved = false;
-            for(unsigned i = 0; !improved && i < customers; ++i) {
+            for(unsigned i = 0; !improved && i+1 < customers; ++i) {
                 const unsigned node = tours[i];
-                for(unsigned j = i+1; !improved && j < customers; ++j) {
+                const unsigned next = tours[i+1];
+                for(unsigned j = i+1; !improved && j+1 < customers; ++j) {
                     
-                    tours[i] = tours[j];
-                    tours[j] = node;
+                    const unsigned jnode = tours[j];
+                    const unsigned jnext = tours[j+1];
+
+                    double variation;
+                    
+                    const unsigned index_i = getCustomerIndex(node, next);
+                    if(dt.find(index_i) == dt.end()) {
+                        dt[index_i] = euclidean_distance(coordinate_matrix[node][0], coordinate_matrix[node][1],
+                                                        coordinate_matrix[next][0], coordinate_matrix[next][1]);
+                    }
+                    variation += dt.at(index_i);
+
+                    const unsigned index_j = getCustomerIndex(jnode, jnext);
+                    if(dt.find(index_j) == dt.end()) {
+                        dt[index_j] = euclidean_distance(coordinate_matrix[jnode][0], coordinate_matrix[jnode][1],
+                                                        coordinate_matrix[jnext][0], coordinate_matrix[jnext][1]);
+                    }
+                    variation += dt.at(index_j);
+
+                    const unsigned n_index_i = getCustomerIndex(jnode, next);
+                    if(dt.find(n_index_i) == dt.end()) {
+                        dt[n_index_i] = euclidean_distance(coordinate_matrix[jnode][0], coordinate_matrix[jnode][1],
+                                                        coordinate_matrix[next][0], coordinate_matrix[next][1]);
+                    }
+                    variation -= dt.at(n_index_i);
+
+                    const unsigned n_index_j = getCustomerIndex(node, jnext);
+                    if(dt.find(n_index_j) == dt.end()) {
+                        dt[n_index_j] = euclidean_distance(coordinate_matrix[node][0], coordinate_matrix[node][1],
+                                                        coordinate_matrix[jnext][0], coordinate_matrix[jnext][1]);
+                    }
+                    variation -= dt.at(n_index_j);
 
                     //se viene trovato un neighboor migliore la search termina
-                    calculate_cost();
-                    if(this->cost - best_cost < -0.1) {
-                        best_cost = cost;
+                    if(variation < -0.9) {
                         improved = true;
+
+                        tours[i] = tours[j];
+                        tours[j] = node;  
                     //altirmenti, viene annullato lo swap
-                    } else {
-                        tours[j] = tours[i];
-                        tours[i] = node;
                     }
                 }
             }
@@ -708,12 +735,13 @@ class Individual {
             repair();
         }
 
-        inline void repair()   {
+        void repair()   {
 
             //cout << "PREREPAIR\n";
             //print_tour();
 
             //array di interi per contare il numero di occorrenze di ogni nodo
+            unsigned *inserted = new unsigned[customers];
             for(unsigned i = 0; i < customers; ++i) {
                 inserted[i] = 0;
             } 
@@ -754,6 +782,7 @@ class Individual {
                 }
             }
 
+            delete[] inserted;
             //usando una map per rappresentare i veicoli, l'ordine è già mantenuto
 
             //print_tour();
@@ -782,7 +811,7 @@ class Individual {
             const unsigned di = getDepotIndex(depot, tours[start]);
             if(dc.find(di) == dc.end()) {
                dc[di] = euclidean_distance(coordinate_matrix[depot][0], coordinate_matrix[depot][1],
-                                            coordinate_matrix[depots + start][0], coordinate_matrix[depots + start][0]);
+                                            coordinate_matrix[depots + start][0], coordinate_matrix[depots + start][1]);
             }
             sum += dc.at(di)*len;
             --len;
@@ -796,7 +825,7 @@ class Individual {
                 const unsigned ci = getCustomerIndex(c1, c2);
                 if(dc.find(ci) == dc.end()) {
                     dc[ci] = euclidean_distance(coordinate_matrix[c1][0], coordinate_matrix[c1][1],
-                                                coordinate_matrix[c2][0], coordinate_matrix[c2][0]);
+                                                coordinate_matrix[c2][0], coordinate_matrix[c2][1]);
                 }
                 sum += dc.at(ci)*len;
                 --len;
@@ -957,8 +986,6 @@ class Individual {
         std::uniform_int_distribution<unsigned> random_cell;
 		std::uniform_int_distribution<unsigned> random_depot;
         std::uniform_int_distribution<unsigned> random_bit;
-        //array d'appoggio usato in varie occasioni
-        unsigned *inserted = new unsigned[customers];
         
 
         inline unsigned getCustomerIndex(unsigned x, unsigned y) {
