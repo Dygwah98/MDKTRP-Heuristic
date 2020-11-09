@@ -49,8 +49,7 @@ class Individual {
             depots( o.depots ), 
             customers( o.customers ), 
             N( o.N ), 
-            cost( o.cost ), 
-            tours( new unsigned[o.customers] ),
+            cost( o.cost ),
             tours_start(o.tours_start),
             coordinate_matrix(o.coordinate_matrix),
         #ifndef BASE
@@ -59,11 +58,12 @@ class Individual {
             distance_table( o.distance_table ),
             random_cell( 0, o.customers-1 ),
             random_depot( 0, o.depots-1 ),
-            random_bit( 0, 1 ),
-            inserted( new unsigned[o.customers] )
+            random_bit( 0, 1 )
         {
             //cout << "           copy constructor called\n";
 
+            tours = new unsigned[o.customers];
+            inserted = new unsigned[o.customers];
             for(unsigned i = 0; i < customers; ++i)
                 tours[i] = o.tours[i];
         }
