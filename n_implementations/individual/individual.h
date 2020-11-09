@@ -60,7 +60,7 @@ class Individual {
             random_cell( 0, o.customers-1 ),
             random_depot( 0, o.depots-1 ),
             random_bit( 0, 1 ),
-            inserted(new unsigned[customers])
+            inserted( new unsigned[o.customers] )
         {
             //cout << "           copy constructor called\n";
 
