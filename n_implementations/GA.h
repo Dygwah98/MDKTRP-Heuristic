@@ -90,7 +90,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             unsigned i = 0;
             for (; i < s; ++i) {
                 new_generation[i] = individuals[i];
-                //new_generation[i].improvement_algorithm();
+                new_generation[i].improvement_algorithm();
             }
 
             //cout << "       iteration " << g << ": elite population processed\n";
@@ -176,8 +176,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             //cout << "       iteration " << g << ": entire population processed\n";
 
             individuals.swap(new_generation);
-            //for(auto& i : individuals)
-            //    i.print_tour();
 
             std::sort(individuals.begin(), individuals.end());
             

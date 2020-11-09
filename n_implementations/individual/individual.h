@@ -107,12 +107,9 @@ class Individual {
             
             std::uniform_int_distribution<unsigned> left(-1, fst-1);
             std::uniform_int_distribution<unsigned> right(fst+1, customers);
-
-            unsigned lsnd = left(mt);
-            unsigned rsnd = right(mt);
             
             unsigned snd;
-            if(random_bit(mt)){
+            if(random_bit(mt)) {
                 snd = left(mt);
                 if(snd == -1) ++snd;
             } else {
@@ -717,8 +714,8 @@ class Individual {
                     variation -= dt.at(n_index_j);
 
                     //se viene trovato un neighboor migliore la search termina
-                    if(variation < -1) {
-                        improved = true;
+                    if(variation < -0.1) {
+                        //improved = true;
 
                         tours[i] = tours[j];
                         tours[j] = node;  
