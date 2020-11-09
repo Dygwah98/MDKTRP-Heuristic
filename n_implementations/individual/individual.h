@@ -875,7 +875,7 @@ class Individual {
  
         void print_tour() const   {
 
-            cout << "giant tour of individual: " << this << "\n";
+            cout << "\ngiant tour of individual: " << this << "\n";
 
             for(unsigned i = 0; i < customers; ++i)
                 cout << tours[i] << " ";
@@ -901,6 +901,7 @@ class Individual {
                 cout << endl;
                 ++i;
             }
+            cout << endl;
         }
 
         inline double get_cost() const   {
