@@ -38,7 +38,8 @@ class Individual {
             distance_table( dt ),
             random_cell( 0, c-1 ),
             random_depot( 0, d-1 ),
-            random_bit( 0, 1 )
+            random_bit( 0, 1 ),
+            inserted(new unsigned[customers])
         {
             //cout << "           default constructor called\n";
         }
@@ -58,7 +59,8 @@ class Individual {
             distance_table( o.distance_table ),
             random_cell( 0, o.customers-1 ),
             random_depot( 0, o.depots-1 ),
-            random_bit( 0, 1 )
+            random_bit( 0, 1 ),
+            inserted(new unsigned[customers])
         {
             //cout << "           copy constructor called\n";
 
@@ -709,7 +711,7 @@ class Individual {
             repair();
         }
 
-        inline void repair()   {
+        void repair()   {
 
             //cout << "PREREPAIR\n";
             //print_tour();
@@ -959,7 +961,7 @@ class Individual {
 		std::uniform_int_distribution<unsigned> random_depot;
         std::uniform_int_distribution<unsigned> random_bit;
         //array d'appoggio usato in varie occasioni
-        unsigned *inserted = new unsigned[customers];
+        unsigned *inserted;
         
 
         inline unsigned getCustomerIndex(unsigned x, unsigned y) {
