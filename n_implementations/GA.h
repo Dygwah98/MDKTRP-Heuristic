@@ -30,7 +30,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     double global_best = std::numeric_limits<double>::max();
 
     Individual best_individual2(ind);
-    best_individual2.random_initialize();
     //cout << "       parameters set\n";
     for (unsigned i = 0; i < gdata.tries; ++i)
     {

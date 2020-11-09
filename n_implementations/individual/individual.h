@@ -42,6 +42,7 @@ class Individual {
             inserted(new unsigned[customers])
         {
             //cout << "           default constructor called\n";
+            random_initialize();
         }
 
         Individual(const Individual& o):

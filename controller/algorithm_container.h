@@ -57,9 +57,7 @@ class AlgorithmContainer {
             #else
                 Individual startingIndividual(instance.vehicles, depots, customers, distances, coordinate_matrix);
             #endif
-
-                
-                
+      
                 //cout << "   starting algorithm...\n";
                 r = (*algorithm)(instance, startingIndividual);
 
