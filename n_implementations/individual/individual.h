@@ -717,20 +717,19 @@ class Individual {
                     variation -= dt.at(n_index_j);
 
                     //se viene trovato un neighboor migliore la search termina
-                    if(variation < -0.9) {
+                    if(variation < -1) {
                         improved = true;
 
                         tours[i] = tours[j];
                         tours[j] = node;  
-                    //altirmenti, viene annullato lo swap
                     }
                 }
             }
 
-            //cout << "           individual " << this << " improvement algorithm executed\n";
-            //if(improved) {
-            //    print_tour();
-            //}
+            //sezione dedicata all'ottimizzazione dell'allocazione di veicoli
+            //vogliamo migliorare l'attuale allocazione di veicoli, eventualmente eliminandone qualcuno
+
+            //SPLITTING ALGORITHM TIME
 
             repair();
         }
@@ -988,7 +987,6 @@ class Individual {
 		std::uniform_int_distribution<unsigned> random_depot;
         std::uniform_int_distribution<unsigned> random_bit;
         
-
         inline unsigned getCustomerIndex(unsigned x, unsigned y) {
             return N + x*customers + y;
         }
