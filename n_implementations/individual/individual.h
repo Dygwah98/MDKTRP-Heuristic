@@ -296,7 +296,7 @@ class Individual {
         }
 		
         void two_point_cross_over(const Individual& p1, const Individual& p2)   {
-            
+/*        
             unsigned *const tours = this->tours;
             const unsigned *const tours_p1 = p1.tours;
             const unsigned *const tours_p2 = p2.tours;
@@ -363,6 +363,9 @@ class Individual {
             auto fb2 = next(fb, second.size());
             auto fe = first.end();
             vp.insert(fb2, fe);
+*/
+
+            
 
             repair();
         }
@@ -667,9 +670,9 @@ class Individual {
             //cout << "           individual " << this << " randomly initialized\n";
         }
         
-        //per ora una banale neighboorhood search sul tour
         void improvement_algorithm()   {
-            
+
+/*  prima parte: neighboorhood search su giant tour */    
             unsigned *const tours = this->tours;
             auto& dt = this->distance_table;
             //il neighboor è definito qui come:
@@ -728,8 +731,7 @@ class Individual {
                 }
             }
 
-            //sezione dedicata all'ottimizzazione dell'allocazione di veicoli
-            //vogliamo migliorare l'attuale allocazione di veicoli, eventualmente eliminandone qualcuno
+/* seconda parte: ottimizzazione del costo del depot (sia attivazione che primo arco) */
         #ifndef BASE
             const auto& ac = this->activation_costs;
         #endif
