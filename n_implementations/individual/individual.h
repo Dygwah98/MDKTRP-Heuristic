@@ -684,37 +684,42 @@ class Individual {
                     const unsigned jnext = tours[j+1];
 
                     double variation;
+
+                    const unsigned d_node = node + depots;
+                    const unsigned d_next = next + depots;
+                    const unsigned d_jnode = jnode + depots;
+                    const unsigned d_jnext = jnext + depots;
                     
                     const unsigned index_i = getCustomerIndex(node, next);
                     if(dt.find(index_i) == dt.end()) {
-                        dt[index_i] = euclidean_distance(coordinate_matrix[node][0], coordinate_matrix[node][1],
-                                                        coordinate_matrix[next][0], coordinate_matrix[next][1]);
+                        dt[index_i] = euclidean_distance(coordinate_matrix[d_node][0], coordinate_matrix[d_node][1],
+                                                        coordinate_matrix[d_next][0], coordinate_matrix[d_next][1]);
                     }
                     variation += dt.at(index_i);
 
                     const unsigned index_j = getCustomerIndex(jnode, jnext);
                     if(dt.find(index_j) == dt.end()) {
-                        dt[index_j] = euclidean_distance(coordinate_matrix[jnode][0], coordinate_matrix[jnode][1],
-                                                        coordinate_matrix[jnext][0], coordinate_matrix[jnext][1]);
+                        dt[index_j] = euclidean_distance(coordinate_matrix[d_jnode][0], coordinate_matrix[d_jnode][1],
+                                                        coordinate_matrix[d_jnext][0], coordinate_matrix[d_jnext][1]);
                     }
                     variation += dt.at(index_j);
 
                     const unsigned n_index_i = getCustomerIndex(jnode, next);
                     if(dt.find(n_index_i) == dt.end()) {
-                        dt[n_index_i] = euclidean_distance(coordinate_matrix[jnode][0], coordinate_matrix[jnode][1],
-                                                        coordinate_matrix[next][0], coordinate_matrix[next][1]);
+                        dt[n_index_i] = euclidean_distance(coordinate_matrix[d_jnode][0], coordinate_matrix[d_jnode][1],
+                                                        coordinate_matrix[d_next][0], coordinate_matrix[d_next][1]);
                     }
                     variation -= dt.at(n_index_i);
 
                     const unsigned n_index_j = getCustomerIndex(node, jnext);
                     if(dt.find(n_index_j) == dt.end()) {
-                        dt[n_index_j] = euclidean_distance(coordinate_matrix[node][0], coordinate_matrix[node][1],
-                                                        coordinate_matrix[jnext][0], coordinate_matrix[jnext][1]);
+                        dt[n_index_j] = euclidean_distance(coordinate_matrix[d_node][0], coordinate_matrix[d_node][1],
+                                                        coordinate_matrix[d_jnext][0], coordinate_matrix[d_jnext][1]);
                     }
                     variation -= dt.at(n_index_j);
 
                     //se viene trovato un neighboor migliore la search termina
-                    if(variation < -0.1) {
+                    if(variation < -0.9) {
                         //improved = true;
 
                         tours[i] = tours[j];
@@ -725,6 +730,56 @@ class Individual {
 
             //sezione dedicata all'ottimizzazione dell'allocazione di veicoli
             //vogliamo migliorare l'attuale allocazione di veicoli, eventualmente eliminandone qualcuno
+        #ifndef BASE
+            const auto& ac = this->activation_costs;
+        #endif
+            auto& ts = this->tours_start;
+
+            for(auto& it : ts) {
+                
+                const unsigned depot = it.second;
+                for(unsigned i = 0; i < depots; ++i) {
+        #ifndef BASE        
+                    //se il depot ha un costo di attivazione minore
+                    if(ac[i] < ac[depot]) {
+                        //si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
+                        const unsigned first = tours[it.first];
+
+                        const double nval = ac[i] + dt.at( getDepotIndex(i, first) );
+                        const double oval = ac[depot] + dt.at(  getDepotIndex(depot, first) );
+
+                        //se il costo complessivo è minore, si effettua lo swap di depot
+                        if(nval < oval) {
+                            it.second = i;
+                            break;
+                        }
+                    }
+        #else
+                    //si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
+                    const unsigned first = tours[it.first] + depots;
+                    const unsigned dindex1 = getDepotIndex(i, first - depots );
+                    if(dt.find(dindex1) == dt.end()) {
+                        dt[dindex1] = euclidean_distance(coordinate_matrix[i][0], coordinate_matrix[i][1],
+                                                        coordinate_matrix[first][0], coordinate_matrix[ first ][1]);
+                    }
+
+                    const unsigned dindex2 = getDepotIndex(depot, first - depots );
+                    if(dt.find(dindex2) == dt.end()) {
+                        dt[dindex2] = euclidean_distance(coordinate_matrix[depot][0], coordinate_matrix[depot][1],
+                                                        coordinate_matrix[ first ][0], coordinate_matrix[ first ][1]);
+                    }
+                    const double nval = dt.at(dindex1);
+                    const double oval = dt.at(dindex2);
+
+                    //se il costo complessivo è minore, si effettua lo swap di depot
+                    if(nval < oval) {
+                        it.second = i;
+                        break;
+                    }
+                    
+        #endif
+                }
+            }
 
             //SPLITTING ALGORITHM TIME
 
@@ -779,10 +834,53 @@ class Individual {
             }
 
             delete[] inserted;
+            
             //usando una map per rappresentare i veicoli, l'ordine è già mantenuto
+            //bisogna limitare il numero di veicoli
 
-            //print_tour();
-            //cout << "POSTREPAIR\n";
+            auto& ts = this->tours_start;
+            const unsigned size = ts.size();
+            if(size > vehicles) {
+
+                unsigned *pos = new unsigned[size];
+                unsigned *len = new unsigned[size];
+
+                unsigned k = 0;
+                for(auto it = ts.begin(); it != ts.end(); ++it) {
+                    
+                    auto next_it = it;
+                    ++next_it;
+                    const unsigned start = it->first;
+                    const unsigned end = next_it == ts.end() ? customers : next_it->first;
+
+                    pos[k] = start;
+                    len[k] = end - start;
+
+                    ++k;
+                }
+
+                int i, j;
+                for (i = 1; i < size; i++) {
+                        unsigned tmp = len[i];
+                        unsigned tmp2 = pos[i];
+                        for (j = i; j >= 1 && tmp < len[j-1]; j--) {
+                            len[j] = len[j-1];
+                            pos[j] = pos[j-1];
+                        }
+                        len[j] = tmp;
+                        pos[j] = tmp2;
+                }
+
+                const unsigned excess = size - vehicles;
+                for(unsigned l = 0; l < excess; ++l) {
+                    ts.erase(pos[l]);
+                }
+
+                delete[] pos;
+                delete[] len;
+
+            }
+
 
             //cout << "           individual " << this << " repaired\n";
         }
@@ -804,10 +902,11 @@ class Individual {
         #ifndef BASE
             sum += ac[ depot ];
         #endif
-            const unsigned di = getDepotIndex(depot, tours[start]);
+            const unsigned tsindex = tours[start] + depots;
+            const unsigned di = getDepotIndex(depot, tsindex - depots);
             if(dc.find(di) == dc.end()) {
                dc[di] = euclidean_distance(coordinate_matrix[depot][0], coordinate_matrix[depot][1],
-                                            coordinate_matrix[depots + start][0], coordinate_matrix[depots + start][1]);
+                                            coordinate_matrix[ tsindex ][0], coordinate_matrix[ tsindex ][1]);
             }
             sum += dc.at(di)*len;
             --len;
@@ -816,9 +915,9 @@ class Individual {
 
             for(; start + 1 < end; ++start) {
                 
-                const unsigned c1 = tours[start];
-                const unsigned c2 = tours[start+1];
-                const unsigned ci = getCustomerIndex(c1, c2);
+                const unsigned c1 = tours[start] + depots;
+                const unsigned c2 = tours[start+1] + depots;
+                const unsigned ci = getCustomerIndex(c1 - depots, c2 - depots);
                 if(dc.find(ci) == dc.end()) {
                     dc[ci] = euclidean_distance(coordinate_matrix[c1][0], coordinate_matrix[c1][1],
                                                 coordinate_matrix[c2][0], coordinate_matrix[c2][1]);
@@ -828,6 +927,9 @@ class Individual {
 
                 //cout << "       sum: " << sum << endl;
             }
+
+            if(len < 0) 
+                cout << "ERROR LEN\n";
 
             //cout << "           individual " << this << " subtour: " << start_pos << "to: " << end_pos << "calculated\n";
 

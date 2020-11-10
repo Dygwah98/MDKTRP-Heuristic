@@ -93,7 +93,7 @@ class AlgorithmContainer {
                 double mean = 0;
 
                 double max_cost = euclidean_distance(coordinate_matrix[i][0], coordinate_matrix[i][1],
-													 coordinate_matrix[0][0], coordinate_matrix[0][1]);
+													 coordinate_matrix[depots][0], coordinate_matrix[depots][1]);
                 
                 //si inserisce la distanza fra il depot e il primo cliente
                 unsigned index = getDepotIndex(i, 0);

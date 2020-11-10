@@ -7,7 +7,7 @@
 #include <cmath>
 using namespace std;
 
-enum {SWAP2 = 0, SWAP3, SCRUMBLE, INVERSION, INSERTION};
+enum {SWAP2 = 0, SWAP3, SCRAMBLE, INVERSION, INSERTION};
 enum {ONE_POINT = 0, TWO_POINT, BEST_ORDER, POSITION_BASED, UNIFORM, NO_CROSSOVER};
 
 
@@ -217,9 +217,9 @@ void read_file_ruiz(string file, unsigned &depots, unsigned &customers, double *
 	instance.close();
 }
 
-inline double euclidean_distance(const int x1, const int y1, const int x2, const int y2)
+static inline double euclidean_distance(const int x1, const int y1, const int x2, const int y2)
 {
-	return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
+	return sqrt( abs((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2)) );
 }
 
 void calculate_distance_matrix(double **distance_matrix, const double *const *const coordinate_matrix, const int depots, const int customers)
