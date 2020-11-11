@@ -100,7 +100,7 @@ class Individual {
         }
     	
         void swap2()   {
-
+/*
             auto& random_cell = this->random_cell;
 
             unsigned fst = random_cell(mt);
@@ -120,8 +120,39 @@ class Individual {
             const unsigned node = tours[fst];
             tours[fst] = tours[snd];
             tours[snd] = node;
+*/
 
-            repair();
+            if(random_bit(mt)) {
+                //interroute swap
+
+                const auto& tours_start = this->tours_start;
+
+                std::uniform_int_distribution<unsigned> route(0, tours_start.size()-1);
+
+                auto it = next(tours_start.begin(), route(mt));
+                const unsigned route_c = it->first; 
+                ++it;
+                const unsigned route_e = it == tours_start.end() ? customers : it->first;
+
+                std::uniform_int_distribution<unsigned> choice(route_c, route_e-1);
+                const unsigned fst = choice(mt);
+                const unsigned snd = choice(mt);
+
+                const unsigned node = tours[fst];
+                tours[fst] = tours[snd];
+                tours[snd] = node;
+
+            } else {
+
+                auto& random_cell = this->random_cell;
+
+                const unsigned fst = random_cell(mt);
+                const unsigned snd = random_cell(mt);
+
+                const unsigned node = tours[fst];
+                tours[fst] = tours[snd];
+                tours[snd] = node;
+            }
 
             //cout << "           individual " << this << ": swap2 executed\n";
         }
@@ -147,8 +178,6 @@ class Individual {
             tours[fst] = tours[snd];
             tours[snd] = tours[trd];
             tours[trd] = node;
-
-            repair();
         }
 		
         void inversion()   {
@@ -168,7 +197,6 @@ class Individual {
             unsigned *const tours = this->tours;
             std::reverse(tours + start, tours + end);
 
-            repair();
         }
 		
         void scramble()   {
@@ -188,7 +216,6 @@ class Individual {
             unsigned *const tours = this->tours;
             std::shuffle(tours + start, tours + end, mt);
 
-            repair();
         }
 		
         void insertion()   {
@@ -254,7 +281,6 @@ class Individual {
                 }
             }
 
-            repair();
         }
 		
         void one_point_cross_over(const Individual& p1, const Individual& p2)   {
@@ -292,11 +318,10 @@ class Individual {
             auto vcp_2 = vmap_p2.end();
             vmap.insert(p2b, vcp_2);
         
-            repair();
         }
 		
         void two_point_cross_over(const Individual& p1, const Individual& p2)   {
-/*        
+/*       
             unsigned *const tours = this->tours;
             const unsigned *const tours_p1 = p1.tours;
             const unsigned *const tours_p2 = p2.tours;
@@ -365,9 +390,38 @@ class Individual {
             vp.insert(fb2, fe);
 */
 
-            
+            auto& ts = this->tours_start;
+            map<unsigned, unsigned>().swap(ts);
 
-            repair();
+            ts.insert(p1.tours_start.begin(), p1.tours_start.end());
+            ts.insert(p2.tours_start.begin(), p2.tours_start.end());
+
+            const unsigned size = ts.size();
+            if(size >= 3) {
+
+                const unsigned bound = size > 3 ? size - 3 : 1;
+                std::uniform_int_distribution<unsigned> cpoint1(0, bound);
+                std::uniform_int_distribution<unsigned> cpoint2(bound + 1, size-1);
+
+                const unsigned first_cutting_point = next(ts.begin(), cpoint1(mt))->first;
+                const unsigned second_cutting_point = next(ts.begin(), cpoint2(mt))->first;
+
+                unsigned *const tours = this->tours;
+                const unsigned *const toursp1 = p1.tours;
+                const unsigned *const toursp2 = p2.tours;
+                unsigned i = 0;
+                for(; i < first_cutting_point; ++i) {
+                    tours[i] = toursp1[i];
+                }
+                for(; i < second_cutting_point; ++i) {
+                    tours[i] = toursp2[i];
+                }
+                for(; i < customers; ++i) {
+                    tours[i] = toursp1[i];
+                }
+
+            } 
+            
         }
 		
         void best_order_cross_over(const Individual&p1, const Individual&p2, const Individual& best)   {
@@ -538,7 +592,6 @@ class Individual {
             
 		    delete[] customers_in_sequence;
 
-            repair();
         }
 		
         void position_based_cross_over(const Individual&p1, const Individual&p2)   {
@@ -603,7 +656,6 @@ class Individual {
                 tours_start[i] = parents[vp]->tours_start.at(i);
             }
 
-            repair();
         }
 		
         void uniform_cross_over(const Individual &p1, const Individual &p2)   {
@@ -628,7 +680,6 @@ class Individual {
                 tours_start.insert( *(next(it, i)) );
             }
         
-            repair();
         }
 
         //per ora ignoro il problema dello splitting
@@ -663,7 +714,6 @@ class Individual {
             //cout << "           individual " << this << " random tour:\n";
             //print_tour();
 
-            repair();
             improvement_algorithm();
             calculate_cost();
 
@@ -785,7 +835,6 @@ class Individual {
 
             //SPLITTING ALGORITHM TIME
 
-            repair();
         }
 
         void repair()   {
@@ -876,6 +925,13 @@ class Individual {
                 const unsigned excess = size - vehicles;
                 for(unsigned l = 0; l < excess; ++l) {
                     ts.erase(pos[l]);
+                }
+
+                //se nessun veicolo parte dal primo subtour, si sposta il primo veicolo
+                if(ts.find(0) == ts.end()) {
+                    const unsigned depot_temp = ts.begin()->second;
+                    ts.erase(ts.begin()->first);
+                    ts[0] = depot_temp;
                 }
 
                 delete[] pos;
@@ -1004,7 +1060,7 @@ class Individual {
             cout << endl;
         }
 
-        inline double get_cost() const   {
+        inline double get_cost() const {
 
             return cost;
         }
