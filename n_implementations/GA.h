@@ -136,7 +136,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         std::sort(individuals_original.begin(), individuals_original.end());
 
-        const unsigned s  = (unsigned)ceil( (10.0 * gdata.population_size) / 100.0);
+        const unsigned s  = (10 * gdata.population_size) / 100;
         const unsigned s3 = gdata.population_size;  
 
         std::uniform_int_distribution<unsigned> random_parent(1, gdata.population_size / 2);
@@ -218,7 +218,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         .count() / (double)1000000000;
 
                     crossover_calls += 1;
-                    
+/*                    
                     repair_begin = std::chrono::steady_clock::now();
                     new_generation[i].repair();
                     repair_end = std::chrono::steady_clock::now();
@@ -227,6 +227,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         <std::chrono::nanoseconds>(repair_end - repair_begin)
                         .count() / (double)1000000000;
                     repair_calls +=1;
+*/
                     break;
                 case 1:
                     crossover_begin = std::chrono::steady_clock::now(); 
@@ -238,7 +239,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         .count() / (double)1000000000;
 
                     crossover_calls += 1;
-
+/*
                     repair_begin =std::chrono::steady_clock::now();
                     new_generation[i].repair();
                     repair_end = std::chrono::steady_clock::now();
@@ -247,6 +248,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         <std::chrono::nanoseconds>(repair_end - repair_begin)
                         .count() / (double)1000000000;
                     repair_calls +=1;
+*/
                     break;
                 case 2:
                     crossover_begin = std::chrono::steady_clock::now(); 
@@ -258,7 +260,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         .count() / (double)1000000000;
 
                     crossover_calls += 1;
-
+/*
                     repair_begin =std::chrono::steady_clock::now();
                     new_generation[i].repair();
                     repair_end = std::chrono::steady_clock::now();
@@ -267,6 +269,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         <std::chrono::nanoseconds>(repair_end - repair_begin)
                         .count() / (double)1000000000;
                     repair_calls +=1;
+*/
                     break;
                 case 3:
                     crossover_begin = std::chrono::steady_clock::now();    
@@ -278,7 +281,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         .count() / (double)1000000000;
 
                     crossover_calls += 1;
-
+/*
                     repair_begin =std::chrono::steady_clock::now();
                     new_generation[i].repair();
                     repair_end = std::chrono::steady_clock::now();
@@ -287,6 +290,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         <std::chrono::nanoseconds>(repair_end - repair_begin)
                         .count() / (double)1000000000;
                     repair_calls +=1;
+*/
                     break;
                 case 4:
                     crossover_begin = std::chrono::steady_clock::now();    
@@ -298,7 +302,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         .count() / (double)1000000000;
 
                     crossover_calls += 1;
-
+/*
                     repair_begin =std::chrono::steady_clock::now();
                     new_generation[i].repair();
                     repair_end = std::chrono::steady_clock::now();
@@ -307,6 +311,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         <std::chrono::nanoseconds>(repair_end - repair_begin)
                         .count() / (double)1000000000;
                     repair_calls +=1;
+*/
                     break;
                 }
 
@@ -327,15 +332,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             .count() / (double)1000000000;
                         
                         mutation_calls += 1;
-
-                        repair_begin = std::chrono::steady_clock::now();
-                        new_generation[i].repair();
-                        repair_end = std::chrono::steady_clock::now();
-
-                        repair_time += (double)std::chrono::duration_cast
-                            <std::chrono::nanoseconds>(repair_end - repair_begin)
-                            .count() / (double)1000000000;
-                        repair_calls +=1;
                         break;
                     case 1:
                         mutation_begin = std::chrono::steady_clock::now(); 
@@ -347,15 +343,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             .count() / (double)1000000000;
                         
                         mutation_calls += 1;
-
-                        repair_begin =std::chrono::steady_clock::now();
-                        new_generation[i].repair();
-                        repair_end = std::chrono::steady_clock::now();
-
-                        repair_time += (double)std::chrono::duration_cast
-                            <std::chrono::nanoseconds>(repair_end - repair_begin)
-                            .count() / (double)1000000000;
-                        repair_calls +=1;
                         break;
                     case 2:
                         mutation_begin = std::chrono::steady_clock::now(); 
@@ -367,15 +354,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             .count() / (double)1000000000;
                         
                         mutation_calls += 1;
-
-                        repair_begin =std::chrono::steady_clock::now();
-                        new_generation[i].repair();
-                        repair_end = std::chrono::steady_clock::now();
-
-                        repair_time += (double)std::chrono::duration_cast
-                            <std::chrono::nanoseconds>(repair_end - repair_begin)
-                            .count() / (double)1000000000;
-                        repair_calls +=1;
                         break;
                     case 3:
                         mutation_begin = std::chrono::steady_clock::now(); 
@@ -387,15 +365,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             .count() / (double)1000000000;
                         
                         mutation_calls += 1;
-
-                        repair_begin =std::chrono::steady_clock::now();
-                        new_generation[i].repair();
-                        repair_end = std::chrono::steady_clock::now();
-
-                        repair_time += (double)std::chrono::duration_cast
-                            <std::chrono::nanoseconds>(repair_end - repair_begin)
-                            .count() / (double)1000000000;
-                        repair_calls +=1;
                         break;
                     case 4:
                         mutation_begin = std::chrono::steady_clock::now(); 
@@ -407,18 +376,18 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             .count() / (double)1000000000;
                         
                         mutation_calls += 1;
-                        
-                        repair_begin =std::chrono::steady_clock::now();
-                        new_generation[i].repair();
-                        repair_end = std::chrono::steady_clock::now();
-
-                        repair_time += (double)std::chrono::duration_cast
-                            <std::chrono::nanoseconds>(repair_end - repair_begin)
-                            .count() / (double)1000000000;
-                        repair_calls +=1;
                         break;
                     }
                 }
+
+                repair_begin = std::chrono::steady_clock::now();
+                new_generation[i].repair();
+                repair_end = std::chrono::steady_clock::now();
+
+                repair_time += (double)std::chrono::duration_cast
+                    <std::chrono::nanoseconds>(repair_end - repair_begin)
+                    .count() / (double)1000000000;
+                repair_calls +=1;
 
                 //cout << "       iteration " << g << ": individual " << &(new_generation[i]) <<": mutation executed\n";
 

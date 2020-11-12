@@ -9,6 +9,7 @@
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
+#include <deque>
 #include "../utils.h"
 using namespace std;
 
@@ -322,7 +323,7 @@ class Individual {
         }
 		
         void two_point_cross_over(const Individual& p1, const Individual& p2)   {
-
+/*
             unsigned *const tours = this->tours;
             const unsigned *const tours_p1 = p1.tours;
             const unsigned *const tours_p2 = p2.tours;
@@ -378,7 +379,8 @@ class Individual {
                 }
 
             }
-/*
+*/
+
             auto& ts = this->tours_start;
             map<unsigned, unsigned>().swap(ts);
 
@@ -415,7 +417,7 @@ class Individual {
                 }
 
             } 
-*/
+
         }
 		
         void best_order_cross_over(const Individual&p1, const Individual&p2, const Individual& best)   {
@@ -745,122 +747,150 @@ class Individual {
         }
         
         void improvement_algorithm()   {
+
+//variant prima parte: splitting algorithm (basato sul Bellman-Ford Shortest Path algorithm)
 /*
-//  prima parte: neighboorhood search su giant tour    
-            unsigned *const tours = this->tours;
-            auto& dt = this->distance_table;
-            //il neighboor è definito qui come:
-            //un tour ottenibile tramite un 2-swap di nodi nell'originale
-            bool improved = false;
-            for(unsigned i = 0; !improved && i+1 < customers; ++i) {
-                const unsigned node = tours[i];
-                const unsigned next = tours[i+1];
-                for(unsigned j = i+1; !improved && j+1 < customers; ++j) {
-                    
-                    const unsigned jnode = tours[j];
-                    const unsigned jnext = tours[j+1];
+    vector<double>distances(customers+1, std::numeric_limits<double>::max());
+    vector<bool> inqueue(customers+1, false);
+    std::vector<unsigned> predecessor(customers+1, customers);
+    deque<int> q;
 
-                    double variation;
+    auto& dt = this->distance_table;
+#ifndef BASE
+    const double *const ac = this->activation_costs;
+    const double ac_base = ac[0];
+#endif
 
-                    const unsigned d_node = node + depots;
-                    const unsigned d_next = next + depots;
-                    const unsigned d_jnode = jnode + depots;
-                    const unsigned d_jnext = jnext + depots;
-                    
-                    const unsigned index_i = getCustomerIndex(node, next);
-                    if(dt.find(index_i) == dt.end()) {
-                        dt[index_i] = euclidean_distance(coordinate_matrix[d_node][0], coordinate_matrix[d_node][1],
-                                                        coordinate_matrix[d_next][0], coordinate_matrix[d_next][1]);
-                    }
-                    variation += dt.at(index_i);
+    distances[0] = 0;
+    q.push_back(1);
+    inqueue[1] = true;
+    while (!q.empty()) {
+        if(distances[q.back()] < distances[q.front()]) {
+            int u = q.back();
+            q.pop_back();
+            q.push_front(u);
+        }
+        int v = q.front();
+        q.pop_front();
+        inqueue[v] = false;
 
-                    const unsigned index_j = getCustomerIndex(jnode, jnext);
-                    if(dt.find(index_j) == dt.end()) {
-                        dt[index_j] = euclidean_distance(coordinate_matrix[d_jnode][0], coordinate_matrix[d_jnode][1],
-                                                        coordinate_matrix[d_jnext][0], coordinate_matrix[d_jnext][1]);
-                    }
-                    variation += dt.at(index_j);
+        const unsigned dindex = getDepotIndex(0, v-1);
+        if(dt.find(dindex) == dt.end()) {
+            dt[dindex] = euclidean_distance(coordinate_matrix[0][0], 
+                                            coordinate_matrix[0][1],
+                                            coordinate_matrix[tours[v-1] + depots][0], 
+                                            coordinate_matrix[tours[v-1] + depots][1]);
+        }
 
-                    const unsigned n_index_i = getCustomerIndex(jnode, next);
-                    if(dt.find(n_index_i) == dt.end()) {
-                        dt[n_index_i] = euclidean_distance(coordinate_matrix[d_jnode][0], coordinate_matrix[d_jnode][1],
-                                                        coordinate_matrix[d_next][0], coordinate_matrix[d_next][1]);
-                    }
-                    variation -= dt.at(n_index_i);
+        double cost = calculate_tour_cost(v-1, v, false);
 
-                    const unsigned n_index_j = getCustomerIndex(node, jnext);
-                    if(dt.find(n_index_j) == dt.end()) {
-                        dt[n_index_j] = euclidean_distance(coordinate_matrix[d_node][0], coordinate_matrix[d_node][1],
-                                                        coordinate_matrix[d_jnext][0], coordinate_matrix[d_jnext][1]);
-                    }
-                    variation -= dt.at(n_index_j);
+        cost += dt.at(dindex);
 
-                    //se viene trovato un neighboor migliore la search termina
-                    if(variation < -0.9) {
-                        //improved = true;
+    #ifndef BASE
+        if( distances[v-1] + cost + ac_base < distances[v] ) {
+    #else 
+        if( distances[v-1] + cost < distances[v] ) {
+    #endif
+            distances[v] = distances[v-1] + cost;
+            predecessor[v] = 0;
+            if (!inqueue[v]) {
+                q.push_back(v);
+                inqueue[v] = true;
+            }
+        }
 
-                        tours[i] = tours[j];
-                        tours[j] = node;  
-                    }
+        for (unsigned j = v+1; j < customers; ++j) {
+            
+            double scost = calculate_tour_cost(v-1, j, false);
+
+    #ifdef BASE
+            if( distances[v-1]*(j-v+1) + scost < distances[j] ) {
+    #else
+            if( distances[v-1]*(j-v-1) + scost + ac_base < distances[j] ) {
+    #endif 
+                distances[j] = distances[v-1]*(j-v-1) + scost;
+                predecessor[j] = v-1;
+                if (!inqueue[j]) {
+                    q.push_front(j);
+                    inqueue[j] = true;
                 }
             }
+        }
+    }
 */
 // prima parte: splitting algorithm (basato sul Bellman-Ford Shortest Path algorithm)
 
             std::vector<double> distances(customers+1, std::numeric_limits<double>::max());
             std::vector<unsigned> predecessor(customers+1, customers);
-            std::vector<unsigned> new_depot(customers+1, 0);
 
             distances[0] = 0.0;
 
             auto& dt = this->distance_table;
+        #ifndef BASE
+            const double *const ac = this->activation_costs;
+            const double ac_base = ac[0];
+        #endif
 
             for( unsigned i = 1; i < customers; ++i ) {
                 bool improved = false;
-                for( unsigned j = i; j < customers; ++j ) {
-                    
-                    double cost = calculate_tour_cost(i-1, j, false);
-                    
-                    for( unsigned k = 0; k < depots; ++k) {
 
-                        const unsigned index = getDepotIndex(k, i-1 + depots);
-                        if(dt.find(index) == dt.end()) {
-                            dt[index] = euclidean_distance(coordinate_matrix[k][0], 
-                                                            coordinate_matrix[k][1],
-                                                            coordinate_matrix[tours[i-1]+depots][0], 
-                                                            coordinate_matrix[tours[i-1]+depots][1]);
-                        }
-                        cost += dt.at(index) * (j - i + 1);
-                        
-                        if( distances[i-1] + cost < distances[j] ) {
-                            distances[j] = distances[i-1] + cost;
-                            predecessor[j] = i-1;
-                            new_depot[j] = k;
-                            improved = true;
-                        }
-                    }
+                const unsigned dindex = getDepotIndex(0, i-1);
+                if(dt.find(dindex) == dt.end()) {
+                    dt[dindex] = euclidean_distance(coordinate_matrix[0][0], 
+                                                    coordinate_matrix[0][1],
+                                                    coordinate_matrix[tours[i-1] + depots][0], 
+                                                    coordinate_matrix[tours[i-1] + depots][1]);
+                }
+
+                double cost = calculate_tour_cost(i-1, i, false);
+
+                cost += dt.at(dindex);
+
+            #ifndef BASE
+                if( distances[i-1] + cost + ac_base < distances[i] ) {
+            #else 
+                if( distances[i-1] + cost < distances[i] ) {
+            #endif
+                    distances[i] = distances[i-1] + cost;
+                    predecessor[i] = 0;
+                    improved = true;
+                } 
+
+                for( unsigned j = i+1; j < customers; ++j ) {
                     
+                    double scost = calculate_tour_cost(i-1, j, false);
+
+            #ifdef BASE
+                    if( distances[i-1] + scost < distances[j] ) {
+            #else
+                    if( distances[i-1]*(j-i-1) + scost + ac_base < distances[j] ) {
+            #endif 
+                        distances[j] = distances[i-1]*(j-i-1) + scost;
+                        predecessor[j] = i-1;
+                        improved = true;
+                    }
+                               
                 }
 
                 if(!improved)
                     break;
             }
-            
+
             //traduzione del risultato dell'algoritmo in termini di depots
             auto& ts = this->tours_start;
+        #ifndef BASE
+            ts.clear();
+            ts[0] = random_depot(mt);
+        #endif
 
             for(unsigned i = 1; i < customers; ++i) {
-                if(predecessor[i] == 0 && tours_start.size() < vehicles) {
-                    tours_start[ tours[i-1] ] = new_depot[i];
+                if(predecessor[i] == 0) {
+                    tours_start[ i-1 ] = random_depot(mt);
                 }
             }
 
 
 /* seconda parte: ottimizzazione del costo del depot (sia attivazione che primo arco) */
-/*
-        #ifndef BASE
-            const auto& ac = this->activation_costs;
-        #endif
             
             for(auto& it : ts) {
                 
@@ -905,7 +935,6 @@ class Individual {
         #endif
                 }
             }
-*/
 
         }
 
@@ -962,9 +991,108 @@ class Individual {
             //bisogna limitare il numero di veicoli
 
             if(tours_start.size() > vehicles) {
-                tours_start.erase(next(tours_start.begin(), vehicles), tours_start.end());
-            }
+/*            
+                std::uniform_int_distribution<unsigned> vc(0, vehicles-1);
+                while(tours_start.size() > vehicles) {
+                    tours_start.erase( next(tours_start.begin(), vc(mt)) );
+                }
 
+                if(tours_start.find(0) == tours_start.end()) {
+                    tours_start.erase(tours_start.begin());
+                    tours_start[0] = random_depot(mt);
+                }
+*/
+
+                auto& ts = this->tours_start;
+                const unsigned size = ts.size();
+                if(size > vehicles) {
+
+                    unsigned *pos = new unsigned[size];
+                    unsigned *len = new unsigned[size];
+
+                    unsigned k = 0;
+                    for(auto it = ++ts.begin(); it != ts.end(); ++it) {
+                        
+                        auto next_it = it;
+                        ++next_it;
+
+                        auto prev_it = it;
+                        --prev_it;
+
+                        const unsigned start = it->first;
+                        const unsigned end = next_it == ts.end() ? customers : next_it->first;
+
+                        pos[k] = start;
+                        len[k] = end - prev_it->first;
+
+                        ++k;
+                    }
+
+                    int i, j;
+                    for (i = 1; i < size; i++) {
+                            unsigned tmp = len[i];
+                            unsigned tmp2 = pos[i];
+                            for (j = i; j >= 1 && tmp < len[j-1]; j--) {
+                                len[j] = len[j-1];
+                                pos[j] = pos[j-1];
+                            }
+                            len[j] = tmp;
+                            pos[j] = tmp2;
+                    }
+
+                    const unsigned excess = size - vehicles;
+                    for(unsigned l = 0; l < excess; ++l) {
+                        ts.erase(pos[l]);
+                    }
+                    
+                    delete[] pos;
+                    delete[] len;
+
+                }        
+                
+                if(tours_start.find(0) == tours_start.end()) {
+                    tours_start.erase(tours_start.begin());
+                    tours_start[0] = random_depot(mt);
+                }
+            }
+/*              
+                vector<unsigned> dist(tours_start.size()-1, customers);
+                vector<unsigned> veic(tours_start.size()-1, 0);
+
+                unsigned index = 0;                
+                for(auto it = tours_start.begin(); next(it,2) != tours_start.end(); ++it) {
+                    
+                    auto next = it;
+                    ++(++next);
+
+                    dist[index] = next->first - it->first;
+                    veic[index] = index;
+                    
+                    ++index;
+                }
+
+                int i, j;
+                for (i = 1; i < tours_start.size()-1; i++) {
+                        unsigned tmp = dist[i];
+                        unsigned tmp2 = veic[i];
+                        for (j = i; j >= 1 && tmp < dist[j-1]; j--) {
+                            dist[j] = dist[j-1];
+                            veic[j] = veic[j-1];
+                        }
+                        dist[j] = tmp;
+                        veic[j] = tmp2;
+                }
+
+                unsigned p = 0;
+                while(tours_start.size() > vehicles) {
+                    tours_start.erase(veic[p]);
+                }
+
+                if(tours_start.find(0) == tours_start.end()) {
+                    tours_start[0] = random_depot(mt);
+                }
+            }
+*/
             //cout << "           individual " << this << " repaired\n";
         }
 
