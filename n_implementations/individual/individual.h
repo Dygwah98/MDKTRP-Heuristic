@@ -1037,54 +1037,51 @@ class Individual {
 
                     auto& ts = this->tours_start;
                     const unsigned size = ts.size();
-                    if(size > vehicles) {
 
-                        vector<unsigned> pos(size, 0);
-                        vector<unsigned> len(size, 0);
+                    vector<unsigned> pos(size, 0);
+                    vector<unsigned> len(size, 0);
 
-                        while(ts.size() > vehicles) {
+                    while(ts.size() > vehicles) {
+                        
+                        unsigned k = 0;
+                        for(auto it = ++ts.begin(); it != ts.end(); ++it) {
                             
-                            unsigned k = 0;
-                            for(auto it = ++ts.begin(); it != ts.end(); ++it) {
-                                
-                                auto next_it = it;
-                                ++next_it;
+                            auto next_it = it;
+                            ++next_it;
 
-                                auto prev_it = it;
-                                --prev_it;
+                            auto prev_it = it;
+                            --prev_it;
 
-                                const unsigned start = it->first;
-                                const unsigned end = next_it == ts.end() ? customers : next_it->first;
+                            const unsigned start = it->first;
+                            const unsigned end = next_it == ts.end() ? customers : next_it->first;
 
-                                pos[k] = start;
-                                len[k] = end - prev_it->first;
+                            pos[k] = start;
+                            len[k] = end - prev_it->first;
 
-                                ++k;
-                            }
-
-                            for(; k < size; ++k) {
-                                pos[k] = customers;
-                                len[k] = customers;
-                            }
-
-                            int i, j;
-                            for (i = 1; i < size; i++) {
-                                    unsigned tmp = len[i];
-                                    unsigned tmp2 = pos[i];
-                                    for (j = i; j >= 1 && tmp < len[j-1]; j--) {
-                                        len[j] = len[j-1];
-                                        pos[j] = pos[j-1];
-                                    }
-                                    len[j] = tmp;
-                                    pos[j] = tmp2;
-                            }
-                            
-                            ts.erase(pos[0]);
-                            len[0] = customers;
-                            pos[0] = customers;
+                            ++k;
                         }
 
-                    }        
+                        for(; k < size; ++k) {
+                            pos[k] = customers;
+                            len[k] = customers;
+                        }
+
+                        int i, j;
+                        for (i = 1; i < size; i++) {
+                                unsigned tmp = len[i];
+                                unsigned tmp2 = pos[i];
+                                for (j = i; j >= 1 && tmp < len[j-1]; j--) {
+                                    len[j] = len[j-1];
+                                    pos[j] = pos[j-1];
+                                }
+                                len[j] = tmp;
+                                pos[j] = tmp2;
+                        }
+                        
+                        ts.erase(pos[0]);
+                        len[0] = customers;
+                        pos[0] = customers;
+                    }
                     
                     if(tours_start.find(0) == tours_start.end()) {
                         tours_start.erase(tours_start.begin());

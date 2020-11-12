@@ -202,10 +202,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             //cout << "       iteration " << g << ": elite population processed\n";
 
             //dobbiamo inserire il rimanente 90% della popolazione
-            std::poisson_distribution<unsigned> crosschance(mean_cost);
+            std::poisson_distribution<unsigned> substitution(mean_cost);
             for (; i < s3; ++i)
             {
-                if( (individuals[i].get_cost()/crosschance(mt)) * i > popsize) {
+                if( (individuals[i].get_cost()/substitution(mt)) * i > popsize) {
                         
                         p1 = random_parent(mt);
                         std::uniform_int_distribution<unsigned> left(0, p1-1);
