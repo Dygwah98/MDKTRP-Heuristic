@@ -11,7 +11,7 @@
 class GeneticAlgorithmData {
 
     public:
-        const unsigned tries = 10;
+        const unsigned tries = 1;
         const unsigned population_size = 250;
         const unsigned mutator = SWAP2;
         const unsigned crossover = TWO_POINT;
@@ -107,6 +107,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 .count() / (double)1000000000;
             repair_calls +=1;
 
+            i.calculate_cost();
+
             if (i.get_cost() < best_cost)
             {
                 best_cost = i.get_cost();
@@ -116,12 +118,12 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                 {
                     cout <<"    AUDITING:\n";
-                    cout <<"    (function): (time per call) (total time)\n";
-                    cout <<"    random_initalize: " << random_initialize_time /  random_initialize_calls << " " << random_initialize_time << endl;
-                    cout <<"    repair: " << repair_time / repair_calls << " " << repair_time << endl;
-                    cout <<"    improvement algorithm: " << improvement_algorithm_time / improvement_algorithm_calls <<" " << improvement_algorithm_time << endl;
-                    cout <<"    crossover: " << crossover_time / crossover_calls << " " << crossover_time << endl;
-                    cout <<"    mutation: " << mutation_time / mutation_calls << " " << mutation_time << endl;
+                    cout <<"    (function): (total time)\n";
+                    cout <<"    random_initalize: " << random_initialize_time << endl;
+                    cout <<"    repair: " << repair_time << endl;
+                    cout <<"    improvement algorithm: " << improvement_algorithm_time << endl;
+                    cout <<"    crossover: "  << crossover_time << endl;
+                    cout <<"    mutation: " << mutation_time << endl;
                     cout << "known solution ";
                     //best_individual.print_tour();
                     return best_individual.get_cost();                    
@@ -452,12 +454,12 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     if ((unsigned)best_individual.get_cost() == instance.known_solution)
                     {
                         cout <<"    AUDITING:\n";
-                        cout <<"    (function): (time per call) (total time)\n";
-                        cout <<"    random_initalize: " << random_initialize_time /  random_initialize_calls << " " << random_initialize_time << endl;
-                        cout <<"    repair: " << repair_time / repair_calls << " " << repair_time << endl;
-                        cout <<"    improvement algorithm: " << improvement_algorithm_time / improvement_algorithm_calls <<" " << improvement_algorithm_time << endl;
-                        cout <<"    crossover: " << crossover_time / crossover_calls << " " << crossover_time << endl;
-                        cout <<"    mutation: " << mutation_time / mutation_calls << " " << mutation_time << endl;
+                        cout <<"    (function): (total time)\n";
+                        cout <<"    random_initalize: " << random_initialize_time << endl;
+                        cout <<"    repair: " << repair_time << endl;
+                        cout <<"    improvement algorithm: " << improvement_algorithm_time << endl;
+                        cout <<"    crossover: "  << crossover_time << endl;
+                        cout <<"    mutation: " << mutation_time << endl;
                         cout << "known solution ";
                         //best_individual.print_tour();
                         return best_individual.get_cost();
@@ -486,12 +488,12 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             if(cost == instance.known_solution)
             {            
                 cout <<"    AUDITING:\n";
-                cout <<"    (function): (time per call) (total time)\n";
-                cout <<"    random_initalize: " << random_initialize_time /  random_initialize_calls << " " << random_initialize_time << endl;
-                cout <<"    repair: " << repair_time / repair_calls << " " << repair_time << endl;
-                cout <<"    improvement algorithm: " << improvement_algorithm_time / improvement_algorithm_calls <<" " << improvement_algorithm_time << endl;
-                cout <<"    crossover: " << crossover_time / crossover_calls << " " << crossover_time << endl;
-                cout <<"    mutation: " << mutation_time / mutation_calls << " " << mutation_time << endl;
+                cout <<"    (function): (total time)\n";
+                cout <<"    random_initalize: " << random_initialize_time << endl;
+                cout <<"    repair: " << repair_time << endl;
+                cout <<"    improvement algorithm: " << improvement_algorithm_time << endl;
+                cout <<"    crossover: "  << crossover_time << endl;
+                cout <<"    mutation: " << mutation_time << endl;
                 cout << "known solution ";
                 //best_individual.print_tour();
                 return cost;
@@ -501,13 +503,13 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     }
 
     cout <<"    AUDITING:\n";
-    cout <<"    (function): (time per call) (total time)\n";
-    cout <<"    random_initalize: " << random_initialize_time /  random_initialize_calls << " " << random_initialize_time << endl;
-    cout <<"    repair: " << repair_time / repair_calls << " " << repair_time << endl;
-    cout <<"    improvement algorithm: " << improvement_algorithm_time / improvement_algorithm_calls <<" " << improvement_algorithm_time << endl;
-    cout <<"    crossover: " << crossover_time / crossover_calls << " " << crossover_time << endl;
-    cout <<"    mutation: " << mutation_time / mutation_calls << " " << mutation_time << endl;
-    //best_individual2.print_tour();
+    cout <<"    (function): (total time)\n";
+    cout <<"    random_initalize: " << random_initialize_time << endl;
+    cout <<"    repair: " << repair_time << endl;
+    cout <<"    improvement algorithm: " << improvement_algorithm_time << endl;
+    cout <<"    crossover: "  << crossover_time << endl;
+    cout <<"    mutation: " << mutation_time << endl;
+    best_individual2.print_tour();
     return cost;
 }
 

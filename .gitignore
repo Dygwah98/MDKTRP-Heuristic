@@ -4,3 +4,4 @@ log.txt
 *.out
 log_base.txt
 buildscript.sh
+log_base2.txt

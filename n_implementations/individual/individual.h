@@ -8,6 +8,7 @@
 #include <chrono>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include "../utils.h"
 using namespace std;
 
@@ -240,13 +241,13 @@ class Individual {
             if( random_bit(mt) ) {
 
                 unsigned best_depot = dt.at(pos);
-                double min_latency = calculate_tour_cost(scroll1, scroll2);
+                double min_latency = calculate_tour_cost(scroll1, scroll2, true);
                 bool improved = false;
                 for(unsigned i = 0; i < depots; ++i) {
                     
                     dt[pos] = i;
                     
-                    double latency = calculate_tour_cost(scroll1, scroll2);
+                    double latency = calculate_tour_cost(scroll1, scroll2, true);
                     if(latency < min_latency) {
 
                         best_depot = i;
@@ -264,13 +265,13 @@ class Individual {
             else {
 
                 unsigned best_position = scroll1;
-                double min_latency = calculate_tour_cost(scroll1, scroll2);
+                double min_latency = calculate_tour_cost(scroll1, scroll2, true);
                 for(unsigned swap = scroll1; swap < scroll2; ++swap) {
 
                     tours[position] = tours[swap];
                     tours[swap] = node;
 
-                    double latency = calculate_tour_cost(scroll1, scroll2);
+                    double latency = calculate_tour_cost(scroll1, scroll2, true);
                     if(latency < min_latency) {
                         min_latency = latency;
                         best_position = swap;
@@ -321,7 +322,7 @@ class Individual {
         }
 		
         void two_point_cross_over(const Individual& p1, const Individual& p2)   {
-/*       
+
             unsigned *const tours = this->tours;
             const unsigned *const tours_p1 = p1.tours;
             const unsigned *const tours_p2 = p2.tours;
@@ -338,69 +339,62 @@ class Individual {
 
             unsigned first_cutting_point = std::min(cutting_point1, cutting_point2);
             unsigned last_cutting_point = std::max(cutting_point1, cutting_point2);
-        
+/*        
+            auto& this_ts = this->tours_start;
+            this_ts.clear();
+            auto& p1_ts = p1.tours_start;
+            auto& p2_ts = p2.tours_start;
+            const auto& p2_ts_end = p2_ts.end();
+            const auto& p1_ts_end = p1_ts.end();
+*/
             unsigned i = 0;
             for(; i < first_cutting_point; ++i) {
                 
                 tours[i] = tours_p2[i];
+/*                
+                if(p2_ts.find(i) != p2_ts_end) {
+                    this_ts[i] = p2_ts.at(i);
+                }
+*/
             }
 
             
             for(; i < last_cutting_point; ++i) {
                 
                 tours[i] = tours_p1[i];
-                
+/*                
+                if(p1_ts.find(i) != p1_ts_end) {
+                    this_ts[i] = p1_ts.at(i);
+                }
+*/
             }
 
             for(; i < customers; ++i) {
                 
                 tours[i] = tours_p2[i];
-            }
-
-            auto& vp = this->tours_start;
-            auto& vp_p1 = p1.tours_start;
-            auto& vp_p2 = p2.tours_start;
-            const unsigned bound = min(vp_p1.size(), vp_p2.size());
-            std::uniform_int_distribution<unsigned> random_v(0, bound);
-
-            unsigned vcutting_point1 = random_v(mt);
-
-            if(vcutting_point1 == bound) {
-                while(vcutting_point1 == bound) {
-                   vcutting_point1 = random_v(mt);
+/*                
+                if(p2_ts.find(i) != p2_ts_end) {
+                    this_ts[i] = p2_ts.at(i);
                 }
-            }
-
-            auto& first = (vp_p1.size() == bound) ? vp_p2 : vp_p1;
-            auto& second = (vp_p1.size() == bound) ? vp_p1 : vp_p2;
-
-            vp.clear();
-
-            //copio il primo segmento di veicoli
-            auto fb = first.begin();
-            auto cp1 = next(fb, vcutting_point1);
-            vp.insert(fb, cp1);
-            //copio il secondo segmento di veicoli
-            auto sb = next(second.begin(), vcutting_point1);
-            auto cp2 = second.end();
-            vp.insert(sb, cp2);
-            //copio il terzo segmento di veicoli
-            auto fb2 = next(fb, second.size());
-            auto fe = first.end();
-            vp.insert(fb2, fe);
 */
-
+            }
+/*
             auto& ts = this->tours_start;
             map<unsigned, unsigned>().swap(ts);
 
             ts.insert(p1.tours_start.begin(), p1.tours_start.end());
             ts.insert(p2.tours_start.begin(), p2.tours_start.end());
 
+            if(ts.size() > vehicles) {
+                auto it = next(ts.begin(), vehicles);
+                ts.erase(it, ts.end());
+            }
+
             const unsigned size = ts.size();
             if(size >= 3) {
 
                 const unsigned bound = size > 3 ? size - 3 : 1;
-                std::uniform_int_distribution<unsigned> cpoint1(0, bound);
+                std::uniform_int_distribution<unsigned> cpoint1(1, bound);
                 std::uniform_int_distribution<unsigned> cpoint2(bound + 1, size-1);
 
                 const unsigned first_cutting_point = next(ts.begin(), cpoint1(mt))->first;
@@ -421,7 +415,7 @@ class Individual {
                 }
 
             } 
-            
+*/
         }
 		
         void best_order_cross_over(const Individual&p1, const Individual&p2, const Individual& best)   {
@@ -685,16 +679,48 @@ class Individual {
         //per ora ignoro il problema dello splitting
         void random_initialize()   {
             
+            //euristica costruttiva: si parte da un nodo random e da lì si prende ogni volta la scelta migliore
+
             auto& random_depot = this->random_depot;
+            auto& dt = this->distance_table;
 
-            //inserisco i customers in maniera sequenziale
-            for(unsigned i = 0; i < customers; ++i) {
-                tours[i] = i;
+            tours[0] = this->random_cell(mt);
+            tours_start[0] = this->random_depot(mt);
+
+            unordered_set<unsigned> visited;
+            visited.insert(tours[0]);
+
+            auto end = visited.end();
+            unsigned next = 0;
+            double cost;
+            for(unsigned i = 0; i < customers-1; ++i) {
+                
+                double best_cost = std::numeric_limits<double>::max();
+                
+                for(unsigned j = 0; j < customers; ++j) {
+                    
+                    if(tours[i] != j && visited.find(i) == end) {
+
+                        const unsigned index_i = getCustomerIndex(tours[i], j);
+                        if(dt.find(index_i) == dt.end()) {
+                            dt[index_i] = euclidean_distance(coordinate_matrix[tours[i] + depots][0], coordinate_matrix[tours[i] + depots][1],
+                                                            coordinate_matrix[j + depots][0], coordinate_matrix[j + depots][1]);
+                        }
+                        
+                        cost = dt.at(index_i);
+                        if(cost < best_cost) {
+                            next = j;
+                            best_cost = cost;
+                        }
+                    
+                    }
+                }
+    
+                tours[i+1] = next;
+                visited.insert(next);
+                end = visited.end();
             }
-
-            //randomizzo le posizioni di ogni customer
-            std::shuffle(tours, tours + customers, mt);
-
+/*
             //stabilisco il numero di veicoli da inserire
             std::uniform_int_distribution<unsigned> r_vehicles(1, vehicles);
             const unsigned vn = r_vehicles(mt);
@@ -713,16 +739,14 @@ class Individual {
 
             //cout << "           individual " << this << " random tour:\n";
             //print_tour();
-
+*/
             improvement_algorithm();
-            calculate_cost();
-
             //cout << "           individual " << this << " randomly initialized\n";
         }
         
         void improvement_algorithm()   {
-
-/*  prima parte: neighboorhood search su giant tour */    
+/*
+//  prima parte: neighboorhood search su giant tour    
             unsigned *const tours = this->tours;
             auto& dt = this->distance_table;
             //il neighboor è definito qui come:
@@ -780,31 +804,80 @@ class Individual {
                     }
                 }
             }
+*/
+// prima parte: splitting algorithm (basato sul Bellman-Ford Shortest Path algorithm)
+
+            std::vector<double> distances(customers+1, std::numeric_limits<double>::max());
+            std::vector<unsigned> predecessor(customers+1, customers);
+            std::vector<unsigned> new_depot(customers+1, 0);
+
+            distances[0] = 0.0;
+
+            auto& dt = this->distance_table;
+
+            for( unsigned i = 1; i < customers; ++i ) {
+                bool improved = false;
+                for( unsigned j = i; j < customers; ++j ) {
+                    
+                    double cost = calculate_tour_cost(i-1, j, false);
+                    
+                    for( unsigned k = 0; k < depots; ++k) {
+
+                        const unsigned index = getDepotIndex(k, i-1 + depots);
+                        if(dt.find(index) == dt.end()) {
+                            dt[index] = euclidean_distance(coordinate_matrix[k][0], 
+                                                            coordinate_matrix[k][1],
+                                                            coordinate_matrix[tours[i-1]+depots][0], 
+                                                            coordinate_matrix[tours[i-1]+depots][1]);
+                        }
+                        cost += dt.at(index) * (j - i + 1);
+                        
+                        if( distances[i-1] + cost < distances[j] ) {
+                            distances[j] = distances[i-1] + cost;
+                            predecessor[j] = i-1;
+                            new_depot[j] = k;
+                            improved = true;
+                        }
+                    }
+                    
+                }
+
+                if(!improved)
+                    break;
+            }
+            
+            //traduzione del risultato dell'algoritmo in termini di depots
+            auto& ts = this->tours_start;
+
+            for(unsigned i = 1; i < customers; ++i) {
+                if(predecessor[i] == 0 && tours_start.size() < vehicles) {
+                    tours_start[ tours[i-1] ] = new_depot[i];
+                }
+            }
+
 
 /* seconda parte: ottimizzazione del costo del depot (sia attivazione che primo arco) */
+/*
         #ifndef BASE
             const auto& ac = this->activation_costs;
         #endif
-            auto& ts = this->tours_start;
-
+            
             for(auto& it : ts) {
                 
                 const unsigned depot = it.second;
                 for(unsigned i = 0; i < depots; ++i) {
         #ifndef BASE        
-                    //se il depot ha un costo di attivazione minore
-                    if(ac[i] < ac[depot]) {
-                        //si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
-                        const unsigned first = tours[it.first];
+                    
+                    //si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
+                    const unsigned first = tours[it.first];
 
-                        const double nval = ac[i] + dt.at( getDepotIndex(i, first) );
-                        const double oval = ac[depot] + dt.at(  getDepotIndex(depot, first) );
+                    const double nval = ac[i] + dt.at( getDepotIndex(i, first) );
+                    const double oval = ac[depot] + dt.at(  getDepotIndex(depot, first) );
 
-                        //se il costo complessivo è minore, si effettua lo swap di depot
-                        if(nval < oval) {
-                            it.second = i;
-                            break;
-                        }
+                    //se il costo complessivo è minore, si effettua lo swap di depot
+                    if(nval < oval) {
+                        it.second = i;
+                        break;
                     }
         #else
                     //si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
@@ -832,8 +905,7 @@ class Individual {
         #endif
                 }
             }
-
-            //SPLITTING ALGORITHM TIME
+*/
 
         }
 
@@ -889,61 +961,14 @@ class Individual {
             //usando una map per rappresentare i veicoli, l'ordine è già mantenuto
             //bisogna limitare il numero di veicoli
 
-            auto& ts = this->tours_start;
-            const unsigned size = ts.size();
-            if(size > vehicles) {
-
-                unsigned *pos = new unsigned[size];
-                unsigned *len = new unsigned[size];
-
-                unsigned k = 0;
-                for(auto it = ts.begin(); it != ts.end(); ++it) {
-                    
-                    auto next_it = it;
-                    ++next_it;
-                    const unsigned start = it->first;
-                    const unsigned end = next_it == ts.end() ? customers : next_it->first;
-
-                    pos[k] = start;
-                    len[k] = end - start;
-
-                    ++k;
-                }
-
-                int i, j;
-                for (i = 1; i < size; i++) {
-                        unsigned tmp = len[i];
-                        unsigned tmp2 = pos[i];
-                        for (j = i; j >= 1 && tmp < len[j-1]; j--) {
-                            len[j] = len[j-1];
-                            pos[j] = pos[j-1];
-                        }
-                        len[j] = tmp;
-                        pos[j] = tmp2;
-                }
-
-                const unsigned excess = size - vehicles;
-                for(unsigned l = 0; l < excess; ++l) {
-                    ts.erase(pos[l]);
-                }
-
-                //se nessun veicolo parte dal primo subtour, si sposta il primo veicolo
-                if(ts.find(0) == ts.end()) {
-                    const unsigned depot_temp = ts.begin()->second;
-                    ts.erase(ts.begin()->first);
-                    ts[0] = depot_temp;
-                }
-
-                delete[] pos;
-                delete[] len;
-
+            if(tours_start.size() > vehicles) {
+                tours_start.erase(next(tours_start.begin(), vehicles), tours_start.end());
             }
-
 
             //cout << "           individual " << this << " repaired\n";
         }
 
-        double calculate_tour_cost(const unsigned start_pos, const unsigned end_pos)   {
+        double calculate_tour_cost(const unsigned start_pos, const unsigned end_pos, bool consider_depot)   {
 
             auto& ts = this->tours_start;
             auto& dc = this->distance_table;
@@ -953,20 +978,26 @@ class Individual {
 
             unsigned start = start_pos;
             const unsigned end = end_pos;
-            const unsigned depot = ts.at(start_pos);
             unsigned len = end - start;
 
             double sum = 0;
-        #ifndef BASE
-            sum += ac[ depot ];
-        #endif
-            const unsigned tsindex = tours[start] + depots;
-            const unsigned di = getDepotIndex(depot, tsindex - depots);
-            if(dc.find(di) == dc.end()) {
-               dc[di] = euclidean_distance(coordinate_matrix[depot][0], coordinate_matrix[depot][1],
-                                            coordinate_matrix[ tsindex ][0], coordinate_matrix[ tsindex ][1]);
+
+            if(consider_depot) {
+                
+                const unsigned depot = ts.at(start_pos);
+            #ifndef BASE
+                sum += ac[ depot ];
+            #endif
+                const unsigned tsindex = tours[start] + depots;
+                const unsigned di = getDepotIndex(depot, tsindex - depots);
+                if(dc.find(di) == dc.end()) {
+                dc[di] = euclidean_distance(coordinate_matrix[depot][0], coordinate_matrix[depot][1],
+                                                coordinate_matrix[ tsindex ][0], coordinate_matrix[ tsindex ][1]);
+                }
+                sum += dc.at(di)*len;
+                
             }
-            sum += dc.at(di)*len;
+
             --len;
 
             //cout << "       depot activation + first arc costs: " << sum << endl;
@@ -1008,7 +1039,7 @@ class Individual {
 
             while(next_it != end) {
                 
-                sum += calculate_tour_cost(it->first, next_it->first);
+                sum += calculate_tour_cost(it->first, next_it->first, true);
                 //cout << "sum : " << sum << endl;
 
                 ++it;
@@ -1017,7 +1048,7 @@ class Individual {
 
             if(next_it == end) {
 
-                sum += calculate_tour_cost(it->first, customers);
+                sum += calculate_tour_cost(it->first, customers, true);
                 
 
                 //cout << "sum : " << sum << endl;
