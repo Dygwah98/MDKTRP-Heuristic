@@ -13,10 +13,10 @@ class GeneticAlgorithmData {
     public:
         const unsigned tries = 1;
         const unsigned population_size = 250;
-        const unsigned mutator = SCRAMBLE;
+        const unsigned mutator = SWAP2;
         const unsigned crossover = TWO_POINT;
         const unsigned max_evaluations_GA = 40000000 / 3;
-        const unsigned mut_rate = 4;
+        const unsigned mut_rate = 2;
 };
 
 double GeneticAlgorithm(const Test& instance, const Individual& ind) {
