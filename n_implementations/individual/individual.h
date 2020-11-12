@@ -339,44 +339,44 @@ class Individual {
 
             unsigned first_cutting_point = std::min(cutting_point1, cutting_point2);
             unsigned last_cutting_point = std::max(cutting_point1, cutting_point2);
-/*        
+      
             auto& this_ts = this->tours_start;
             this_ts.clear();
             auto& p1_ts = p1.tours_start;
             auto& p2_ts = p2.tours_start;
             const auto& p2_ts_end = p2_ts.end();
             const auto& p1_ts_end = p1_ts.end();
-*/
+
             unsigned i = 0;
             for(; i < first_cutting_point; ++i) {
                 
                 tours[i] = tours_p2[i];
-/*                
+           
                 if(p2_ts.find(i) != p2_ts_end) {
                     this_ts[i] = p2_ts.at(i);
                 }
-*/
+
             }
 
             
             for(; i < last_cutting_point; ++i) {
                 
                 tours[i] = tours_p1[i];
-/*                
+           
                 if(p1_ts.find(i) != p1_ts_end) {
                     this_ts[i] = p1_ts.at(i);
                 }
-*/
+
             }
 
             for(; i < customers; ++i) {
                 
                 tours[i] = tours_p2[i];
-/*                
+          
                 if(p2_ts.find(i) != p2_ts_end) {
                     this_ts[i] = p2_ts.at(i);
                 }
-*/
+
             }
 /*
             auto& ts = this->tours_start;
@@ -720,7 +720,7 @@ class Individual {
                 visited.insert(next);
                 end = visited.end();
             }
-/*
+
             //stabilisco il numero di veicoli da inserire
             std::uniform_int_distribution<unsigned> r_vehicles(1, vehicles);
             const unsigned vn = r_vehicles(mt);
@@ -739,7 +739,7 @@ class Individual {
 
             //cout << "           individual " << this << " random tour:\n";
             //print_tour();
-*/
+
             improvement_algorithm();
             //cout << "           individual " << this << " randomly initialized\n";
         }
