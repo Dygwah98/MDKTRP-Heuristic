@@ -34,7 +34,7 @@ class AlgorithmContainer {
                 depots = 0;
                 customers = 0;
                 unsigned i = instance.start_number_file;  
-                string number_instance;
+                string number_instance = "";
                 if (i < 10)
                 {
                     number_instance = number_instance + "0" + to_string(i);
@@ -47,12 +47,19 @@ class AlgorithmContainer {
 
                 std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
                 
+                cout << file << "\n";
                 read_file_ruiz(file, depots, customers, coordinate_matrix);
                 dpc = depots + customers;
-                
-                distTable().swap(distances);
+/*
+                for(unsigned i = 0; i < depots + customers; ++i) {
+                    for(unsigned j = 0; j < 2; ++j)
+                        cout << coordinate_matrix[i][j] << " ";
+                    cout << endl;
+                }
+*/                
+                distances.clear();
             #ifndef BASE
-                calculate_activation_costs();
+                calculate_activation_costs(instance.vehicles);
                 Individual startingIndividual(instance.vehicles, depots, customers, distances, activation_costs, coordinate_matrix);
             #else
                 Individual startingIndividual(instance.vehicles, depots, customers, distances, coordinate_matrix);
@@ -69,7 +76,7 @@ class AlgorithmContainer {
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-                cout << instance.prefix + number_instance << " : " << r <<  " : " << (double)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / (double)1000 << "\n";
+                cout << instance.prefix + number_instance << " : " << r <<  " : " << (double)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / (double)1000 << "\n\n";
                 
             }
         }
@@ -83,7 +90,7 @@ class AlgorithmContainer {
         }
 
     #ifndef BASE
-        void calculate_activation_costs() {
+        void calculate_activation_costs(unsigned vehicles) {
 
             activation_costs = new double[depots];
 
@@ -123,7 +130,7 @@ class AlgorithmContainer {
                 double result = (max_cost - mean) * customers;
 
                 //il costo d'attivazione viene salvato
-                activation_costs[i] = result;
+                activation_costs[i] = result/vehicles;
             }
 
             //cout << "   activation costs:\n";

@@ -219,7 +219,9 @@ void read_file_ruiz(string file, unsigned &depots, unsigned &customers, double *
 
 static inline double euclidean_distance(const int x1, const int y1, const int x2, const int y2)
 {
-	return sqrt( abs((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2)) );
+	//cout << "\n euclidean distance : " << x1 << " " << y1 << " and " << x2 << " " << y2 << endl;
+	//cout << "	result: " << sqrt( (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) );
+	return sqrt( (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) );
 }
 
 void calculate_distance_matrix(double **distance_matrix, const double *const *const coordinate_matrix, const int depots, const int customers)

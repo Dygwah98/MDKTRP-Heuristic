@@ -12,8 +12,8 @@ class GeneticAlgorithmData {
 
     public:
         const unsigned tries = 1;
-        const unsigned population_size = 250;
-        const unsigned mutator = SWAP2;
+        const unsigned population_size = 500;
+        const unsigned mutator = SCRAMBLE;
         const unsigned crossover = TWO_POINT;
         const unsigned max_evaluations_GA = 40000000 / 3;
         const unsigned mut_rate = 2;
@@ -53,6 +53,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     std::chrono::steady_clock::time_point mutation_begin;
     std::chrono::steady_clock::time_point mutation_end;
 
+    //schema genetico
 
     const GeneticAlgorithmData gdata;
     
@@ -140,14 +141,14 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         std::sort(individuals_original.begin(), individuals_original.end());
 
-        mean_cost /= popsize;
+        mean_cost /= (double)popsize;
 
         const unsigned s  = (10 * popsize) / 100;
-        const unsigned s3 = popsize;  
-
-        std::uniform_int_distribution<unsigned> random_parent(1, popsize / 2);
+        
+        std::uniform_int_distribution<unsigned> random_parent(1, popsize/2 - 2);
         std::uniform_int_distribution<unsigned> random_mut(0, gdata.mut_rate);
         std::uniform_int_distribution<unsigned> random_choice(0, 1);
+        std::uniform_int_distribution<unsigned> substitution(0, 10);
 
         std::vector<Individual> new_generation_original;
         new_generation_original.assign(popsize, ind);
@@ -173,7 +174,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             unsigned i = 0;
             for (; i < s; ++i) {
                 new_generation[i] = individuals[i];
-
+/*
                 improvement_algorithm_begin = std::chrono::steady_clock::now();
 
                 new_generation[i].improvement_algorithm();
@@ -196,156 +197,89 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 repair_calls +=1;
 
                 new_generation[i].calculate_cost();
+*/
+               
                 new_mean_cost += new_generation[i].get_cost();
             }
 
             //cout << "       iteration " << g << ": elite population processed\n";
 
             //dobbiamo inserire il rimanente 90% della popolazione
-            std::poisson_distribution<unsigned> substitution(mean_cost);
-            for (; i < s3; ++i)
+            for (; i < popsize; ++i)
             {
-                if( (individuals[i].get_cost()/substitution(mt)) * i > popsize) {
                         
-                        p1 = random_parent(mt);
-                        std::uniform_int_distribution<unsigned> left(0, p1-1);
-                        std::uniform_int_distribution<unsigned> right(p1 + 1, (popsize / 2) + 1);
-                        if(random_choice(mt))
-                            p2 = left(mt);
-                        else
-                            p2 = right(mt);
+                p1 = random_parent(mt);
+                std::uniform_int_distribution<unsigned> left(0, p1-1);
+                std::uniform_int_distribution<unsigned> right(p1 + 1, popsize - 1);
+                if(random_choice(mt))
+                    p2 = left(mt);
+                else
+                    p2 = right(mt);
 
-                        //cout << "parents chosen: " << &individuals[p1] << " " << &individuals[p2] << endl;
-                        //Individual child(instance.vehicles, depots, customers, distance_matrix);
+                switch (gdata.crossover)
+                {
+                case 0:
 
-                        switch (gdata.crossover)
-                        {
-                        case 0:
+                    crossover_begin = std::chrono::steady_clock::now(); 
+                    new_generation[i].one_point_cross_over(individuals[p1], individuals[p2]);
+                    crossover_end = std::chrono::steady_clock::now();
 
-                            crossover_begin = std::chrono::steady_clock::now(); 
-                            new_generation[i].one_point_cross_over(individuals[p1], individuals[p2]);
-                            crossover_end = std::chrono::steady_clock::now();
-
-                            crossover_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(crossover_end - crossover_begin)
-                                .count() / (double)1000000000;
-
-                            crossover_calls += 1;
-        /*                    
-                            repair_begin = std::chrono::steady_clock::now();
-                            new_generation[i].repair();
-                            repair_end = std::chrono::steady_clock::now();
-
-                            repair_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(repair_end - repair_begin)
-                                .count() / (double)1000000000;
-                            repair_calls +=1;
-        */
-                            break;
-                        case 1:
-                            crossover_begin = std::chrono::steady_clock::now(); 
-                            new_generation[i].two_point_cross_over(individuals[p1], individuals[p2]);
-                            crossover_end = std::chrono::steady_clock::now();
-
-                            crossover_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(crossover_end - crossover_begin)
-                                .count() / (double)1000000000;
-
-                            crossover_calls += 1;
-        /*
-                            repair_begin =std::chrono::steady_clock::now();
-                            new_generation[i].repair();
-                            repair_end = std::chrono::steady_clock::now();
-
-                            repair_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(repair_end - repair_begin)
-                                .count() / (double)1000000000;
-                            repair_calls +=1;
-        */
-                            break;
-                        case 2:
-                            crossover_begin = std::chrono::steady_clock::now(); 
-                            new_generation[i].best_order_cross_over(individuals[p1], individuals[p2], best_individual);
-                            crossover_end = std::chrono::steady_clock::now();
-
-                            crossover_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(crossover_end - crossover_begin)
-                                .count() / (double)1000000000;
-
-                            crossover_calls += 1;
-        /*
-                            repair_begin =std::chrono::steady_clock::now();
-                            new_generation[i].repair();
-                            repair_end = std::chrono::steady_clock::now();
-
-                            repair_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(repair_end - repair_begin)
-                                .count() / (double)1000000000;
-                            repair_calls +=1;
-        */
-                            break;
-                        case 3:
-                            crossover_begin = std::chrono::steady_clock::now();    
-                            new_generation[i].position_based_cross_over(individuals[p1], individuals[p2]);
-                            crossover_end = std::chrono::steady_clock::now();
-
-                            crossover_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(crossover_end - crossover_begin)
-                                .count() / (double)1000000000;
-
-                            crossover_calls += 1;
-        /*
-                            repair_begin =std::chrono::steady_clock::now();
-                            new_generation[i].repair();
-                            repair_end = std::chrono::steady_clock::now();
-
-                            repair_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(repair_end - repair_begin)
-                                .count() / (double)1000000000;
-                            repair_calls +=1;
-        */
-                            break;
-                        case 4:
-                            crossover_begin = std::chrono::steady_clock::now();    
-                            new_generation[i].uniform_cross_over(individuals[p1], individuals[p2]);
-                            crossover_end = std::chrono::steady_clock::now();
-
-                            crossover_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(crossover_end - crossover_begin)
-                                .count() / (double)1000000000;
-
-                            crossover_calls += 1;
-        /*
-                            repair_begin =std::chrono::steady_clock::now();
-                            new_generation[i].repair();
-                            repair_end = std::chrono::steady_clock::now();
-
-                            repair_time += (double)std::chrono::duration_cast
-                                <std::chrono::nanoseconds>(repair_end - repair_begin)
-                                .count() / (double)1000000000;
-                            repair_calls +=1;
-        */
-                            break;
-                        }
-                } else {
-
-                    new_generation[i] = individuals[i];
-
-                    improvement_algorithm_begin = std::chrono::steady_clock::now();
-
-                    new_generation[i].improvement_algorithm();
-
-                    improvement_algorithm_end = std::chrono::steady_clock::now();
-
-                    improvement_algorithm_time += (double)std::chrono::duration_cast
-                        <std::chrono::nanoseconds>(improvement_algorithm_end - improvement_algorithm_begin)
+                    crossover_time += (double)std::chrono::duration_cast
+                        <std::chrono::nanoseconds>(crossover_end - crossover_begin)
                         .count() / (double)1000000000;
 
-                    improvement_algorithm_calls += 1;
-                }
-                
+                    crossover_calls += 1;
 
-                //cout << "       iteration " << g << ": individual " << &(new_generation[i]) <<": crossover executed\n";
+                    break;
+                case 1:
+                    crossover_begin = std::chrono::steady_clock::now(); 
+                    new_generation[i].two_point_cross_over(individuals[p1], individuals[p2]);
+                    crossover_end = std::chrono::steady_clock::now();
+
+                    crossover_time += (double)std::chrono::duration_cast
+                        <std::chrono::nanoseconds>(crossover_end - crossover_begin)
+                        .count() / (double)1000000000;
+
+                    crossover_calls += 1;
+
+                    break;
+                case 2:
+                    crossover_begin = std::chrono::steady_clock::now(); 
+                    new_generation[i].best_order_cross_over(individuals[p1], individuals[p2], best_individual);
+                    crossover_end = std::chrono::steady_clock::now();
+
+                    crossover_time += (double)std::chrono::duration_cast
+                        <std::chrono::nanoseconds>(crossover_end - crossover_begin)
+                        .count() / (double)1000000000;
+
+                    crossover_calls += 1;
+
+                    break;
+                case 3:
+                    crossover_begin = std::chrono::steady_clock::now();    
+                    new_generation[i].position_based_cross_over(individuals[p1], individuals[p2]);
+                    crossover_end = std::chrono::steady_clock::now();
+
+                    crossover_time += (double)std::chrono::duration_cast
+                        <std::chrono::nanoseconds>(crossover_end - crossover_begin)
+                        .count() / (double)1000000000;
+
+                    crossover_calls += 1;
+
+                    break;
+                case 4:
+                    crossover_begin = std::chrono::steady_clock::now();    
+                    new_generation[i].uniform_cross_over(individuals[p1], individuals[p2]);
+                    crossover_end = std::chrono::steady_clock::now();
+
+                    crossover_time += (double)std::chrono::duration_cast
+                        <std::chrono::nanoseconds>(crossover_end - crossover_begin)
+                        .count() / (double)1000000000;
+
+                    crossover_calls += 1;
+
+                    break;
+                }
 
                 //mutazione genetica solo con un certo rateo
                 if (random_mut(mt) == 0)
@@ -419,9 +353,25 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     .count() / (double)1000000000;
                 repair_calls +=1;
 
+                improvement_algorithm_begin = std::chrono::steady_clock::now();
+
+                new_generation[i].improvement_algorithm();
+
+                improvement_algorithm_end = std::chrono::steady_clock::now();
+
+                improvement_algorithm_time += (double)std::chrono::duration_cast
+                    <std::chrono::nanoseconds>(improvement_algorithm_end - improvement_algorithm_begin)
+                    .count() / (double)1000000000;
+
+                improvement_algorithm_calls += 1;
+
                 //cout << "       iteration " << g << ": individual " << &(new_generation[i]) <<": mutation executed\n";
 
                 new_generation[i].calculate_cost();
+
+                if(new_generation[i].get_cost() - individuals[popsize - 1].get_cost() > 0) {
+                    new_generation[i] = individuals[i];
+                }
 
                 new_mean_cost += new_generation[i].get_cost();
 
@@ -446,7 +396,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     //std::cout << "Child improved: " << best_cost << "\n";
                 }
 
-                new_mean_cost /= popsize;
+                new_mean_cost /= (double)popsize;
                 mean_cost = new_mean_cost;
             }
 
@@ -492,6 +442,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     cout <<"    crossover: "  << crossover_time << endl;
     cout <<"    mutation: " << mutation_time << endl;
     best_individual2.print_tour();
+    //best_individual2.calculate_cost(true);
     return cost;
 }
 
