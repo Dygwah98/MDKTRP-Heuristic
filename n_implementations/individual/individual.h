@@ -309,63 +309,7 @@ class Individual {
         }
 		
         void two_point_cross_over(const Individual& p1, const Individual& p2)   {
-/*
-            unsigned *const tours = this->tours;
-            const unsigned *const tours_p1 = p1.tours;
-            const unsigned *const tours_p2 = p2.tours;
-            auto& random_cell = this->random_cell;
 
-            unsigned cutting_point1 = random_cell(mt);
-            unsigned cutting_point2 = random_cell(mt);
-
-            if(cutting_point1 == customers - 1) {
-                while(cutting_point2 == cutting_point1) {
-                    cutting_point2 = random_cell(mt);
-                }
-            }
-
-            unsigned first_cutting_point = std::min(cutting_point1, cutting_point2);
-            unsigned last_cutting_point = std::max(cutting_point1, cutting_point2);
-      
-            auto& this_ts = this->tours_start;
-            this_ts.clear();
-            auto& p1_ts = p1.tours_start;
-            auto& p2_ts = p2.tours_start;
-            const auto& p2_ts_end = p2_ts.end();
-            const auto& p1_ts_end = p1_ts.end();
-
-            unsigned i = 0;
-            for(; i < first_cutting_point; ++i) {
-                
-                tours[i] = tours_p2[i];
-           
-                if(p2_ts.find(i) != p2_ts_end) {
-                    this_ts[i] = p2_ts.at(i);
-                }
-
-            }
-
-            
-            for(; i < last_cutting_point; ++i) {
-                
-                tours[i] = tours_p1[i];
-           
-                if(p1_ts.find(i) != p1_ts_end) {
-                    this_ts[i] = p1_ts.at(i);
-                }
-
-            }
-
-            for(; i < customers; ++i) {
-                
-                tours[i] = tours_p2[i];
-          
-                if(p2_ts.find(i) != p2_ts_end) {
-                    this_ts[i] = p2_ts.at(i);
-                }
-
-            }
-*/
 
             auto& ts = this->tours_start;
             map<unsigned, unsigned>().swap(ts);
