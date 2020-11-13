@@ -217,11 +217,29 @@ void read_file_ruiz(string file, unsigned &depots, unsigned &customers, double *
 	instance.close();
 }
 
+static inline double fast_sqrt(double x) {
+    if (x <= 0)
+        return 0;       // if negative number throw an exception?
+    int exp = 0;
+    x = frexp(x, &exp); // extract binary exponent from x
+    if (exp & 1) {      // we want exponent to be even
+        exp--;
+        x *= 2;
+    }
+    double y = (1+x)/2; // first approximation
+    double z = 0;
+    while (y != z) {    // yes, we CAN compare doubles here!
+        z = y;
+        y = (y + x/y) / 2;
+    }
+    return ldexp(y, exp/2); // multiply answer by 2^(exp/2)
+}
+
 static inline double euclidean_distance(const int x1, const int y1, const int x2, const int y2)
 {
 	//cout << "\n euclidean distance : " << x1 << " " << y1 << " and " << x2 << " " << y2 << endl;
 	//cout << "	result: " << sqrt( (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) );
-	return sqrt( (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) );
+	return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
 }
 
 void calculate_distance_matrix(double **distance_matrix, const double *const *const coordinate_matrix, const int depots, const int customers)

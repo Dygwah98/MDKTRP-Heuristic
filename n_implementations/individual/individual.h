@@ -94,27 +94,6 @@ class Individual {
         }
     	
         void swap2()   {
-/*
-            auto& random_cell = this->random_cell;
-
-            unsigned fst = random_cell(mt);
-            
-            std::uniform_int_distribution<unsigned> left(-1, fst-1);
-            std::uniform_int_distribution<unsigned> right(fst+1, customers);
-            
-            unsigned snd;
-            if(random_bit(mt)) {
-                snd = left(mt);
-                if(snd == -1) ++snd;
-            } else {
-                snd = right(mt);
-                if(snd == customers) --snd;
-            } 
-
-            const unsigned node = tours[fst];
-            tours[fst] = tours[snd];
-            tours[snd] = node;
-*/
 
             if(std::uniform_int_distribution<unsigned>(0,1)(mt)) {
                 //interroute swap
@@ -776,21 +755,20 @@ class Individual {
                 improved_called = true;
 
         // prima parte: variante del k-opt con nodi invece di archi
-                {
 
                     auto& dt = this->distance_table;
-                    const auto& ts = this->tours_start;
+                    auto& ts = this->tours_start;
 
-                    for(unsigned not_used = 0; not_used < customers - 2; not_used += 1) {
+                    const unsigned customers_n = customers_n;
+                    for(unsigned not_used = 0; not_used < customers_n; ++not_used) {
                         
                         double old_cost = 0;
                         double new_cost = 0;
 
-                        const unsigned pivot = not_used;
-                        const unsigned in_broken = pivot+1;
-                        const unsigned in_joined = pivot+2;
+                        const unsigned in_broken = not_used+1;
+                        const unsigned in_joined = not_used+2;
 
-                        const unsigned chain = tours[pivot];
+                        const unsigned chain = tours[not_used];
                         const unsigned candidate = tours[in_broken];
                         const unsigned candidate2 = tours[in_joined];
 
@@ -846,16 +824,11 @@ class Individual {
                         }
                     }
 
-                }
 
         // seconda parte: splitting algorithm (basato sul Bellman-Ford Shortest Path algorithm)
-                {
 
                     std::vector<double> distances(customers+1, std::numeric_limits<double>::max());
                     std::vector<unsigned> predecessor(customers+1, depots);
-
-                    auto& dt = this->distance_table;
-                    auto& ts = this->tours_start;
 
                     distances[0] = 0.0;
 
@@ -892,7 +865,6 @@ class Individual {
                             improved = true;
                         } 
                         
-                        if(i != 1)
                         for( unsigned j = i+1; j < customers; ++j ) {
                             
                             double scost = calculate_tour_cost(i-1, j, false);
@@ -921,13 +893,12 @@ class Individual {
                     ts[0] = random_depot(mt);
                 //#endif
 
-                    for(unsigned i = 2; i < customers; ++i) {
-                        if(predecessor[i] < depots && ts.size() < vehicles) {
+                    for(unsigned i = 1; ts.size() < vehicles && i < customers; ++i) {
+                        if(predecessor[i] < depots) {
                             tours_start[ i-1 ] = predecessor[i];
                         }
                     }
                 } 
-            }
         }
 
         void repair()   {
@@ -937,53 +908,7 @@ class Individual {
                 //cout << "           Individual: " << this << " repair(";
 
                 needs_repair = false;
-                improved_called = false;
-
-/*
-                //array di interi per contare il numero di occorrenze di ogni nodo
-                unsigned *inserted = new unsigned[customers];
-                for(unsigned i = 0; i < customers; ++i) {
-                    inserted[i] = 0;
-                } 
-
-                //conto il numero di occorrenze di ogni nodo
-                for(unsigned i = 0; i < customers; ++i) {
-                    inserted[ tours[i] ] += 1; 
-                }
-
-                //salvo il primo nodo non inserito nel tour
-                unsigned pos = 0;
-                for(; pos < customers; ++pos) {
-                    if( inserted[pos] == 0 ) {
-                        break;
-                    }
-                }
-
-                //riparo il tour
-                for(unsigned si = 0; si < customers; ++si) {
-                    //se tutti i nodi sono stati inseriti, chiusura anticipata
-                    if(pos >= customers) {
-                            break;
-                    }
-                    
-                    //sostituisce un nodo ripetuto con un nodo non inserito
-                    if( inserted[ tours[si] ] > 1) {
-
-                        //decrementa le occorrenze del nodo
-                        inserted[ tours[si] ] -= 1;
-                        tours[si] = pos;
-                        //incrementa le occorrenze del nodo appena inserito
-                        inserted[ pos ] += 1;
-
-                        //trova il successivo nodo non inserito
-                        while(inserted[pos] > 0 && pos < customers) {
-                            ++pos;
-                        }
-                    }
-                }
-
-                delete[] inserted;
-*/                
+                improved_called = false;         
 
                 std::vector<bool> found(customers, false);
 
@@ -1160,80 +1085,7 @@ class Individual {
             }
         }
 
-        double calculate_tour_cost(const unsigned start_pos, const unsigned end_pos, bool consider_depot, bool print = false)   {
-
-            //cout << "\n           starting subtour calculation...\n";
-            auto& ts = this->tours_start;
-            auto& dc = this->distance_table;
-        #ifndef BASE
-            const double *const ac = this->activation_costs;
-        #endif
-
-            unsigned start = start_pos;
-            unsigned end = end_pos;
-            if(end < start)
-                std::swap(start, end);
-            unsigned len = end - start;
-
-            double sum = 0;
-
-            if(consider_depot) {
-            
-                if(ts.find(start_pos) != ts.end()) {
-                    const unsigned depot = ts.at(start_pos);
-                #ifndef BASE
-                    sum += ac[ depot ];
-                #endif
-                    const unsigned tsindex = tours[start];
-                    const unsigned di = getDepotIndex(depot, tsindex);
-                    if(dc.find(di) == dc.end()) {
-                        dc.emplace(di, euclidean_distance(coordinate_matrix[ depot ][0], 
-                                                    coordinate_matrix[ depot ][1],
-                                                    coordinate_matrix[ tsindex + depots ][0], 
-                                                    coordinate_matrix[ tsindex + depots ][1]));
-                    }
-                    sum += dc.at(di)*len;
-
-                    if(print)
-                        cout << "   " << depot << " " << len << " " << sum << endl;
-                }
-            }
-
-            --len;
-
-            //cout << "       depot activation + first arc costs: " << sum << endl;
-
-            //cout << sum << endl;
-            ++start;
-            for(; start < end; ++start) {
-                if(len <= 0)
-                    cout << "ERROR";
-                const unsigned c1 = tours[start-1];
-                const unsigned c2 = tours[start];
-                const unsigned ci = getCustomerIndex(c1, c2);
-                if(dc.find(ci) == dc.end()) {
-                    dc.emplace(ci, euclidean_distance(coordinate_matrix[c1 + depots][0], 
-                                                    coordinate_matrix[c1 + depots][1],
-                                                    coordinate_matrix[c2 + depots][0], 
-                                                    coordinate_matrix[c2 + depots][1]) );
-                }
-                sum += dc.at(ci)*len;
-
-                //cout << "\n depots: " << depots << "(" << dc.at(ci) << "*" << len <<") " << sum << endl;
-                --len;
-                //cout << "       sum: " << sum << endl;
-            }
-
-            
-            //cout << "           individual " << this << " subtour: " << start_pos << "to: " << end_pos << "calculated\n";
-            if(print)
-                cout << sum << endl;
-
-            return sum;
- 
-        }
-
-        void calculate_cost(bool print = false)   {
+        void calculate_cost()   {
 
             //print_tour();
 
@@ -1248,9 +1100,7 @@ class Individual {
 
             while(next_it != end) {
                 
-                if(print)
-                cout << it->first << " " << next_it->first << endl;
-                sum += calculate_tour_cost(it->first, next_it->first, true, print);
+                sum += calculate_tour_cost(it->first, next_it->first, true);
                 //cout << "sum : " << sum << endl;
 
                 ++it;
@@ -1259,13 +1109,11 @@ class Individual {
 
             if(next_it == end) {
                 
-                if(print)
-                cout << it->first << " " << customers << endl;
-                sum += calculate_tour_cost(it->first, customers, true, print);
+                
+                sum += calculate_tour_cost(it->first, customers, true);
                 //cout << "sum : " << sum << endl;
             }
 
-            double oldcost = cost;
             this->cost = sum;
 
             //cout << "           individual " << this << " cost updated from: " << oldcost <<" to: " << cost <<"\n";
@@ -1307,7 +1155,7 @@ class Individual {
             return cost;
         }
 
-        bool operator<(const Individual& o) const   {
+         inline bool operator<(const Individual& o) const   {
 
             //cout << "           individual " << this << " operator< called versus " << &o << "\n";
             //print_tour();
@@ -1315,19 +1163,19 @@ class Individual {
             //o.print_tour();
             //cout << o.cost << "\n";
 
-            if(this == &o) {
-                return true;
-            }
+//            if(this == &o) {
+//                return true;
+//            }
 
             return (int)cost < (int)o.cost;
         }
 
-        bool operator==(const Individual& o) const   {
+        inline bool operator==(const Individual& o) const   {
             
             //cout << "           individual " << this << " operator== called\n";
 
-            if(this == &o)
-                return true;
+//            if(this == &o)
+//                return true;
 
             return (int)cost == (int)o.cost;
 
@@ -1420,6 +1268,76 @@ class Individual {
 
             return depot;
 
+        }
+
+        double calculate_tour_cost(const unsigned start_pos, const unsigned end_pos, bool consider_depot)   {
+
+            //cout << "\n           starting subtour calculation...\n";
+            auto& ts = this->tours_start;
+            auto& dc = this->distance_table;
+        #ifndef BASE
+            const double *const ac = this->activation_costs;
+        #endif
+
+            unsigned start = start_pos;
+            unsigned end = end_pos;
+            if(end < start)
+                std::swap(start, end);
+            unsigned len = end - start;
+
+            double sum = 0;
+
+            if(consider_depot) {
+            
+                if(ts.find(start_pos) != ts.end()) {
+                    const unsigned depot = ts.at(start_pos);
+                #ifndef BASE
+                    sum += ac[ depot ];
+                #endif
+                    const unsigned tsindex = tours[start];
+                    const unsigned di = getDepotIndex(depot, tsindex);
+                    if(dc.find(di) == dc.end()) {
+                        dc.emplace(di, euclidean_distance(coordinate_matrix[ depot ][0], 
+                                                    coordinate_matrix[ depot ][1],
+                                                    coordinate_matrix[ tsindex + depots ][0], 
+                                                    coordinate_matrix[ tsindex + depots ][1]));
+                    }
+                    sum += dc.at(di)*len;
+
+                }
+            }
+
+            --len;
+
+            //cout << "       depot activation + first arc costs: " << sum << endl;
+
+            //cout << sum << endl;
+            ++start;
+            for(; start < end; ++start) {
+                if(len <= 0)
+                    cout << "ERROR";
+                const unsigned c1 = tours[start-1];
+                const unsigned c2 = tours[start];
+                const unsigned ci = getCustomerIndex(c1, c2);
+                if(dc.find(ci) == dc.end()) {
+                    dc.emplace(ci, euclidean_distance(coordinate_matrix[c1 + depots][0], 
+                                                    coordinate_matrix[c1 + depots][1],
+                                                    coordinate_matrix[c2 + depots][0], 
+                                                    coordinate_matrix[c2 + depots][1]) );
+                }
+                sum += dc.at(ci)*len;
+
+                //cout << "\n depots: " << depots << "(" << dc.at(ci) << "*" << len <<") " << sum << endl;
+                --len;
+                //cout << "       sum: " << sum << endl;
+            }
+
+            
+            //cout << "           individual " << this << " subtour: " << start_pos << "to: " << end_pos << "calculated\n";
+
+
+            return sum;
+ 
         }
 };
 
