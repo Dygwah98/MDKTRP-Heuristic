@@ -85,59 +85,59 @@ class Timer {
         Timer() {}
 
         void random_initialize(Individual& i) {
-            measure_time(i, Individual::random_initialize);
+            measure_time(i, &Individual::random_initialize);
         }
 
         void repair(Individual& i) {
-            measure_time(i, Individual::repair);
+            measure_time(i, &Individual::repair);
         }
 
         void calculate_cost(Individual& i) {
-            measure_time(i, Individual::calculate_cost);
+            measure_time(i, &Individual::calculate_cost);
         }
 
         void swap2(Individual& i) {
-            measure_time(i, Individual::swap2);
+            measure_time(i, &Individual::swap2);
         }
 
         void swap3(Individual& i) {
-            measure_time(i, Individual::swap3);
+            measure_time(i, &Individual::swap3);
         }
 
         void scramble(Individual& i) {
-            measure_time(i, Individual::scramble);
+            measure_time(i, &Individual::scramble);
         }
 
         void inversion(Individual& i) {
-            measure_time(i, Individual::inversion);
+            measure_time(i, &Individual::inversion);
         }
 
         void insertion(Individual& i) {
-            measure_time(i, Individual::insertion);
+            measure_time(i, &Individual::insertion);
         }
 
         void one_point_crossover(Individual& i, const Individual& p1, const Individual& p2) {
-            measure_time(i, p1, p2, Individual::one_point_cross_over);
+            measure_time(i, p1, p2, &Individual::one_point_cross_over);
         }
 
         void position_based_crossover(Individual& i, const Individual& p1, const Individual& p2) {
-            measure_time(i, p1, p2, Individual::position_based_cross_over);
+            measure_time(i, p1, p2, &Individual::position_based_cross_over);
         }
 
         void two_point_crossover(Individual& i, const Individual& p1, const Individual& p2) {
-            measure_time(i, p1, p2, Individual::two_point_cross_over);
+            measure_time(i, p1, p2, &Individual::two_point_cross_over);
         }
 
         void best_order_crossover(Individual& i, const Individual& p1, const Individual& p2, const Individual& best_individual) {
-            measure_time(i, p1, p2, best_individual, Individual::best_order_cross_over);
+            measure_time(i, p1, p2, best_individual, &Individual::best_order_cross_over);
         }
 
         void uniform_crossover(Individual& i, const Individual& p1, const Individual& p2) {
-            measure_time(i, p1, p2, Individual::uniform_cross_over);
+            measure_time(i, p1, p2, &Individual::uniform_cross_over);
         }
 
         void improvement_algorithm(Individual& i) {
-            measure_time(i, Individual::improvement_algorithm);
+            measure_time(i, &Individual::improvement_algorithm);
         }
 
         double getTotalTime() {
