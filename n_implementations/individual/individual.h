@@ -22,9 +22,9 @@ class Individual {
 
     public:
         Individual(const unsigned v, const unsigned d, const unsigned c, distTable& dt, 
-    #ifndef BASE    
+#ifndef BASE    
         double *const ac, 
-    #endif    
+#endif    
         double **const _coordinate_matrix):
             vehicles( v ), 
             depots( d ), 
@@ -1035,10 +1035,10 @@ class Individual {
         unsigned* tours;
         //associa ad ogni inizio subtour il suo depot
         map<unsigned, unsigned> tours_start;
-    #ifndef BASE    
+#ifndef BASE    
         //costi di attivazione per ogni depot
         double *const activation_costs;
-    #endif
+#endif
         //matrice delle coordinate (per calcolare le distanze)
         double**const coordinate_matrix;
         //tabella di hash contente le distanze node <-> customer
@@ -1090,20 +1090,20 @@ class Individual {
 
             auto& dt = this->distance_table;
             auto& ts = this->tours_start;
-        #ifndef BASE
+#ifndef BASE
             auto& ac = this->activation_costs;
-        #endif
+#endif
 
             const unsigned first = tours[node_position];
-        #ifndef BASE
+#ifndef BASE
             double oval = ac[0] + dt.at(  getDepotIndex(0, first ) );
-        #else
+#else
             double oval = getDepotCost(0, first);
-        #endif
+#endif
             unsigned depot = 0;
 
             for(unsigned i = 1; i < depots; ++i) {
-        #ifndef BASE        
+#ifndef BASE        
 
                 const double nval = ac[i] + dt.at( getDepotIndex(i, first) );
 
@@ -1112,7 +1112,7 @@ class Individual {
                     depot = i;
                     oval = nval;
                 }
-        #else
+#else
                 //si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
                 
                 const double nval = getDepotCost(i, first);
@@ -1123,7 +1123,7 @@ class Individual {
                     oval = nval;
                 }
                 
-        #endif
+#endif
             }
 
             return depot;
@@ -1135,9 +1135,9 @@ class Individual {
             //cout << "\n           starting subtour calculation...\n";
             auto& ts = this->tours_start;
             auto& dc = this->distance_table;
-        #ifndef BASE
+#ifndef BASE
             const double *const ac = this->activation_costs;
-        #endif
+#endif
 
             unsigned start = start_pos;
             unsigned end = end_pos;
@@ -1151,9 +1151,9 @@ class Individual {
             
                 if(ts.find(start) != ts.end()) {
                     const unsigned depot = ts.at(start);
-                #ifndef BASE
+#ifndef BASE
                     sum += ac[ depot ];
-                #endif
+#endif
                     const unsigned tsindex = tours[start];
                     sum += getDepotCost(depot, tsindex)*len;
 
