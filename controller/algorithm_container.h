@@ -47,7 +47,7 @@ class AlgorithmContainer {
 
                 std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
                 
-                cout << file << "\n";
+                //cout << file << "\n";
                 read_file_ruiz(file, depots, customers, coordinate_matrix);
                 dpc = depots + customers;
 /*

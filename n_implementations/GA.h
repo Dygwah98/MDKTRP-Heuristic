@@ -62,8 +62,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         {
             initialize.random_initialize(i);
 
-            repair.repair(i);
-
             i.calculate_cost();
 
             double cost = i.get_cost(); 
@@ -152,27 +150,22 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 case 0:
 
                     crossover.one_point_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ]);
-
                     break;
                 case 1:
 
                     crossover.two_point_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ]);
-
                     break;
                 case 2:
 
                     crossover.best_order_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ], best_individual);
-
                     break;
                 case 3:
 
                     crossover.position_based_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ]);
-
                     break;
                 case 4:
 
                     crossover.uniform_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ]);
-
                     break;
                 }
 
@@ -184,12 +177,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     case 0:
 
                         mutation.swap2(new_generation[ I[i] ]);
-
                         break;
                     case 1:
 
                         mutation.swap3(new_generation[ I[i] ]);
-                        
                         break;
                     case 2:
 
@@ -199,12 +190,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     case 3:
 
                         mutation.inversion(new_generation[ I[i] ]);
-
                         break;
                     case 4:
 
                         mutation.insertion(new_generation[ I[i] ]);
-
                         break;
                     }
                 }
@@ -213,14 +202,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 improvement.improvement_algorithm(new_generation[ I[i] ]);
 
-                //cout << "       iteration " << g << ": individual " << &(new_generation[i]) <<": mutation executed\n";
-
                 new_generation[ I[i] ].calculate_cost();
-
-                if(new_generation[ I[i] ].get_cost() - individuals[ I[popsize - 1] ].get_cost() > 0) {
-                    new_generation[ I[i] ] = individuals[ I[i] ];
-                }
-
                 new_mean_cost += new_generation[i].get_cost();
 
                 if (new_generation[ I[i] ].get_cost() < best_cost)
