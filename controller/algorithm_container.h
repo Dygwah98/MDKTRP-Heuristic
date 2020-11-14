@@ -60,11 +60,11 @@ class AlgorithmContainer {
                 distances.clear();
             #ifndef BASE
                 calculate_activation_costs(instance.vehicles);
-                Individual startingIndividual(instance.vehicles, depots, customers, distances, activation_costs, coordinate_matrix);
+                Individual::setEnvironment(instance.vehicles, customers, depots, activation_costs, coordinate_matrix, &distances);
             #else
-                Individual startingIndividual(instance.vehicles, depots, customers, distances, coordinate_matrix);
+                Individual::setEnvironment(instance.vehicles, customers, depots, coordinate_matrix, &distances);
             #endif
-
+                Individual startingIndividual;
                 //cout << "   starting algorithm...\n";
                 r = (*algorithm)(instance, startingIndividual);
 

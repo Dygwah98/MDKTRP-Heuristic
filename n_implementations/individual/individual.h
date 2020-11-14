@@ -21,43 +21,23 @@ using distTable = unordered_map<unsigned, double>;
 class Individual {
 
     public:
-        Individual(const unsigned v, const unsigned d, const unsigned c, distTable& dt, 
-#ifndef BASE    
-        double *const ac, 
-#endif    
-        double **const _coordinate_matrix):
-            vehicles( v ), 
-            depots( d ), 
-            customers( c ), 
-            cost( 0 ), 
-            tours( new unsigned[c] ),
-	        tours_start(),
-            coordinate_matrix(_coordinate_matrix),
-        #ifndef BASE
-            activation_costs( ac ),
-        #endif
-            distance_table( dt ),
+        Individual():
+            cost( 0 ),
             needs_repair(true),
-            improved_called(false)
+            improved_called(false),
+            tours( new unsigned[customers] ),
+	        tours_start()
         {
             //cout << "           default constructor called\n";
             random_initialize();
         }
 
         Individual(const Individual& o):
-            vehicles( o.vehicles ), 
-            depots( o.depots ), 
-            customers( o.customers ), 
-            cost( o.cost ), 
-            tours( new unsigned[o.customers] ),
-            tours_start(o.tours_start),
-            coordinate_matrix(o.coordinate_matrix),
-        #ifndef BASE
-            activation_costs( o.activation_costs ),
-        #endif
-            distance_table( o.distance_table ),
+            cost( o.cost ),
             needs_repair( o.needs_repair ),
-            improved_called( o.improved_called )
+            improved_called( o.improved_called ),     
+            tours( new unsigned[o.customers] ),
+            tours_start(o.tours_start)
         {
             //cout << "           copy constructor called\n";
 
@@ -1024,28 +1004,45 @@ class Individual {
 
         }
 
+        static void setEnvironment(unsigned v, unsigned c, unsigned d, 
+#ifndef BASE
+                                    double *a, 
+#endif
+                                    double **m, distTable* t) {
+
+            vehicles = v;
+            customers = c;
+            depots = d;
+#ifndef BASE
+            activation_costs = a;
+#endif
+            coordinate_matrix = m;
+            distance_table = t;
+        }
+
     private:
-        //cardinalità veicoli, customers, depots
-        const unsigned vehicles;
-        const unsigned customers;
-        const unsigned depots;
         //costo
         double cost;
+        //cardinalità veicoli, customers, depots
+        inline static unsigned vehicles;
+        inline static unsigned customers;
+        inline static unsigned depots;
+        //booleani d'utilità
+        bool needs_repair;
+        bool improved_called;
+#ifndef BASE    
+        //costi di attivazione per ogni depot
+        inline static double * activation_costs;
+#endif
+        //matrice delle coordinate (per calcolare le distanze)
+        inline static double **coordinate_matrix;
+        //tabella di hash contente le distanze node <-> customer
+        inline static distTable* distance_table;
         //giant tour
         unsigned* tours;
         //associa ad ogni inizio subtour il suo depot
         map<unsigned, unsigned> tours_start;
-#ifndef BASE    
-        //costi di attivazione per ogni depot
-        double *const activation_costs;
-#endif
-        //matrice delle coordinate (per calcolare le distanze)
-        double**const coordinate_matrix;
-        //tabella di hash contente le distanze node <-> customer
-        distTable& distance_table;
-        //booleani d'utilità
-        bool needs_repair;
-        bool improved_called;
+
         
         inline unsigned getCustomerIndex(unsigned x, unsigned y) {
 
@@ -1061,34 +1058,36 @@ class Individual {
         inline double getCustomerCost(unsigned x, unsigned y) {
             
             const unsigned index = getCustomerIndex(x, y);
-            if(distance_table.find(index) == distance_table.end()) {
-                distance_table[index] =
+            distTable& dt = *Individual::distance_table;
+            if(dt.find(index) == dt.end()) {
+                dt[index] =
                     euclidean_distance(
                         coordinate_matrix[ x + depots ][0],
                         coordinate_matrix[ x + depots ][1],
                         coordinate_matrix[ y + depots ][0],
                         coordinate_matrix[ y + depots ][1]);
             }
-            return distance_table.at(index);
+            return dt.at(index);
         }
 
         inline double getDepotCost(unsigned x, unsigned y) {
             
             const unsigned index = getDepotIndex(x, y);
-            if(distance_table.find(index) == distance_table.end()) {
-                distance_table[index] =
+            distTable& dt = *Individual::distance_table;
+            if(dt.find(index) == dt.end()) {
+                dt[index] =
                     euclidean_distance(
                         coordinate_matrix[ x ][0],
                         coordinate_matrix[ x ][1],
                         coordinate_matrix[ y + depots ][0],
                         coordinate_matrix[ y + depots ][1]);
             }
-            return distance_table.at(index);
+            return dt.at(index);
         }
 
         unsigned optimizeDepot(const unsigned node_position) {
 
-            auto& dt = this->distance_table;
+            distTable& dt = *Individual::distance_table;
             auto& ts = this->tours_start;
 #ifndef BASE
             auto& ac = this->activation_costs;
