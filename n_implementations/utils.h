@@ -237,8 +237,6 @@ static inline double fast_sqrt(double x) {
 
 static inline double euclidean_distance(const int x1, const int y1, const int x2, const int y2)
 {
-	//cout << "\n euclidean distance : " << x1 << " " << y1 << " and " << x2 << " " << y2 << endl;
-	//cout << "	result: " << sqrt( (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) );
 	return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
 }
 

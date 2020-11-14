@@ -675,15 +675,7 @@ class Individual {
                     
                     if(visited.find(j) == end) {
 
-                        const unsigned index_i = getCustomerIndex(tours[i], j);
-                        if(dt.find(index_i) == dt.end()) {
-                            dt.emplace(index_i, euclidean_distance(coordinate_matrix[tours[i] + depots][0],
-                                                                    coordinate_matrix[tours[i] + depots][1],
-                                                                    coordinate_matrix[j + depots][0], 
-                                                                    coordinate_matrix[j + depots][1]));
-                        }
-                        
-                        cost = dt.at(index_i);
+                        cost = getCustomerCost(tours[i], j);
                         if(cost < best_cost) {
                             next = j;
                             best_cost = cost;
@@ -732,44 +724,14 @@ class Individual {
 
                         if(ts.find(in_broken) == ts.end()) {
 
-                            const unsigned index = getCustomerIndex(chain, candidate);
-                            if(dt.find(index) == dt.end()) {
-                                dt.emplace(index, euclidean_distance(coordinate_matrix[chain+depots][0],
-                                                                coordinate_matrix[chain+depots][1],
-                                                                coordinate_matrix[candidate+depots][0],
-                                                                coordinate_matrix[candidate+depots][1]));
-                            } 
-                            old_cost += dt.at(index);
-
-                            const unsigned index2 = getCustomerIndex(chain, candidate2);
-                            if(dt.find(index2) == dt.end()) {
-                                dt.emplace(index2, euclidean_distance(coordinate_matrix[chain+depots][0],
-                                                                coordinate_matrix[chain+depots][1],
-                                                                coordinate_matrix[candidate2+depots][0],
-                                                                coordinate_matrix[candidate2+depots][1]));
-                            } 
-                            new_cost += dt.at(index2);
+                            old_cost += getCustomerCost(chain, candidate);
+                            new_cost += getCustomerCost(chain, candidate);
 
                         } else {
 
                             const unsigned depot = ts.at(in_broken);
-                            const unsigned dindex = getDepotIndex(depot, candidate);
-                            if(dt.find(dindex) == dt.end()) {
-                                dt.emplace(dindex, euclidean_distance(coordinate_matrix[depot][0],
-                                                                coordinate_matrix[depot][1],
-                                                                coordinate_matrix[candidate+depots][0],
-                                                                coordinate_matrix[candidate+depots][1]));
-                            }
-                            old_cost += dt.at(dindex);
-
-                            const unsigned dindex2 = getDepotIndex(depot, candidate2);
-                            if(dt.find(dindex2) == dt.end()) {
-                                dt.emplace(dindex2, euclidean_distance(coordinate_matrix[depot][0],
-                                                                coordinate_matrix[depot][1],
-                                                                coordinate_matrix[candidate2+depots][0],
-                                                                coordinate_matrix[candidate2+depots][1]));
-                            }
-                            new_cost += dt.at(dindex2);
+                            old_cost += getDepotCost(depot, candidate);
+                            new_cost += getDepotCost(depot, candidate2);
                         }
 
                         if(old_cost - new_cost > 0) {
@@ -852,14 +814,7 @@ class Individual {
 
                         if( ts.find(customers-2) == ts.end() ) {
                             
-                            const unsigned back = getCustomerIndex(tours[customers-2], toInsert);
-                            if(dt.find(back) == dt.end()) {
-                                dt.emplace(back, euclidean_distance(coordinate_matrix[tours[customers-2] + depots][0], 
-                                                                coordinate_matrix[tours[customers-2] + depots][1],
-                                                                coordinate_matrix[toInsert + depots][0], 
-                                                                coordinate_matrix[toInsert + depots][1]));
-                            }
-                            cost += dt.at(back);
+                            cost += getCustomerCost(tours[customers-2], toInsert);
                         }
 
                         if(cost < best_cost) {
@@ -874,38 +829,17 @@ class Individual {
 
                         if(ts.find(i) == ts.end()) {
                                 
-                            const unsigned back = getCustomerIndex(tours[i-1], toInsert);
-                            if(dt.find(back) == dt.end()) {
-                                dt.emplace(back, euclidean_distance(coordinate_matrix[tours[i-1] + depots][0], 
-                                                                    coordinate_matrix[tours[i-1] + depots][1],
-                                                                    coordinate_matrix[toInsert + depots][0], 
-                                                                    coordinate_matrix[toInsert + depots][1]));
-                            }
-                            cost += dt.at(back);
+                            cost += getCustomerCost(tours[i-1], toInsert);
                         
                             if( ts.find(i+1) == ts.end() ) {
                                 
-                                const unsigned front = getCustomerIndex(toInsert, tours[i+1]);
-                                if(dt.find(front) == dt.end()) {
-                                    dt.emplace(front, euclidean_distance(coordinate_matrix[toInsert + depots][0], 
-                                                                        coordinate_matrix[toInsert + depots][1],
-                                                                        coordinate_matrix[tours[i+1] + depots][0], 
-                                                                        coordinate_matrix[tours[i+1] + depots][1]));
-                                }
-                                cost += dt.at(front);
+                                cost += getCustomerCost(toInsert, tours[i+1]);
                             }
 
                         } else {
 
                             const unsigned depot = optimizeDepot(toInsert);
-                            const unsigned index = getDepotIndex(depot, toInsert);
-                            if(dt.find(index) == dt.end()) {
-                                dt.emplace(index, euclidean_distance(coordinate_matrix[depot][0], 
-                                                                    coordinate_matrix[depot][1],
-                                                                    coordinate_matrix[toInsert + depots][0],
-                                                                    coordinate_matrix[toInsert + depots][1]));
-                            }   
-                            cost += dt.at(index);
+                            cost += getDepotCost(depot, toInsert);
                         }
                         
                         if(cost < best_cost) {
@@ -1022,7 +956,7 @@ class Individual {
             //cout << "           individual " << this << " cost updated from: " << oldcost <<" to: " << cost <<"\n";
         }
  
-        void print_tour() const   {
+        void print_tour() {
 
             cout << "\ngiant tour of individual: " << this << "\n";
 
@@ -1030,7 +964,7 @@ class Individual {
                 cout << tours[i] << " ";
             cout << "\n";
 
-            cout << "{depot : vehicle : tour}\n";
+            cout << "{depot : subtour => cost}\n";
             
             unsigned i = 0;
             unsigned j;
@@ -1038,13 +972,19 @@ class Individual {
             for(auto it = tours_start.begin(); it != end; ++it) {
 
                 cout << it->second << " : ";
-                cout << i << " : ";
 
                 j = it->first;
                 auto it2(it);
                 const unsigned max = (++it2 == end) ? customers : it2->first;
                 for(; j < max; ++j) {
                     cout << tours[j] << " ";
+                }
+
+                if(it2 == end) {
+                    cout << " => " << calculate_tour_cost(it->first, customers, true);
+
+                } else {
+                    cout << " => " << calculate_tour_cost(it->first, it2->first, true);
                 }
 
                 cout << endl;
@@ -1118,6 +1058,34 @@ class Individual {
             return x*customers + y;
         }
 
+        inline double getCustomerCost(unsigned x, unsigned y) {
+            
+            const unsigned index = getCustomerIndex(x, y);
+            if(distance_table.find(index) == distance_table.end()) {
+                distance_table[index] =
+                    euclidean_distance(
+                        coordinate_matrix[ x + depots ][0],
+                        coordinate_matrix[ x + depots ][1],
+                        coordinate_matrix[ y + depots ][0],
+                        coordinate_matrix[ y + depots ][1]);
+            }
+            return distance_table.at(index);
+        }
+
+        inline double getDepotCost(unsigned x, unsigned y) {
+            
+            const unsigned index = getDepotIndex(x, y);
+            if(distance_table.find(index) == distance_table.end()) {
+                distance_table[index] =
+                    euclidean_distance(
+                        coordinate_matrix[ x ][0],
+                        coordinate_matrix[ x ][1],
+                        coordinate_matrix[ y + depots ][0],
+                        coordinate_matrix[ y + depots ][1]);
+            }
+            return distance_table.at(index);
+        }
+
         unsigned optimizeDepot(const unsigned node_position) {
 
             auto& dt = this->distance_table;
@@ -1130,14 +1098,7 @@ class Individual {
         #ifndef BASE
             double oval = ac[0] + dt.at(  getDepotIndex(0, first ) );
         #else
-            const unsigned dindex2 = getDepotIndex(0, first );
-            if(dt.find(dindex2) == dt.end()) {
-                dt.emplace(dindex2, euclidean_distance(coordinate_matrix[0][0], 
-                                                    coordinate_matrix[0][1],
-                                                    coordinate_matrix[ first + depots ][0], 
-                                                    coordinate_matrix[ first + depots ][1]));
-            }
-            double oval = dt.at(dindex2);
+            double oval = getDepotCost(0, first);
         #endif
             unsigned depot = 0;
 
@@ -1153,12 +1114,8 @@ class Individual {
                 }
         #else
                 //si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
-                const unsigned dindex1 = getDepotIndex( i, first );
-                if(dt.find(dindex1) == dt.end()) {
-                    dt.emplace(dindex1, euclidean_distance(coordinate_matrix[i][0], coordinate_matrix[i][1],
-                                                    coordinate_matrix[first + depots][0], coordinate_matrix[ first + depots ][1]));
-                }
-                const double nval = dt.at(dindex1);
+                
+                const double nval = getDepotCost(i, first);
 
                 //se il costo complessivo è minore, si effettua lo swap di depot
                 if(nval < oval) {
@@ -1192,20 +1149,13 @@ class Individual {
 
             if(consider_depot) {
             
-                if(ts.find(start_pos) != ts.end()) {
-                    const unsigned depot = ts.at(start_pos);
+                if(ts.find(start) != ts.end()) {
+                    const unsigned depot = ts.at(start);
                 #ifndef BASE
                     sum += ac[ depot ];
                 #endif
                     const unsigned tsindex = tours[start];
-                    const unsigned di = getDepotIndex(depot, tsindex);
-                    if(dc.find(di) == dc.end()) {
-                        dc.emplace(di, euclidean_distance(coordinate_matrix[ depot ][0], 
-                                                    coordinate_matrix[ depot ][1],
-                                                    coordinate_matrix[ tsindex + depots ][0], 
-                                                    coordinate_matrix[ tsindex + depots ][1]));
-                    }
-                    sum += dc.at(di)*len;
+                    sum += getDepotCost(depot, tsindex)*len;
 
                 }
             }
@@ -1221,14 +1171,7 @@ class Individual {
                     cout << "ERROR";
                 const unsigned c1 = tours[start-1];
                 const unsigned c2 = tours[start];
-                const unsigned ci = getCustomerIndex(c1, c2);
-                if(dc.find(ci) == dc.end()) {
-                    dc.emplace(ci, euclidean_distance(coordinate_matrix[c1 + depots][0], 
-                                                    coordinate_matrix[c1 + depots][1],
-                                                    coordinate_matrix[c2 + depots][0], 
-                                                    coordinate_matrix[c2 + depots][1]) );
-                }
-                sum += dc.at(ci)*len;
+                sum += getCustomerCost(c1, c2)*len;
 
                 //cout << "\n depots: " << depots << "(" << dc.at(ci) << "*" << len <<") " << sum << endl;
                 --len;
@@ -1262,17 +1205,9 @@ class Individual {
 
                 unsigned best_depot = optimizeDepot(i);
 
-                const unsigned dindex = getDepotIndex(best_depot, i-1);
-                if(dt.find(dindex) == dt.end()) {
-                    dt.emplace(dindex, euclidean_distance(coordinate_matrix[best_depot][0], 
-                                                    coordinate_matrix[best_depot][1],
-                                                    coordinate_matrix[tours[i-1] + depots][0], 
-                                                    coordinate_matrix[tours[i-1] + depots][1]));
-                }
-
                 double cost = calculate_tour_cost(i-1, i, false);
 
-                cost += dt.at(dindex);
+                cost += getDepotCost(best_depot, i-1);
 
 #ifndef BASE
                 if( distances[i-1] + cost + ac[best_depot] < distances[i] ) {

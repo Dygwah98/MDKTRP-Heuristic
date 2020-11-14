@@ -18,11 +18,13 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
     //variabili per misurare le prestazioni
     
-    Timer initialize;
-    Timer crossover;
-    Timer mutation;
-    Timer improvement;
-    Timer repair;
+    Analyzer printStats; 
+    Timer& initialize = printStats.initialize;
+    Timer& crossover = printStats.crossover;
+    Timer& mutation = printStats.mutation;
+    Timer& improvement = printStats.improvement;
+    Timer& repair = printStats.repair;
+    Timer& costs = printStats.costs;
 
     //schema genetico
 
@@ -62,7 +64,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         {
             initialize.random_initialize(i);
 
-            i.calculate_cost();
+            costs.calculate_cost(i);
 
             double cost = i.get_cost(); 
             if (cost < best_cost)
@@ -73,12 +75,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 if (cost == instance.known_solution)
                 {
-                    cout <<"\n    PERFORMANCE ANALYSIS (seconds):\n";
-                    cout <<"    random_initalize: " << initialize.getTotalTime() << endl;
-                    cout <<"    repair: " << repair.getTotalTime() << endl;
-                    cout <<"    improvement algorithm: " << improvement.getTotalTime() << endl;
-                    cout <<"    crossover: "  << crossover.getTotalTime() << endl;
-                    cout <<"    mutation: " << mutation.getTotalTime() << endl;
+                    printStats();
                     cout << "known solution ";
                     //best_individual.print_tour();
                     return cost;                    
@@ -202,7 +199,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 improvement.improvement_algorithm(new_generation[ I[i] ]);
 
-                new_generation[ I[i] ].calculate_cost();
+                costs.calculate_cost( new_generation[ I[i] ] );
                 new_mean_cost += new_generation[i].get_cost();
 
                 if (new_generation[ I[i] ].get_cost() < best_cost)
@@ -213,12 +210,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                     if ((unsigned)best_individual.get_cost() == instance.known_solution)
                     {
-                        cout <<"\n    PERFORMANCE ANALYSIS (seconds):\n";
-                        cout <<"    random_initalize: " << initialize.getTotalTime() << endl;
-                        cout <<"    repair: " << repair.getTotalTime() << endl;
-                        cout <<"    improvement algorithm: " << improvement.getTotalTime() << endl;
-                        cout <<"    crossover: "  << crossover.getTotalTime() << endl;
-                        cout <<"    mutation: " << mutation.getTotalTime() << endl;
+                        printStats();
                         cout << "known solution ";
                         //best_individual.print_tour();
                         return best_individual.get_cost();
@@ -252,12 +244,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
             if(cost == instance.known_solution)
             {            
-                cout <<"\n    PERFORMANCE ANALYSIS (seconds):\n";
-                cout <<"    random_initalize: " << initialize.getTotalTime() << endl;
-                cout <<"    repair: " << repair.getTotalTime() << endl;
-                cout <<"    improvement algorithm: " << improvement.getTotalTime() << endl;
-                cout <<"    crossover: "  << crossover.getTotalTime() << endl;
-                cout <<"    mutation: " << mutation.getTotalTime() << endl;
+                printStats();
                 cout << "known solution ";
                 //best_individual.print_tour();
                 return cost;
@@ -266,14 +253,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         
     }
 
-    cout <<"\n    PERFORMANCE ANALYSIS (seconds):\n";
-    cout <<"    random_initalize: " << initialize.getTotalTime() << endl;
-    cout <<"    repair: " << repair.getTotalTime() << endl;
-    cout <<"    improvement algorithm: " << improvement.getTotalTime() << endl;
-    cout <<"    crossover: "  << crossover.getTotalTime() << endl;
-    cout <<"    mutation: " << mutation.getTotalTime() << endl;
+    printStats();
     best_individual2.print_tour();
-    //best_individual2.calculate_cost(true);
     return cost;
 }
 

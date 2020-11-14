@@ -151,4 +151,27 @@ class Timer {
         }
 };
 
+class Analyzer {
+
+    public:
+        Timer initialize;
+        Timer crossover;
+        Timer mutation;
+        Timer improvement;
+        Timer repair;
+        Timer costs;
+
+        void operator()() {
+
+            cout <<"\n    PERFORMANCE ANALYSIS (seconds):\n";
+            cout <<"    random_initalize: " << initialize.getTotalTime() << endl;
+            cout <<"    repair: " << repair.getTotalTime() << endl;
+            cout <<"    improvement algorithm: " << improvement.getTotalTime() << endl;
+            cout <<"    crossover: "  << crossover.getTotalTime() << endl;
+            cout <<"    mutation: " << mutation.getTotalTime() << endl;
+            cout <<"    calculate_cost: " << costs.getTotalTime() << endl;
+        }
+};
+
+
 #endif
