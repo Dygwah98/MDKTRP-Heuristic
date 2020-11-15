@@ -739,7 +739,7 @@ class Individual {
 
                 improved_called = true;
 
-        // prima parte: variante del k-opt con nodi invece di archi
+        // prima parte: riscrittura iterata tramite 2-swap
 
                     auto& dt = this->distance_table;
                     auto& ts = this->tours_start;
@@ -784,15 +784,11 @@ class Individual {
                         if(old_cost - new_cost > 0) {
 
                             if(ts.find(in_broken) != ts.end()) {
-                                const unsigned depot = ts.at(in_broken);
-                                ts.erase(in_broken);
-                                ts[in_joined] = depot;
+                                ts[in_broken] = best_depots[ tours[in_joined] ];
                             }
 
                             if(ts.find(in_joined) != ts.end()) {
-                                const unsigned depot = ts.at(in_joined);
-                                ts.erase(in_joined);
-                                ts[in_broken] = depot;
+                                ts[in_joined] = best_depots[ tours[in_broken] ];
                             }
 
                             const unsigned node = tours[in_broken]; 
@@ -854,7 +850,7 @@ class Individual {
                             unsigned new_start = pos[0] + (end - pos[0])/2;
                             double new_cost = calculate_tour_cost(new_start, end, false) + calculate_tour_cost(pos[0], new_start, false);
 #ifndef BASE
-                            new_cost += ac[--it_end->second];
+                            new_cost += ac[ ( ts.find(pos[0]) )->second ];
                             new_cost += ac[ best_depots[ tours[new_start] ] ];
 #endif                            
                             if(new_cost < len[0] ) {
@@ -1142,20 +1138,17 @@ class Individual {
 
         }
 
-        static void setEnv(unsigned v, unsigned c, unsigned d, 
-#ifndef BASE
-                                    double *a, 
-#endif
-                                    double **m, distTable* t) {
+        static void setEnv(unsigned v, unsigned c, unsigned d, double **m, distTable* t) {
 
             vehicles = v;
             customers = c;
             depots = d;
-#ifndef BASE
-            activation_costs = a;
-#endif
+            
             coordinate_matrix = m;
             distance_table = t;
+#ifndef BASE
+            calculate_activation_costs();
+#endif
 
             best_depots = new unsigned[c];
             for(unsigned i = 0; i < c; ++i)
@@ -1166,6 +1159,9 @@ class Individual {
         static void freeEnv() {
 
             delete[] best_depots;
+#ifndef BASE
+            delete[] activation_costs;
+#endif
         }
 
     private:
@@ -1211,12 +1207,15 @@ class Individual {
             const unsigned index = getCustomerIndex(x, y);
             distTable& dt = *Individual::distance_table;
             if(dt.find(index) == dt.end()) {
-                dt[index] =
+                const unsigned specular_index = getCustomerIndex(y, x);
+                double val =
                     euclidean_distance(
                         coordinate_matrix[ x + depots ][0],
                         coordinate_matrix[ x + depots ][1],
                         coordinate_matrix[ y + depots ][0],
                         coordinate_matrix[ y + depots ][1]);
+                dt[index] = val;
+                dt[specular_index] = val;
             }
             return dt.at(index);
         }
@@ -1279,13 +1278,53 @@ class Individual {
 
         }
 
+#ifndef BASE
+        static void calculate_activation_costs() {
+
+            activation_costs = new double[depots];
+
+            auto& distances = *Individual::distance_table;
+
+            //per ogni depot
+            for(unsigned i = 0; i < depots; ++i) {
+
+                double mean = 0;
+
+                double max_cost = getDepotCost(i, 0);
+                
+                mean += max_cost;
+                
+                //per ogni cliente dopo il primo
+                for(unsigned j = 1; j < customers; ++j) {
+
+                    double cost = getDepotCost(i, j);
+                    
+                    mean += cost;
+
+                    //se è la distanza massima trovata finora, conservala
+                    if(cost > max_cost) {
+                        max_cost = cost;
+                    }
+                }
+
+                //calcolo della media e formula del costo d'attivazione
+                mean /= (double)customers;
+                double result = (max_cost - mean) * customers;
+
+                //il costo d'attivazione viene salvato
+                activation_costs[i] = result/vehicles;
+
+            }
+        }
+#endif
+
         double calculate_tour_cost(const unsigned start_pos, const unsigned end_pos, bool consider_depot)   {
 
             //cout << "\n           starting subtour calculation...\n";
             auto& ts = this->tours_start;
             auto& dc = this->distance_table;
 #ifndef BASE
-            const double *const ac = this->activation_costs;
+            double *const ac = this->activation_costs;
 #endif
 
             unsigned start = start_pos;
@@ -1345,7 +1384,7 @@ class Individual {
             auto& dt = this->distance_table;
             auto& ts = this->tours_start;
 #ifndef BASE
-            const double *const ac = this->activation_costs;
+            double *const ac = this->activation_costs;
 #endif
 
             for( unsigned i = 1; i < customers; ++i ) {

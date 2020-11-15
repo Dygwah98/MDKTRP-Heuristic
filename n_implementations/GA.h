@@ -6,11 +6,11 @@
 struct GeneticAlgorithmData {
 
     static constexpr unsigned tries = 1;
-    static constexpr unsigned population_size = 250;
-    static constexpr unsigned mutator = SWAP2;
+    static constexpr unsigned population_size = 500;
+    static constexpr unsigned mutator = SCRAMBLE;
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
-    static constexpr double timelimit = 10.1;
+    static constexpr double timelimit = 10.0;
 #else 
     static constexpr unsigned max_evaluations_GA = 40000000 / 3; 
 #endif
@@ -109,7 +109,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         mean_cost /= (double)popsize;
 
-        const unsigned s  = (5 * popsize) / 100;
+        const unsigned s  = (10 * popsize) / 100;
         
         std::uniform_int_distribution<unsigned> random_parent(1, popsize/2 - 2);
         std::uniform_int_distribution<unsigned> random_mut(0, GeneticAlgorithmData::mut_rate);
@@ -133,6 +133,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         std::vector<Individual> *new_generation_ptr = &new_generation_original; 
 
         //cout << "       starting evaluations\n";
+        double time_elapsed = 0;
 #ifdef TIMELIMIT
         while(true) {
 #else 
@@ -147,10 +148,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
             //elitismo al 10%
             unsigned i = 0;
-
             if(repeated == 500) {
-
-                for (; i < s; ++i) {
+                for (; i < s/2; ++i) {
                     new_generation[ I[i] ] = individuals[ I[i] ];
 #ifdef PRINT
                     initialize.measure_time(new_generation[ I[i] ], &Individual::random_restart);
@@ -159,6 +158,11 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     new_generation[ I[i] ].random_restart();
                     new_generation[ I[i] ].repair();
 #endif
+                    new_mean_cost += new_generation[i].get_cost();
+                }
+
+                for (; i < s; ++i) {
+                    new_generation[ I[i] ] = individuals[ I[i] ];
                     new_mean_cost += new_generation[i].get_cost();
                 }
 
@@ -370,7 +374,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 #ifdef TIMELIMIT            
             std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
 
-            double time_elapsed = (double)std::chrono::duration_cast
+            time_elapsed = (double)std::chrono::duration_cast
                 <std::chrono::nanoseconds>(end_time - start_time)
                 .count() / (double)1000000000;
             

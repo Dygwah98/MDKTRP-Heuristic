@@ -16,9 +16,6 @@ class AlgorithmContainer {
         unsigned customers;
         double **coordinate_matrix;
         distTable distances;
-#ifndef BASE
-        double *activation_costs = nullptr;
-#endif
         const string dir = "./dat/";
         unsigned dpc;
         
@@ -50,17 +47,14 @@ class AlgorithmContainer {
 
                 std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
                 
-
+                //cout << "file\n";
                 read_file_ruiz(file, depots, customers, coordinate_matrix);
                 dpc = depots + customers;
              
                 distances.clear();
-#ifndef BASE
-                calculate_activation_costs(instance.vehicles);
-                Individual::setEnv(instance.vehicles, customers, depots, activation_costs, coordinate_matrix, &distances);
-#else
+
                 Individual::setEnv(instance.vehicles, customers, depots, coordinate_matrix, &distances);
-#endif
+
                 Individual startingIndividual;
                 
                 r = (*algorithm)(instance, startingIndividual);
@@ -68,10 +62,6 @@ class AlgorithmContainer {
                 free_matrix(coordinate_matrix, depots+customers);
 
                 Individual::freeEnv();
-
-#ifndef BASE
-                delete[] activation_costs;
-#endif
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
@@ -96,65 +86,6 @@ class AlgorithmContainer {
             cout << "GAP medio : " << mean_gap / gap_counter << "\n";
 #endif
         }
-
-        inline unsigned getCustomerIndex(unsigned x, unsigned y) {
-            return depots*customers + x*customers + y;
-        }
-
-        inline unsigned getDepotIndex(unsigned x, unsigned y) {
-            return x*customers + y;
-        }
-
-#ifndef BASE
-        void calculate_activation_costs(unsigned vehicles) {
-
-            activation_costs = new double[depots];
-
-            //per ogni depot
-            for(unsigned i = 0; i < depots; ++i) {
-
-                double mean = 0;
-
-                double max_cost = euclidean_distance(coordinate_matrix[i][0], coordinate_matrix[i][1],
-													 coordinate_matrix[depots][0], coordinate_matrix[depots][1]);
-                
-                //si inserisce la distanza fra il depot e il primo cliente
-                unsigned index = getDepotIndex(i, 0);
-                distances[index] = max_cost;
-
-                mean += max_cost;
-                
-                //per ogni cliente dopo il primo
-                for(unsigned j = depots + 1; j < depots + customers; ++j) {
-                    
-                    double cost = euclidean_distance(coordinate_matrix[i][0], coordinate_matrix[i][1],
-													 coordinate_matrix[j][0], coordinate_matrix[j][1]);
-
-                    mean += cost;
-                    //si inserisce la distanza fra il depot e il cliente
-                    index = getDepotIndex(i, j - depots);
-                    distances[index] = cost;
-
-                    //se è la distanza massima trovata finora, conservala
-                    if(cost > max_cost) {
-                        max_cost = cost;
-                    }
-                }
-
-                //calcolo della media e formula del costo d'attivazione
-                mean /= (double)customers;
-                double result = (max_cost - mean) * customers;
-
-                //il costo d'attivazione viene salvato
-                activation_costs[i] = result/vehicles;
-            }
-
-            //cout << "   activation costs:\n";
-            //for(unsigned i = 0; i < depots; ++i) {
-            //    cout << "       depot: " << i << " " << activation_costs[i] << endl;
-            //}
-        }
-#endif
 
         double getResult() const { return r; }
 };
