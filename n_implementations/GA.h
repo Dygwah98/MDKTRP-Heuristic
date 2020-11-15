@@ -35,7 +35,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
     Individual best_individual(ind);
 #ifdef PRINT    
-    initialize.random_initialize(best_individual2);
+    initialize.random_initialize(best_individual);
 #else
     best_individual.random_initialize();
 #endif
@@ -314,7 +314,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             {  
 #ifdef PRINT          
                 printStats();
-                best_individual2.print_tour();
+                best_individual.print_tour();
 #endif
                 cout << "known solution ";
                 //best_individual.print_tour();
@@ -326,7 +326,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 #ifdef PRINT
     
     printStats();
-    best_individual2.print_tour();
+    best_individual.print_tour();
 #endif
     return cost;
 }

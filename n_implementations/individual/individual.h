@@ -25,6 +25,7 @@ class Individual {
             cost( 0 ),
             needs_repair(true),
             improved_called(false),
+            needs_to_update_cost(true),
             tours( new unsigned[customers] ),
 	        tours_start()
         {
@@ -35,7 +36,8 @@ class Individual {
         Individual(const Individual& o):
             cost( o.cost ),
             needs_repair( o.needs_repair ),
-            improved_called( o.improved_called ),     
+            improved_called( o.improved_called ),
+            needs_to_update_cost( o.needs_to_update_cost),     
             tours( new unsigned[o.customers] ),
             tours_start(o.tours_start)
         {
@@ -59,6 +61,10 @@ class Individual {
             }
 
             tours_start = m.tours_start;
+
+            needs_repair = m.needs_repair;
+            improved_called = m.improved_called;
+            needs_to_update_cost = m.needs_to_update_cost;
 
             if(m.cost != 0) {
                 cost = m.cost;
@@ -108,6 +114,7 @@ class Individual {
             }
 
             improved_called = false;
+            needs_to_update_cost = true;
 
             //cout << "           individual " << this << ": swap2 executed\n";
         }
@@ -136,6 +143,7 @@ class Individual {
 
             
             improved_called = false;
+            needs_to_update_cost = true;
         }
 		
         void inversion()   {
@@ -157,6 +165,7 @@ class Individual {
 
             
             improved_called = false;
+            needs_to_update_cost = true;
         }
 		
         void scramble()   {
@@ -178,6 +187,7 @@ class Individual {
 
             
             improved_called = false;
+            needs_to_update_cost = true;
 
         }
 		
@@ -246,6 +256,7 @@ class Individual {
 
             needs_repair = true;
             improved_called = false;
+            needs_to_update_cost = true;
         }
 		
         void one_point_cross_over(const Individual& p1, const Individual& p2)   {
@@ -285,6 +296,7 @@ class Individual {
         
             needs_repair = true;
             improved_called = false;
+            needs_to_update_cost = true;
         }
 		
         void two_point_cross_over(const Individual& p1, const Individual& p2) {
@@ -362,6 +374,7 @@ class Individual {
 
             needs_repair = true;
             improved_called = false;
+            needs_to_update_cost = true;
         }
 		
         void best_order_cross_over(const Individual&p1, const Individual&p2, const Individual& best)   {
@@ -534,6 +547,7 @@ class Individual {
 
             needs_repair = true;
             improved_called = false;
+            needs_to_update_cost = true;
 
         }
 		
@@ -627,6 +641,7 @@ class Individual {
         
             needs_repair = true;
             improved_called = false;
+            needs_to_update_cost = true;
 
         }
 
@@ -743,6 +758,7 @@ class Individual {
                         ts[it->first] = optimizeDepot(it->first);
                     }
 
+                    needs_to_update_cost = true;
                 } 
         }
 
@@ -899,11 +915,14 @@ class Individual {
                 //print_tour();
                 //cout << "           individual " << this << " repaired\n";
                 //cout << ")\n";
+                needs_to_update_cost = true;
             }
         }
 
         void calculate_cost()   {
-
+            
+            if(!needs_to_update_cost)
+                return;
             //print_tour();
 
             //cout << "\n       calculating all subtour costs\n";
@@ -932,6 +951,7 @@ class Individual {
             }
 
             this->cost = sum;
+            needs_to_update_cost = false;
 
             //cout << "           individual " << this << " cost updated from: " << oldcost <<" to: " << cost <<"\n";
         }
@@ -1030,9 +1050,10 @@ class Individual {
         //booleani d'utilità
         bool needs_repair;
         bool improved_called;
+        bool needs_to_update_cost;
 #ifndef BASE    
         //costi di attivazione per ogni depot
-        inline static double * activation_costs;
+        inline static double *activation_costs;
 #endif
         //matrice delle coordinate (per calcolare le distanze)
         inline static double **coordinate_matrix;
