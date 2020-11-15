@@ -129,7 +129,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             //elitismo al 10%
             unsigned i = 0;
 
-            if(repeated == 10) {
+            if(repeated == 500*instance.factor_valuations) {
 
                 for (; i < s; ++i) {
                     new_generation[ I[i] ] = individuals[ I[i] ];

@@ -650,7 +650,7 @@ class Individual {
             //euristica costruttiva: si parte da un nodo random e da lì si prende ogni volta la scelta migliore
 
             tours[0] = std::uniform_int_distribution<unsigned>(0,customers-1)(mt);
-            tours_start[0] = optimizeDepot(0);
+            tours_start[0] = best_depots[ tours[0] ];
 
             unordered_set<unsigned> visited;
             visited.insert(tours[0]);
@@ -697,14 +697,16 @@ class Individual {
 
             //randomizzo le posizioni di ogni customer
             std::shuffle(tours, tours + customers, mt);
-            std::shuffle(tours, tours + customers, mt);
 
-            tours_start[0] = std::uniform_int_distribution<unsigned>(0, depots-1)(mt);
-            unsigned i = std::uniform_int_distribution<unsigned>(1, customers-vehicles-2)(mt);
+            std::uniform_int_distribution<unsigned> dp(0, depots-1);
+            std::uniform_int_distribution<unsigned> v(1, customers-vehicles-2);
+            tours_start[0] = dp(mt);
+            unsigned i = v(mt);
             
             for(; i < vehicles;) {
-                tours_start[i] = std::uniform_int_distribution<unsigned>(0, depots-1)(mt);
-                i += std::uniform_int_distribution<unsigned>(1, customers-vehicles-2-i)(mt);
+                tours_start[i] = dp(mt);
+                const unsigned val = v(mt);
+                i += val > customers-vehicles-2-i ? val-i : val;
             }
 
         }
@@ -721,7 +723,7 @@ class Individual {
                     auto& dt = this->distance_table;
                     auto& ts = this->tours_start;
 
-                    const unsigned customers_n = customers - 2;
+                    const unsigned customers_n = customers - 3;
                     for(unsigned not_used = 0; not_used < customers_n; ++not_used) {
                         
                         double old_cost = 0;
@@ -729,21 +731,33 @@ class Individual {
 
                         const unsigned in_broken = not_used+1;
                         const unsigned in_joined = not_used+2;
+                        const unsigned other_chain = not_used+3;
 
                         const unsigned chain = tours[not_used];
                         const unsigned candidate = tours[in_broken];
                         const unsigned candidate2 = tours[in_joined];
+                        const unsigned chain2 = tours[other_chain];
 
                         if(ts.find(in_broken) == ts.end()) {
 
                             old_cost += getCustomerCost(chain, candidate);
-                            new_cost += getCustomerCost(chain, candidate);
+                            new_cost += getCustomerCost(chain, candidate2);
+                            
+                            if(ts.find(other_chain) == ts.end()) {
+                                old_cost += getCustomerCost(candidate2, chain2);
+                                new_cost += getCustomerCost(candidate, chain2);
+                            }
 
                         } else {
 
                             const unsigned depot = ts.at(in_broken);
                             old_cost += getDepotCost(depot, candidate);
                             new_cost += getDepotCost(depot, candidate2);
+                        
+                            if(ts.find(other_chain) == ts.end()) {
+                                old_cost += getCustomerCost(candidate2, chain2);
+                                new_cost += getCustomerCost(candidate, chain2);
+                            }
                         }
 
                         if(old_cost - new_cost > 0) {
@@ -772,7 +786,7 @@ class Individual {
 
                     for(unsigned i = 0; i < ts.size(); ++i) {
                         auto it = next(ts.begin(), i);
-                        ts[it->first] = optimizeDepot(it->first);
+                        ts[it->first] = best_depots[ tours[it->first] ];
                     }
 
                     needs_to_update_cost = true;
@@ -851,7 +865,7 @@ class Individual {
 
                         } else {
 
-                            const unsigned depot = optimizeDepot(toInsert);
+                            const unsigned depot = best_depots[ toInsert ];
                             cost += getDepotCost(depot, toInsert);
                         }
                         
@@ -925,7 +939,7 @@ class Individual {
                     
                     if(tours_start.find(0) == tours_start.end()) {
                         tours_start.erase(tours_start.begin());
-                        tours_start[0] = optimizeDepot(0);
+                        tours_start[0] = best_depots[ tours[0] ];
                     }
                 }
 
@@ -1058,7 +1072,7 @@ class Individual {
 
             best_depots = new unsigned[c];
             for(unsigned i = 0; i < c; ++i)
-                best_depots[i] = d;
+                optimizeDepot(i);
 
         }
 
@@ -1094,18 +1108,18 @@ class Individual {
         map<unsigned, unsigned> tours_start;
 
         
-        inline unsigned getCustomerIndex(unsigned x, unsigned y) {
+        static inline unsigned getCustomerIndex(unsigned x, unsigned y) {
 
             //cout << "\n customer index: " << x << " " << y << " " << customers * depots + x*customers + y << "| ";
             return customers * depots + x*customers + y;
         }
 
-        inline unsigned getDepotIndex(unsigned x, unsigned y) {
+        static inline unsigned getDepotIndex(unsigned x, unsigned y) {
             //cout << "\n depot index: " << x << " " << y << " " << x*customers + y << "| ";
             return x*customers + y;
         }
 
-        inline double getCustomerCost(unsigned x, unsigned y) {
+        static inline double getCustomerCost(unsigned x, unsigned y) {
             
             const unsigned index = getCustomerIndex(x, y);
             distTable& dt = *Individual::distance_table;
@@ -1120,7 +1134,7 @@ class Individual {
             return dt.at(index);
         }
 
-        inline double getDepotCost(unsigned x, unsigned y) {
+        static inline double getDepotCost(unsigned x, unsigned y) {
             
             const unsigned index = getDepotIndex(x, y);
             distTable& dt = *Individual::distance_table;
@@ -1135,18 +1149,14 @@ class Individual {
             return dt.at(index);
         }
 
-        unsigned optimizeDepot(const unsigned node_position) {
-
-            if(best_depots[ tours[node_position] ] != depots)
-                return best_depots[ tours[node_position] ];
+        static void optimizeDepot(const unsigned node) {
 
             distTable& dt = *Individual::distance_table;
-            auto& ts = this->tours_start;
 #ifndef BASE
-            auto& ac = this->activation_costs;
+            const double *const ac = Individual::activation_costs;
 #endif
 
-            const unsigned first = tours[node_position];
+            const unsigned first = node;
 #ifndef BASE
             double oval = ac[0] + dt.at(  getDepotIndex(0, first ) );
 #else
@@ -1178,9 +1188,7 @@ class Individual {
 #endif
             }
 
-            best_depots[ tours[node_position] ] = depot;
-
-            return depot;
+            best_depots[ node ] = depot;
 
         }
 
@@ -1257,7 +1265,7 @@ class Individual {
                 
                 bool improved = false;
 
-                unsigned best_depot = optimizeDepot(i);
+                unsigned best_depot = best_depots[ tours[i] ];
 
                 double cost = calculate_tour_cost(i-1, i, false);
 
@@ -1298,7 +1306,7 @@ class Individual {
             
         //#ifndef BASE
             ts.clear();
-            ts[0] = optimizeDepot(0);
+            ts[0] = best_depots[ tours[0] ];
         //#endif
 
             for(unsigned i = 1; ts.size() < vehicles && i < customers; ++i) {
