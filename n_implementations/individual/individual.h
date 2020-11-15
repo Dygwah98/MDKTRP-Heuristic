@@ -259,7 +259,7 @@ class Individual {
             needs_to_update_cost = true;
         }
 		
-        void one_point_cross_over(const Individual& p1, const Individual& p2)   {
+        Individual one_point_cross_over(const Individual& p1, const Individual& p2)   {
             
             unsigned *const tours = this->tours;
 		    const unsigned *const tours_p1 = p1.tours;
@@ -297,9 +297,14 @@ class Individual {
             needs_repair = true;
             improved_called = false;
             needs_to_update_cost = true;
+
+            //TODO
+            return Individual();
         }
 		
-        void two_point_cross_over(const Individual& p1, const Individual& p2) {
+        Individual two_point_cross_over(const Individual& p1, const Individual& p2) {
+
+            Individual spare_son;
 
             const unsigned size = std::min(p1.tours_start.size(), p2.tours_start.size());
 
@@ -333,51 +338,58 @@ class Individual {
             unsigned i = 0;
             for(; i < first_cutting_point; ++i) {
                 
-                const unsigned node = toursp1[i];
-                tours[i] = node;
-
+                tours[i] = toursp1[i];
+                spare_son.tours[i] = toursp2[i];
             }
 
             for(; i < second_cutting_point; ++i) {
                 
-                const unsigned node = toursp2[i];
-                tours[i] = node;
+                tours[i] = toursp2[i];
+                spare_son.tours[i] = toursp1[i];
             }
             
             for(; i < customers; ++i) {
                 
-                const unsigned node = toursp1[i];
-                tours[i] = node;
+                tours[i] = toursp1[i];
+                spare_son.tours[i] = toursp2[i];
             }
 
             auto& ts = this->tours_start;
+            auto& ts2 = spare_son.tours_start;
 
             const auto& tsp1 = p1.tours_start;
             auto itp1 = tsp1.begin();
             const auto endp1 = tsp1.end();
+
             while(itp1 != endp1) {
                 
                 if(itp1->first < first_cutting_point || itp1->first > second_cutting_point)
                     ts.insert(*itp1);
+                else
+                    ts2.insert(*itp1);
                 ++itp1;
             }
 
             const auto& tsp2 = p2.tours_start;
             auto itp2 = tsp2.begin();
             const auto endp2 = tsp2.end();
-            while(itp2 != endp2
-                && (itp2->first > first_cutting_point && itp2->first < second_cutting_point)) {
+            while(itp2 != endp2) {
                 
-                ts.insert(*itp2);
+                if((itp2->first > first_cutting_point && itp2->first < second_cutting_point))
+                    ts.insert(*itp2);
+                else
+                    ts2.insert(*itp2);
                 ++itp2;
             }
 
             needs_repair = true;
             improved_called = false;
             needs_to_update_cost = true;
+        
+            return spare_son;
         }
 		
-        void best_order_cross_over(const Individual&p1, const Individual&p2, const Individual& best)   {
+        Individual best_order_cross_over(const Individual&p1, const Individual&p2, const Individual& best)   {
 
             std::uniform_int_distribution<unsigned> len_random_cutting_point(1, customers / 3);
 		    std::uniform_int_distribution<unsigned> random_value_sequence(0, 2);
@@ -549,9 +561,10 @@ class Individual {
             improved_called = false;
             needs_to_update_cost = true;
 
+            return Individual();
         }
 		
-        void position_based_cross_over(const Individual&p1, const Individual&p2)   {
+        Individual position_based_cross_over(const Individual&p1, const Individual&p2)   {
 
             unsigned *const tours = this->tours;
             const Individual *const parents[2] = {&p1, &p2};
@@ -615,9 +628,11 @@ class Individual {
 
             needs_repair = true;
             improved_called = false;
+
+            return Individual();
         }
 		
-        void uniform_cross_over(const Individual &p1, const Individual &p2)   {
+        Individual uniform_cross_over(const Individual &p1, const Individual &p2)   {
 
             std::uniform_int_distribution<unsigned> random_bit(0,1);
             unsigned index[2] = {0, 0};
@@ -643,6 +658,7 @@ class Individual {
             improved_called = false;
             needs_to_update_cost = true;
 
+            return Individual();
         }
 
         void random_initialize()   {

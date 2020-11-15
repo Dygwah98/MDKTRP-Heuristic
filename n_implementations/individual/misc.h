@@ -54,13 +54,13 @@ class Timer {
             calls += 1;
         }
 
-        void measure_time(Individual& i, void(Individual::*function)(const Individual&, const Individual&),
+        Individual measure_time(Individual& i, Individual(Individual::*function)(const Individual&, const Individual&),
                     const Individual& p1, const Individual& p2 
              )  {
             
             begin = std::chrono::steady_clock::now();
 
-            (i.*function)(p1, p2);
+            Individual ind( (i.*function)(p1, p2) );
             
             end = std::chrono::steady_clock::now();
             
@@ -69,15 +69,17 @@ class Timer {
                 .count() / (double)1000000000;
             
             calls += 1;
+
+            return ind;
         }
 
-        void measure_time(Individual& i, void(Individual::*function)(const Individual&, const Individual&, const Individual&),
+        Individual measure_time(Individual& i, Individual(Individual::*function)(const Individual&, const Individual&, const Individual&),
                         const Individual& p1, const Individual& p2, const Individual& best_individual
               ) {
             
             begin = std::chrono::steady_clock::now();
 
-            (i.*function)(p1, p2, best_individual);
+            Individual ind( (i.*function)(p1, p2, best_individual) );
             
             end = std::chrono::steady_clock::now();
             
@@ -86,6 +88,8 @@ class Timer {
                 .count() / (double)1000000000;
             
             calls += 1;
+
+            return ind;
         }
 /*
         void random_initialize(Individual& i) {
