@@ -7,7 +7,7 @@ struct GeneticAlgorithmData {
 
     static constexpr unsigned tries = 1;
     static constexpr unsigned population_size = 500;
-    static constexpr unsigned mutator = SWAP2;
+    static constexpr unsigned mutator = INVERSION;
     static constexpr unsigned crossover = TWO_POINT;
     static constexpr double timelimit = 10.1;
     static constexpr unsigned mut_rate = 2;
@@ -27,7 +27,13 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 #endif
     //schema genetico
     
-    const double timelimit = (GeneticAlgorithmData::timelimit / GeneticAlgorithmData::tries);
+    const double timelimit = 
+        (GeneticAlgorithmData::timelimit / GeneticAlgorithmData::tries) 
+      * ( (instance.factor_valuations) + 1);
+    
+    if(timelimit > 7200)
+        timelimit = 7200;
+
     const unsigned popsize = GeneticAlgorithmData::population_size;
     
     double cost = std::numeric_limits<double>::max();
@@ -129,7 +135,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             //elitismo al 10%
             unsigned i = 0;
 
-            if(repeated == 500*instance.factor_valuations) {
+            if(repeated == 500) {
 
                 for (; i < s; ++i) {
                     new_generation[ I[i] ] = individuals[ I[i] ];
@@ -196,6 +202,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     break;
                 }
 
+                repair.measure_time(new_generation[ I[i] ], &Individual::repair);
+
                 //mutazione genetica solo con un certo rateo
                 if (random_mut(mt) == 0)
                 {
@@ -255,6 +263,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     break;
                 }
 
+                new_generation[ I[i] ].repair();
+
                 //mutazione genetica solo con un certo rateo
                 if (random_mut(mt) == 0)
                 {
@@ -283,7 +293,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     }
                 }
 
-                new_generation[ I[i] ].repair();
 
                 new_generation[ I[i] ].improvement_algorithm();
 

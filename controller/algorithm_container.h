@@ -80,7 +80,7 @@ class AlgorithmContainer {
                         <std::chrono::milliseconds>(end - begin)
                         .count() / (double)1000 << " : ";
 #ifdef BASE 
-                if(r != 0) {
+                if(instance.known_solution != 0) {
 
                     gap_counter += 1;
                     mean_gap += 100.0 * ((r - instance.known_solution) /r );
@@ -92,8 +92,9 @@ class AlgorithmContainer {
 #endif
                 cout << "\n";
             }
-
+#ifdef BASE
             cout << "GAP medio : " << mean_gap / gap_counter << "\n";
+#endif
         }
 
         inline unsigned getCustomerIndex(unsigned x, unsigned y) {

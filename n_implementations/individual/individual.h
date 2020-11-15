@@ -781,6 +781,66 @@ class Individual {
                         }
                     }
 
+        // seconda parte: tento di aumentare il numero di subtours
+
+                    if(ts.size() < vehicles) {
+#ifndef BASE
+                        double *const ac = Individual::activation_costs;
+#endif                        
+                        const unsigned size = vehicles;
+
+                        vector<unsigned> pos(size, 0);
+                        vector<double> len(size, 0);
+
+                        //cout << "(";
+
+                        while(ts.size() < vehicles) {
+                            
+                            unsigned k = 0;
+                            for(auto it = ts.begin(); it != ts.end(); ++it) {
+                                
+                                auto next_it = it;
+                                ++next_it;
+
+                                const unsigned start = it->first;
+                                const unsigned end = next_it == ts.end() ? customers : next_it->first;
+
+                                pos[k] = start;
+                                len[k] = calculate_tour_cost(it->first, end, false);
+#ifndef BASE
+                                len[k] += ac[it->second];
+#endif
+                                ++k;
+                            }
+
+                            int i, j;
+                            for (i = 1; i < ts.size(); i++) {
+                                    double tmp = len[i];
+                                    unsigned tmp2 = pos[i];
+                                    for (j = i; j >= 1 && tmp > len[j-1]; j--) {
+                                        len[j] = len[j-1];
+                                        pos[j] = pos[j-1];
+                                    }
+                                    len[j] = tmp;
+                                    pos[j] = tmp2;
+                            }
+                            
+                            auto it_end = ++ts.find(pos[0]);
+                            unsigned end = it_end == ts.end() ? customers : it_end->first;
+
+                            unsigned new_start = pos[0] + (end - pos[0])/2;
+                            double new_cost = calculate_tour_cost(new_start, end, false) + calculate_tour_cost(pos[0], new_start, false);
+#ifndef BASE
+                            new_cost += ac[--it_end->second];
+                            new_cost += ac[ best_depots[ tours[new_start] ] ];
+#endif                            
+                            if(new_cost < len[0] ) {
+                                ts[new_start] = best_depots[ tours[new_start] ];
+                            }
+                        }
+
+                        //cout << ")";
+                    }
 
         // seconda parte: ottimizzo i depots
 
@@ -886,9 +946,10 @@ class Individual {
                 //usando una map per rappresentare i veicoli, l'ordine è già mantenuto
                 //bisogna limitare il numero di veicoli
 
-                if(tours_start.size() > vehicles) {
-
-                    //auto& ts = this->tours_start;
+                if(ts.size() > vehicles) {
+#ifndef BASE
+                    double *const ac = activation_costs;
+#endif
                     const unsigned size = ts.size();
 
                     vector<unsigned> pos(size, 0);
@@ -910,13 +971,16 @@ class Individual {
 
                             pos[k] = start;
                             len[k] = calculate_tour_cost(prev_it->first, end, false);
+#ifndef BASE
+                                len[k] += ac[it->second];
+#endif
 
                             ++k;
                         }
 
                         for(; k < size; ++k) {
                             pos[k] = customers;
-                            len[k] = std::numeric_limits<double>().max();
+                            len[k] = std::numeric_limits<double>::max();
                         }
 
 
