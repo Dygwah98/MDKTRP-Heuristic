@@ -649,10 +649,6 @@ class Individual {
             
             //euristica costruttiva: si parte da un nodo random e da lì si prende ogni volta la scelta migliore
 
-            std::uniform_int_distribution<unsigned>random_depot(0,depots-1);
-
-            auto& dt = this->distance_table;
-
             tours[0] = std::uniform_int_distribution<unsigned>(0,customers-1)(mt);
             tours_start[0] = optimizeDepot(0);
 
@@ -691,6 +687,27 @@ class Individual {
 
             //cout << "           individual " << this << " randomly initialized\n";
         }
+
+        void random_restart() {
+
+            //inserisco i customers in maniera sequenziale
+            for(unsigned i = 0; i < customers; ++i) {
+                tours[i] = i;
+            }
+
+            //randomizzo le posizioni di ogni customer
+            std::shuffle(tours, tours + customers, mt);
+            std::shuffle(tours, tours + customers, mt);
+
+            tours_start[0] = std::uniform_int_distribution<unsigned>(0, depots-1)(mt);
+            unsigned i = std::uniform_int_distribution<unsigned>(1, customers-vehicles-2)(mt);
+            
+            for(; i < vehicles;) {
+                tours_start[i] = std::uniform_int_distribution<unsigned>(0, depots-1)(mt);
+                i += std::uniform_int_distribution<unsigned>(1, customers-vehicles-2-i)(mt);
+            }
+
+        }
         
         void improvement_algorithm()   {
         
@@ -704,7 +721,7 @@ class Individual {
                     auto& dt = this->distance_table;
                     auto& ts = this->tours_start;
 
-                    const unsigned customers_n = customers_n;
+                    const unsigned customers_n = customers - 2;
                     for(unsigned not_used = 0; not_used < customers_n; ++not_used) {
                         
                         double old_cost = 0;
