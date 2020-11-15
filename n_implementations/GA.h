@@ -9,7 +9,7 @@ struct GeneticAlgorithmData {
     static constexpr unsigned population_size = 500;
     static constexpr unsigned mutator = INVERSION;
     static constexpr unsigned crossover = TWO_POINT;
-    static constexpr double timelimit = 10.1;
+    static constexpr double timelimit = 30.1;
     static constexpr unsigned mut_rate = 2;
 };
 
@@ -27,7 +27,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 #endif
     //schema genetico
     
-    const double timelimit = 
+    double timelimit = 
         (GeneticAlgorithmData::timelimit / GeneticAlgorithmData::tries) 
       * ( (instance.factor_valuations) + 1);
     

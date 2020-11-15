@@ -709,6 +709,8 @@ class Individual {
                 i += val > customers-vehicles-2-i ? val-i : val;
             }
 
+            improved_called = false;
+            needs_to_update_cost = true;
         }
         
         void improvement_algorithm()   {
@@ -794,7 +796,9 @@ class Individual {
 
                         //cout << "(";
 
-                        while(ts.size() < vehicles) {
+                        for(unsigned not_used = 0; 
+                            ts.size() < vehicles && not_used < ts.size(); 
+                            ++not_used) {
                             
                             unsigned k = 0;
                             for(auto it = ts.begin(); it != ts.end(); ++it) {
