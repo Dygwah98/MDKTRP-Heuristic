@@ -33,6 +33,11 @@ class Timer {
         std::chrono::steady_clock::time_point begin;
         std::chrono::steady_clock::time_point end;
 
+        
+
+    public:
+        Timer() {}
+
         void measure_time(Individual& i, 
             void(Individual::*function)() ) {
             
@@ -49,8 +54,9 @@ class Timer {
             calls += 1;
         }
 
-        void measure_time(Individual& i, const Individual& p1, const Individual& p2, 
-            void(Individual::*function)(const Individual&, const Individual&) )  {
+        void measure_time(Individual& i, void(Individual::*function)(const Individual&, const Individual&),
+                    const Individual& p1, const Individual& p2 
+             )  {
             
             begin = std::chrono::steady_clock::now();
 
@@ -65,8 +71,9 @@ class Timer {
             calls += 1;
         }
 
-        void measure_time(Individual& i, const Individual& p1, const Individual& p2, const Individual& best_individual, 
-            void(Individual::*function)(const Individual&, const Individual&, const Individual&)  ) {
+        void measure_time(Individual& i, void(Individual::*function)(const Individual&, const Individual&, const Individual&),
+                        const Individual& p1, const Individual& p2, const Individual& best_individual
+              ) {
             
             begin = std::chrono::steady_clock::now();
 
@@ -80,10 +87,7 @@ class Timer {
             
             calls += 1;
         }
-
-    public:
-        Timer() {}
-
+/*
         void random_initialize(Individual& i) {
             measure_time(i, &Individual::random_initialize);
         }
@@ -139,7 +143,7 @@ class Timer {
         void improvement_algorithm(Individual& i) {
             measure_time(i, &Individual::improvement_algorithm);
         }
-
+*/
         double getTotalTime() {
             
             return time;

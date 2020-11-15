@@ -16,9 +16,9 @@ class AlgorithmContainer {
         unsigned customers;
         double **coordinate_matrix;
         distTable distances;
-    #ifndef BASE
+#ifndef BASE
         double *activation_costs = nullptr;
-    #endif
+#endif
         const string dir = "./dat/";
         unsigned dpc;
         
@@ -29,6 +29,9 @@ class AlgorithmContainer {
 
         void execute(const TestInstances& t) {
             
+            double mean_gap = 0.0;
+            double gap_counter = 0;
+
             for(auto& instance : t.tests) {
     
                 depots = 0;
@@ -47,32 +50,28 @@ class AlgorithmContainer {
 
                 std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
                 
-                //cout << file << "\n";
+
                 read_file_ruiz(file, depots, customers, coordinate_matrix);
                 dpc = depots + customers;
-/*
-                for(unsigned i = 0; i < depots + customers; ++i) {
-                    for(unsigned j = 0; j < 2; ++j)
-                        cout << coordinate_matrix[i][j] << " ";
-                    cout << endl;
-                }
-*/                
+             
                 distances.clear();
-            #ifndef BASE
+#ifndef BASE
                 calculate_activation_costs(instance.vehicles);
-                Individual::setEnvironment(instance.vehicles, customers, depots, activation_costs, coordinate_matrix, &distances);
-            #else
-                Individual::setEnvironment(instance.vehicles, customers, depots, coordinate_matrix, &distances);
-            #endif
+                Individual::setEnv(instance.vehicles, customers, depots, activation_costs, coordinate_matrix, &distances);
+#else
+                Individual::setEnv(instance.vehicles, customers, depots, coordinate_matrix, &distances);
+#endif
                 Individual startingIndividual;
-                //cout << "   starting algorithm...\n";
+                
                 r = (*algorithm)(instance, startingIndividual);
 
                 free_matrix(coordinate_matrix, depots+customers);
 
-            #ifndef BASE
+                Individual::freeEnv();
+
+#ifndef BASE
                 delete[] activation_costs;
-            #endif
+#endif
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
@@ -81,13 +80,20 @@ class AlgorithmContainer {
                         <std::chrono::milliseconds>(end - begin)
                         .count() / (double)1000 << " : ";
 #ifdef BASE 
-                if(r != 0)
+                if(r != 0) {
+
+                    gap_counter += 1;
+                    mean_gap += 100.0 * ((r - instance.known_solution) /r );
+                    
                     cout << 100.0 * ((r - instance.known_solution) /r );
+                }
                 else
                     cout << 0;
 #endif
                 cout << "\n";
             }
+
+            cout << "GAP medio : " << mean_gap / gap_counter << "\n";
         }
 
         inline unsigned getCustomerIndex(unsigned x, unsigned y) {
@@ -98,7 +104,7 @@ class AlgorithmContainer {
             return x*customers + y;
         }
 
-    #ifndef BASE
+#ifndef BASE
         void calculate_activation_costs(unsigned vehicles) {
 
             activation_costs = new double[depots];
@@ -147,7 +153,7 @@ class AlgorithmContainer {
             //    cout << "       depot: " << i << " " << activation_costs[i] << endl;
             //}
         }
-    #endif
+#endif
 
         double getResult() const { return r; }
 };

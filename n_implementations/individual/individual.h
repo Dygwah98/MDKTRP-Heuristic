@@ -30,7 +30,7 @@ class Individual {
 	        tours_start()
         {
             //cout << "           default constructor called\n";
-            random_initialize();
+            //random_initialize();
         }
 
         Individual(const Individual& o):
@@ -1041,7 +1041,7 @@ class Individual {
 
         }
 
-        static void setEnvironment(unsigned v, unsigned c, unsigned d, 
+        static void setEnv(unsigned v, unsigned c, unsigned d, 
 #ifndef BASE
                                     double *a, 
 #endif
@@ -1055,6 +1055,16 @@ class Individual {
 #endif
             coordinate_matrix = m;
             distance_table = t;
+
+            best_depots = new unsigned[c];
+            for(unsigned i = 0; i < c; ++i)
+                best_depots[i] = d;
+
+        }
+
+        static void freeEnv() {
+
+            delete[] best_depots;
         }
 
     private:
@@ -1076,6 +1086,8 @@ class Individual {
         inline static double **coordinate_matrix;
         //tabella di hash contente le distanze node <-> customer
         inline static distTable* distance_table;
+        //conserva il depot migliore per ogni cliente
+        inline static unsigned* best_depots;
         //giant tour
         unsigned* tours;
         //associa ad ogni inizio subtour il suo depot
@@ -1125,6 +1137,9 @@ class Individual {
 
         unsigned optimizeDepot(const unsigned node_position) {
 
+            if(best_depots[ tours[node_position] ] != depots)
+                return best_depots[ tours[node_position] ];
+
             distTable& dt = *Individual::distance_table;
             auto& ts = this->tours_start;
 #ifndef BASE
@@ -1162,6 +1177,8 @@ class Individual {
                 
 #endif
             }
+
+            best_depots[ tours[node_position] ] = depot;
 
             return depot;
 

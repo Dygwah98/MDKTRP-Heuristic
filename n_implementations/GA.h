@@ -9,7 +9,7 @@ struct GeneticAlgorithmData {
     static constexpr unsigned population_size = 500;
     static constexpr unsigned mutator = SWAP2;
     static constexpr unsigned crossover = TWO_POINT;
-    static constexpr double timelimit = 60.1;
+    static constexpr double timelimit = 10.1;
     static constexpr unsigned mut_rate = 2;
 };
 
@@ -27,7 +27,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 #endif
     //schema genetico
     
-    const double timelimit = GeneticAlgorithmData::timelimit / GeneticAlgorithmData::tries;
+    const double timelimit = (GeneticAlgorithmData::timelimit / GeneticAlgorithmData::tries);
     const unsigned popsize = GeneticAlgorithmData::population_size;
     
     double cost = std::numeric_limits<double>::max();
@@ -35,7 +35,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
     Individual best_individual(ind);
 #ifdef PRINT    
-    initialize.random_initialize(best_individual);
+    initialize.measure_time(best_individual, &Individual::random_initialize);
 #else
     best_individual.random_initialize();
 #endif
@@ -63,9 +63,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         for (Individual &i : individuals_original)
         {
 #ifdef PRINT
-            initialize.random_initialize(i);
+            initialize.measure_time(i, &Individual::random_initialize);
 
-            costs.calculate_cost(i);
+            costs.measure_time(i, &Individual::calculate_cost);
 #else
             i.random_initialize();
             i.calculate_cost();
@@ -133,8 +133,13 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 for (; i < s; ++i) {
                     new_generation[ I[i] ] = individuals[ I[i] ];
+#ifdef PRINT
+                    initialize.measure_time(new_generation[ I[i] ], &Individual::random_restart);
+                    repair.measure_time(new_generation[ I[i] ], &Individual::repair);
+#else
                     new_generation[ I[i] ].random_restart();
                     new_generation[ I[i] ].repair();
+#endif
                     new_mean_cost += new_generation[i].get_cost();
                 }
 
@@ -166,23 +171,28 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 {
                 case 0:
 
-                    crossover.one_point_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ]);
+                    crossover.measure_time(new_generation[ I[i] ], &Individual::one_point_cross_over, 
+                                            individuals[ I[p1] ], individuals[ I[p2] ]);
                     break;
                 case 1:
 
-                    crossover.two_point_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ]);
+                    crossover.measure_time(new_generation[ I[i] ], &Individual::two_point_cross_over,
+                                            individuals[ I[p1] ], individuals[ I[p2] ]);
                     break;
                 case 2:
 
-                    crossover.best_order_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ], best_individual);
+                    crossover.measure_time(new_generation[ I[i] ], &Individual::best_order_cross_over,
+                                            individuals[ I[p1] ], individuals[ I[p2] ], best_individual);
                     break;
                 case 3:
 
-                    crossover.position_based_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ]);
+                    crossover.measure_time(new_generation[ I[i] ], &Individual::position_based_cross_over,
+                                            individuals[ I[p1] ], individuals[ I[p2] ]);
                     break;
                 case 4:
 
-                    crossover.uniform_crossover(new_generation[ I[i] ], individuals[ I[p1] ], individuals[ I[p2] ]);
+                    crossover.measure_time(new_generation[ I[i] ], &Individual::uniform_cross_over, 
+                                            individuals[ I[p1] ], individuals[ I[p2] ]);
                     break;
                 }
 
@@ -193,33 +203,33 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     {
                     case 0:
 
-                        mutation.swap2(new_generation[ I[i] ]);
+                        mutation.measure_time(new_generation[ I[i] ], &Individual::swap2);
                         break;
                     case 1:
 
-                        mutation.swap3(new_generation[ I[i] ]);
+                        mutation.measure_time(new_generation[ I[i] ], &Individual::swap3);
                         break;
                     case 2:
 
-                        mutation.scramble(new_generation[ I[i] ]);
+                        mutation.measure_time(new_generation[ I[i] ], &Individual::scramble);
 
                         break;
                     case 3:
 
-                        mutation.inversion(new_generation[ I[i] ]);
+                        mutation.measure_time(new_generation[ I[i] ], &Individual::inversion);
                         break;
                     case 4:
 
-                        mutation.insertion(new_generation[ I[i] ]);
+                        mutation.measure_time(new_generation[ I[i] ], &Individual::insertion);
                         break;
                     }
                 }
 
-                repair.repair(new_generation[ I[i] ]);
+                repair.measure_time(new_generation[ I[i] ], &Individual::repair);
 
-                improvement.improvement_algorithm(new_generation[ I[i] ]);
+                improvement.measure_time(new_generation[ I[i] ], &Individual::improvement_algorithm);
 
-                costs.calculate_cost( new_generation[ I[i] ] );
+                costs.measure_time( new_generation[ I[i] ], &Individual::calculate_cost );
 #else
                 switch (GeneticAlgorithmData::crossover)
                 {

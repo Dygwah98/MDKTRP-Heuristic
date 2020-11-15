@@ -36,7 +36,7 @@ class AlgorithmSelector {
                 
                 cout << "seed " << seed << endl;
                 cout << instance.names.at(key) << endl;
-                cout << "Instance : cost : time : costGAP" << endl;
+                cout << "Instance : cost : time : GAP" << endl;
                 choice.execute(test);
 
             }
