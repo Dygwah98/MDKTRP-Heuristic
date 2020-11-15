@@ -30,7 +30,10 @@ class Individual {
 	        tours_start()
         {
             //cout << "           default constructor called\n";
-            //random_initialize();
+            for(unsigned i = 0; i < customers; ++i)
+                tours[i] = i;
+            
+            tours_start[0] = 0;
         }
 
         Individual(const Individual& o):
