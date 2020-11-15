@@ -9,7 +9,7 @@ struct GeneticAlgorithmData {
     static constexpr unsigned population_size = 500;
     static constexpr unsigned mutator = SWAP2;
     static constexpr unsigned crossover = TWO_POINT;
-    static constexpr double timelimit = 10.1;
+    static constexpr double timelimit = 60.1;
     static constexpr unsigned mut_rate = 2;
 };
 
@@ -129,9 +129,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             //elitismo al 10%
             unsigned i = 0;
 
-            if(repeated == 10000) {
-                
-                cout << "restarting...\n";
+            if(repeated == 10) {
 
                 for (; i < s; ++i) {
                     new_generation[ I[i] ] = individuals[ I[i] ];

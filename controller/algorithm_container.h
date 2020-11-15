@@ -76,8 +76,17 @@ class AlgorithmContainer {
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-                cout << instance.prefix + number_instance << " : " << r <<  " : " << (double)std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / (double)1000 << "\n";
-                
+                cout << instance.prefix + number_instance << " : " << r <<  " : ";
+                cout << (double)std::chrono::duration_cast
+                        <std::chrono::milliseconds>(end - begin)
+                        .count() / (double)1000 << " : ";
+#ifdef BASE 
+                if(r != 0)
+                    cout << 100.0 * ((r - instance.known_solution) /r );
+                else
+                    cout << 0;
+#endif
+                cout << "\n";
             }
         }
 
