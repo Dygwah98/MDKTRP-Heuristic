@@ -13,8 +13,7 @@ class AlgorithmSelector {
     private:
         const map<unsigned, AlgorithmContainer > funcs = {
             {0, AlgorithmContainer(GeneticAlgorithm)         },
-            {1, AlgorithmContainer(AdaptiveGeneticAlgorithm) },
-            {2, AlgorithmContainer(AllEqualGeneticAlgorithm) }
+            {1, AlgorithmContainer(AdaptiveGeneticAlgorithm) }
         };
 
         const map<unsigned, string > names = {
@@ -36,7 +35,7 @@ class AlgorithmSelector {
                 
                 cout << "seed " << seed << endl;
                 cout << instance.names.at(key) << endl;
-                cout << "Instance : cost : time : GAP" << endl;
+                cout << "Instance : cost : time" << endl;
                 choice.execute(test);
 
             }

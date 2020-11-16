@@ -12,9 +12,12 @@ struct GeneticAlgorithmData {
 #ifdef TIMELIMIT
     static constexpr double timelimit = 30.0;
 #else 
-    static constexpr unsigned max_evaluations_GA = 3000000 / 3; 
+    static constexpr unsigned max_evaluations_GA = 30000000; 
 #endif
-    static constexpr unsigned mut_rate = 10; //va letto: 1/mut_rate prob di mutazione
+    //va letto: 1/mut_rate prob di mutazione
+    static constexpr unsigned mut_rate = 6; 
+    //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
+    static constexpr unsigned mut_update_window = 100;
 };
 
 double GeneticAlgorithm(const Test& instance, const Individual& ind) {
@@ -63,8 +66,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     for(unsigned i = 0; i < popsize; ++i)
         I.push_back(i);
 
-    //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
-    const unsigned mut_update_window = 100;
+    const unsigned mut_update_window = GeneticAlgorithmData::mut_update_window;
     
     const unsigned max_repeated = (mut_rate * mut_update_window)*2;
 
@@ -120,7 +122,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         std::uniform_int_distribution<unsigned> random_parent(1, popsize/2 - 2);
         std::uniform_int_distribution<unsigned> random_mut(1, mut_rate);
         std::uniform_int_distribution<unsigned> random_choice(0, 1);
-        std::uniform_int_distribution<unsigned> substitution(0, 10);
 
         std::vector<Individual> new_generation_original;
         new_generation_original.assign(popsize, ind);
@@ -177,8 +178,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     new_mean_cost += new_generation[i].get_cost();
                 }
 
-                if(repeated == max_repeated)
+                if(repeated == max_repeated) {
                     repeated = 0;
+                }
 
             } else {
                 
@@ -233,12 +235,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 repair.measure_time(new_generation[ I[i] ], &Individual::repair);
                 repair.measure_time(spare_son, &Individual::repair);
-
-                costs.measure_time(new_generation[ I[i] ], &Individual::calculate_cost);
-                costs.measure_time(spare_son, &Individual::calculate_cost);
-
-                if(spare_son.get_cost() < new_generation[ I[i] ].get_cost())
-                    new_generation[ I[i] ] = spare_son;
 
                 //mutazione genetica solo con un certo rateo
                 if (random_mut(mt) == 1)

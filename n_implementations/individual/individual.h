@@ -855,7 +855,7 @@ class Individual {
 
                     if(ts.size() < vehicles) {
 #ifndef BASE
-                        double *const ac = Individual::activation_costs;
+                        const double *const ac = Individual::activation_costs;
 #endif                        
                         const unsigned size = vehicles;
 
@@ -880,7 +880,7 @@ class Individual {
                                 pos[k] = start;
                                 len[k] = calculate_tour_cost(it->first, end, false);
 #ifndef BASE
-                                len[k] += ac[it->second];
+                                //len[k] += ac[it->second];
 #endif
                                 ++k;
                             }
@@ -903,8 +903,8 @@ class Individual {
                             unsigned new_start = pos[0] + (end - pos[0])/2;
                             double new_cost = calculate_tour_cost(new_start, end, false) + calculate_tour_cost(pos[0], new_start, false);
 #ifndef BASE
-                            new_cost += ac[ ( ts.find(pos[0]) )->second ];
-                            new_cost += ac[ best_depots[ tours[new_start] ] ];
+                            //new_cost += ac[ ( ts.find(pos[0]) )->second ];
+                            //new_cost += ac[ best_depots[ tours[new_start] ] ];
 #endif                            
                             if(new_cost < len[0] ) {
                                 ts[new_start] = best_depots[ tours[new_start] ];
@@ -1020,7 +1020,7 @@ class Individual {
 
                 if(ts.size() > vehicles) {
 #ifndef BASE
-                    double *const ac = activation_costs;
+                    const double *const ac = activation_costs;
 #endif
                     const unsigned size = ts.size();
 
@@ -1044,7 +1044,7 @@ class Individual {
                             pos[k] = start;
                             len[k] = calculate_tour_cost(prev_it->first, end, false);
 #ifndef BASE
-                                len[k] += ac[it->second];
+                            //len[k] += ac[it->second];
 #endif
 
                             ++k;
@@ -1177,7 +1177,7 @@ class Individual {
 //                return true;
 //            }
 
-            return (int)cost < (int)o.cost;
+            return (unsigned)cost < (unsigned)o.cost;
         }
 
         inline bool operator==(const Individual& o) const   {
@@ -1187,7 +1187,7 @@ class Individual {
 //            if(this == &o)
 //                return true;
 
-            return (int)cost == (int)o.cost;
+            return (unsigned)cost == (unsigned)o.cost;
 
         }
 
@@ -1206,7 +1206,6 @@ class Individual {
             best_depots = new unsigned[c];
             for(unsigned i = 0; i < c; ++i)
                 optimizeDepot(i);
-
         }
 
         static void freeEnv() {
@@ -1297,7 +1296,7 @@ class Individual {
 
             const unsigned first = node;
 #ifndef BASE
-            double oval = ac[0] + dt.at(  getDepotIndex(0, first ) );
+            double oval = ac[0] + getDepotCost(0, first );
 #else
             double oval = getDepotCost(0, first);
 #endif
@@ -1306,7 +1305,7 @@ class Individual {
             for(unsigned i = 1; i < depots; ++i) {
 #ifndef BASE        
 
-                const double nval = ac[i] + dt.at( getDepotIndex(i, first) );
+                const double nval = ac[i] + getDepotCost(i, first);
 
                 //se il costo complessivo è minore, si effettua lo swap di depot
                 if(nval < oval) {
@@ -1336,8 +1335,6 @@ class Individual {
 
             activation_costs = new double[depots];
 
-            auto& distances = *Individual::distance_table;
-
             //per ogni depot
             for(unsigned i = 0; i < depots; ++i) {
 
@@ -1346,7 +1343,7 @@ class Individual {
                 double max_cost = getDepotCost(i, 0);
                 
                 mean += max_cost;
-                
+                cout << mean << " " << max_cost << "\n";
                 //per ogni cliente dopo il primo
                 for(unsigned j = 1; j < customers; ++j) {
 
@@ -1358,15 +1355,18 @@ class Individual {
                     if(cost > max_cost) {
                         max_cost = cost;
                     }
+
+                    cout << mean << " " << max_cost << "\n";
                 }
 
                 //calcolo della media e formula del costo d'attivazione
                 mean /= (double)customers;
-                double result = (max_cost - mean) * customers;
+                double result = (max_cost - mean) * (double)customers;
 
                 //il costo d'attivazione viene salvato
-                activation_costs[i] = result/vehicles;
+                activation_costs[i] = result/(double)vehicles;
 
+                cout << "RESULT: " << activation_costs[i] << endl;
             }
         }
 #endif
@@ -1377,7 +1377,7 @@ class Individual {
             auto& ts = this->tours_start;
             auto& dc = this->distance_table;
 #ifndef BASE
-            double *const ac = this->activation_costs;
+            const double *const ac = this->activation_costs;
 #endif
 
             unsigned start = start_pos;
@@ -1437,7 +1437,7 @@ class Individual {
             auto& dt = this->distance_table;
             auto& ts = this->tours_start;
 #ifndef BASE
-            double *const ac = this->activation_costs;
+            const double *const ac = this->activation_costs;
 #endif
 
             for( unsigned i = 1; i < customers; ++i ) {
