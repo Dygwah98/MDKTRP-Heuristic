@@ -10,11 +10,11 @@ struct GeneticAlgorithmData {
     static constexpr unsigned mutator = SCRAMBLE;
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
-    static constexpr double timelimit = 10.0;
+    static constexpr double timelimit = 30.0;
 #else 
-    static constexpr unsigned max_evaluations_GA = 40000000 / 3; 
+    static constexpr unsigned max_evaluations_GA = 3000000 / 3; 
 #endif
-    static constexpr unsigned mut_rate = 7; //va letto: 1/mut_rate prob di mutazione
+    static constexpr unsigned mut_rate = 10; //va letto: 1/mut_rate prob di mutazione
 };
 
 double GeneticAlgorithm(const Test& instance, const Individual& ind) {
@@ -62,6 +62,11 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     std::vector<unsigned> I;
     for(unsigned i = 0; i < popsize; ++i)
         I.push_back(i);
+
+    //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
+    const unsigned mut_update_window = 100;
+    
+    const unsigned max_repeated = (mut_rate * mut_update_window)*2;
 
     for (unsigned tries_i = 0; tries_i < max_tries; ++tries_i)
     {
@@ -149,11 +154,11 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
             //elitismo al 10%
             unsigned i = 0;
-            if(repeated == 500) {
+            if(repeated % mut_update_window == 0) {
 
-                if(mut_rate-1 > 0) {
+                if(mut_rate-1 >= 2) {
                     --mut_rate;
-                    random_mut = std::uniform_int_distribution<unsigned>(0, mut_rate);
+                    random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
                 }
 
                 for (; i < s/2; ++i) {
@@ -172,7 +177,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     new_mean_cost += new_generation[i].get_cost();
                 }
 
-                repeated = 0;
+                if(repeated == max_repeated)
+                    repeated = 0;
 
             } else {
                 

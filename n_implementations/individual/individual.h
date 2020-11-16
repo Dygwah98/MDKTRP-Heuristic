@@ -798,6 +798,59 @@ class Individual {
                         }
                     }
 
+                    //si valuta se swappare il primo e l'ultimo customer
+                    {
+                        double old_cost = 0;
+                        double new_cost = 0;
+
+                        const unsigned in_broken = 0;
+                        const unsigned in_joined = customers-1;
+                        const unsigned other_chain = customers-2;
+
+                        const unsigned chain = tours[1];
+                        const unsigned candidate = tours[in_broken];
+                        const unsigned candidate2 = tours[in_joined];
+                        const unsigned chain2 = tours[customers-2];
+
+                        if(ts.find(in_broken) == ts.end()) {
+
+                            old_cost += getCustomerCost(chain, candidate);
+                            new_cost += getCustomerCost(chain, candidate2);
+                            
+                            if(ts.find(other_chain) == ts.end()) {
+                                old_cost += getCustomerCost(candidate2, chain2);
+                                new_cost += getCustomerCost(candidate, chain2);
+                            }
+
+                        } else {
+
+                            const unsigned depot = ts.at(in_broken);
+                            old_cost += getDepotCost(depot, candidate);
+                            new_cost += getDepotCost(depot, candidate2);
+                        
+                            if(ts.find(other_chain) == ts.end()) {
+                                old_cost += getCustomerCost(candidate2, chain2);
+                                new_cost += getCustomerCost(candidate, chain2);
+                            }
+                        }
+
+                        if(old_cost - new_cost > 0) {
+
+                            if(ts.find(in_broken) != ts.end()) {
+                                ts[in_broken] = best_depots[ tours[in_joined] ];
+                            }
+
+                            if(ts.find(in_joined) != ts.end()) {
+                                ts[in_joined] = best_depots[ tours[in_broken] ];
+                            }
+
+                            const unsigned node = tours[in_broken]; 
+
+                            tours[in_broken] = tours[in_joined];
+                            tours[in_joined] = node;
+                        }
+                    }
+
         // seconda parte: tento di aumentare il numero di subtours
 
                     if(ts.size() < vehicles) {
