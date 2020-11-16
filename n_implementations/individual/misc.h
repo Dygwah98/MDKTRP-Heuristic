@@ -145,7 +145,7 @@ class Metrics {
             repeated(0),
             p()
         {
-            u = std::uniform_int_distribution<unsigned>(1, popsize-3);
+            u = std::uniform_int_distribution<unsigned>(1, popsize/2-3);
         }
 
         inline unsigned getFirstParent() {
@@ -154,7 +154,7 @@ class Metrics {
                 return u(mt);
             } else {
                 if(repeated % 500 == 0) {
-                    p = std::geometric_distribution<unsigned>( 1.0 - (repeated)*0.000475 );
+                    p = std::geometric_distribution<unsigned>( 1.0 - double(repeated)*0.00018 );
                 }
                 
                 return (p(mt)/max_prob) * (popsize-1);
@@ -164,7 +164,7 @@ class Metrics {
         inline unsigned getSecondParent(unsigned first) {
 
             if(repeated < 500) {
-                std::uniform_int_distribution<unsigned> left(1, popsize-1-first);
+                std::uniform_int_distribution<unsigned> left(1, popsize/2-1-first);
                 return left(mt) + first;
             
             } else {
@@ -188,11 +188,15 @@ class Metrics {
         }
 
         inline void increaseRepeated() {
-            ++repeated;
+            repeated = repeated < 5000 ? ++repeated : 0;
         }
 
         inline void resetRepeated() {
             repeated = 0;
+        }
+
+        inline unsigned getRepeated() {
+            return repeated;
         }
 }; 
 

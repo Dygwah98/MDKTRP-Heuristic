@@ -14,7 +14,7 @@ struct GeneticAlgorithmData {
 #else 
     static constexpr unsigned max_evaluations_GA = 40000000 / 3; 
 #endif
-    static constexpr unsigned mut_rate = 10; //va letto: [0, 10] in N, qundi 0.1
+    static constexpr unsigned mut_rate = 7; //va letto: 1/mut_rate prob di mutazione
 };
 
 double GeneticAlgorithm(const Test& instance, const Individual& ind) {
@@ -113,7 +113,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         const unsigned s  = (10 * popsize) / 100;
         
         std::uniform_int_distribution<unsigned> random_parent(1, popsize/2 - 2);
-        std::uniform_int_distribution<unsigned> random_mut(0, mut_rate);
+        std::uniform_int_distribution<unsigned> random_mut(1, mut_rate);
         std::uniform_int_distribution<unsigned> random_choice(0, 1);
         std::uniform_int_distribution<unsigned> substitution(0, 10);
 
@@ -235,7 +235,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     new_generation[ I[i] ] = spare_son;
 
                 //mutazione genetica solo con un certo rateo
-                if (random_mut(mt) == 0)
+                if (random_mut(mt) == 1)
                 {
                     switch (GeneticAlgorithmData::mutator)
                     {
@@ -301,7 +301,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 spare_son.repair();
 
                 //mutazione genetica solo con un certo rateo
-                if (random_mut(mt) == 0)
+                if (random_mut(mt) == 1)
                 {
                     switch (GeneticAlgorithmData::mutator)
                     {
