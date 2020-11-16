@@ -73,9 +73,9 @@ class AlgorithmContainer {
                 if(instance.known_solution != 0) {
 
                     gap_counter += 1;
-                    mean_gap += 100.0 * ((r - instance.known_solution) /r );
+                    mean_gap += 100.0 * ((floor(r) - instance.known_solution) /instance.known_solution );
                     
-                    cout << 100.0 * ((r - instance.known_solution) /r );
+                    cout << 100.0 * ((floor(r) - instance.known_solution) /instance.known_solution );
                 }
                 else
                     cout << 0;
