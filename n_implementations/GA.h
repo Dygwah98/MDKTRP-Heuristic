@@ -10,7 +10,7 @@ struct GeneticAlgorithmData {
     static constexpr unsigned mutator = SCRAMBLE;
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
-    static constexpr double timelimit = 10.0;
+    static constexpr double timelimit = 40.0;
 #else 
     static constexpr unsigned max_evaluations_GA = 40000000 / 3; 
 #endif
@@ -111,7 +111,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         const unsigned s  = (10 * popsize) / 100;
         
-        std::uniform_int_distribution<unsigned> random_parent(1, popsize/2 - 2);
+        std::uniform_int_distribution<unsigned> random_parent(1, popsize - 2);
         std::uniform_int_distribution<unsigned> random_mut(0, GeneticAlgorithmData::mut_rate);
         std::uniform_int_distribution<unsigned> random_choice(0, 1);
         std::uniform_int_distribution<unsigned> substitution(0, 10);
@@ -148,9 +148,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
             //elitismo al 10%
             unsigned i = 0;
-            if(repeated == 500) {
-                for (; i < s/2; ++i) {
-                    new_generation[ I[i] ] = individuals[ I[i] ];
+                
+            for (; i < s; ++i) {
+                new_generation[ I[i] ] = individuals[ I[i] ];
+                new_mean_cost += new_generation[i].get_cost();
+            }
+            
+            //cout << "       iteration " << g << ": elite population processed\n";
+            if(repeated == 5000) {
+                for (; i < popsize; ++i) {
 #ifdef PRINT
                     initialize.measure_time(new_generation[ I[i] ], &Individual::random_restart);
                     repair.measure_time(new_generation[ I[i] ], &Individual::repair);
@@ -161,228 +167,215 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     new_mean_cost += new_generation[i].get_cost();
                 }
 
-                for (; i < s; ++i) {
-                    new_generation[ I[i] ] = individuals[ I[i] ];
-                    new_mean_cost += new_generation[i].get_cost();
-                }
-
                 repeated = 0;
 
             } else {
-                
-                for (; i < s; ++i) {
-                    new_generation[ I[i] ] = individuals[ I[i] ];
+                //dobbiamo inserire il rimanente 90% della popolazione
+                for (; i < popsize; ++i)
+                {
+                            
+                    p1 = random_parent(mt);
+                    std::uniform_int_distribution<unsigned> left(0, p1-1);
+                    std::uniform_int_distribution<unsigned> right(p1 + 1, popsize - 1);
+                    if(random_choice(mt))
+                        p2 = left(mt);
+                    else
+                        p2 = right(mt);
+#ifdef PRINT
+                    switch (GeneticAlgorithmData::crossover)
+                    {
+                    case 0:
+
+                        spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::one_point_cross_over, 
+                                                individuals[ I[p1] ], individuals[ I[p2] ]);
+                        break;
+                    case 1:
+
+                        spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::two_point_cross_over,
+                                                individuals[ I[p1] ], individuals[ I[p2] ]);
+                        break;
+                    case 2:
+
+                        spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::best_order_cross_over,
+                                                individuals[ I[p1] ], individuals[ I[p2] ], best_individual);
+                        break;
+                    case 3:
+
+                        spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::position_based_cross_over,
+                                                individuals[ I[p1] ], individuals[ I[p2] ]);
+                        break;
+                    case 4:
+
+                        spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::uniform_cross_over, 
+                                                individuals[ I[p1] ], individuals[ I[p2] ]);
+                        break;
+                    }
+
+                    repair.measure_time(new_generation[ I[i] ], &Individual::repair);
+                    repair.measure_time(spare_son, &Individual::repair);
+
+                    costs.measure_time(new_generation[ I[i] ], &Individual::calculate_cost);
+                    costs.measure_time(spare_son, &Individual::calculate_cost);
+
+                    if(spare_son.get_cost() < new_generation[ I[i] ].get_cost())
+                        new_generation[ I[i] ] = spare_son;
+
+                    //mutazione genetica solo con un certo rateo
+                    if (random_mut(mt) == 0)
+                    {
+                        switch (GeneticAlgorithmData::mutator)
+                        {
+                        case 0:
+
+                            mutation.measure_time(new_generation[ I[i] ], &Individual::swap2);
+                            mutation.measure_time(spare_son, &Individual::swap2);
+                            break;
+                        case 1:
+
+                            mutation.measure_time(new_generation[ I[i] ], &Individual::swap3);
+                            mutation.measure_time(spare_son, &Individual::swap3);
+                            break;
+                        case 2:
+
+                            mutation.measure_time(new_generation[ I[i] ], &Individual::scramble);
+                            mutation.measure_time(spare_son, &Individual::scramble);
+                            break;
+                        case 3:
+
+                            mutation.measure_time(new_generation[ I[i] ], &Individual::inversion);
+                            mutation.measure_time(spare_son, &Individual::inversion);
+                            break;
+                        case 4:
+
+                            mutation.measure_time(new_generation[ I[i] ], &Individual::insertion);
+                            mutation.measure_time(spare_son, &Individual::insertion);
+                            break;
+                        }
+                    }
+
+                    improvement.measure_time(new_generation[ I[i] ], &Individual::improvement_algorithm);
+                    improvement.measure_time(spare_son, &Individual::improvement_algorithm);
+
+                    costs.measure_time( new_generation[ I[i] ], &Individual::calculate_cost );
+                    costs.measure_time( spare_son, &Individual::calculate_cost );
+#else
+                    switch (GeneticAlgorithmData::crossover)
+                    {
+                    case 0:
+
+                        spare_son = new_generation[ I[i] ].one_point_cross_over(individuals[ I[p1] ], individuals[ I[p2] ]);
+                        break;
+                    case 1:
+
+                        spare_son = new_generation[ I[i] ].two_point_cross_over(individuals[ I[p1] ], individuals[ I[p2] ]);
+                        break;
+                    case 2:
+
+                        spare_son = new_generation[ I[i] ].best_order_cross_over(individuals[ I[p1] ], individuals[ I[p2] ], best_individual);
+                        break;
+                    case 3:
+
+                        spare_son = new_generation[ I[i] ].position_based_cross_over(individuals[ I[p1] ], individuals[ I[p2] ]);
+                        break;
+                    case 4:
+
+                        spare_son =  new_generation[ I[i] ].uniform_cross_over(individuals[ I[p1] ], individuals[ I[p2] ]);
+                        break;
+                    }
+
+                    new_generation[ I[i] ].repair();
+                    spare_son.repair();
+
+                    //mutazione genetica solo con un certo rateo
+                    if (random_mut(mt) == 0)
+                    {
+                        switch (GeneticAlgorithmData::mutator)
+                        {
+                        case 0:
+
+                            new_generation[ I[i] ].swap2();
+                            spare_son.swap2();
+                            break;
+                        case 1:
+
+                            new_generation[ I[i] ].swap3();
+                            spare_son.swap3();
+                            break;
+                        case 2:
+                            
+                            new_generation[ I[i] ].scramble();
+                            spare_son.scramble();
+                            break;
+                        case 3:
+
+                            new_generation[ I[i] ].inversion();
+                            spare_son.inversion();
+                            break;
+                        case 4:
+
+                            new_generation[ I[i] ].insertion();
+                            spare_son.insertion();
+                            break;
+                        }
+                    }
+
+                    new_generation[ I[i] ].improvement_algorithm();
+                    spare_son.improvement_algorithm();
+
+                    new_generation[ I[i] ].calculate_cost();
+                    spare_son.calculate_cost();
+#endif
+
+                    if(spare_son.get_cost() < new_generation[ I[i] ].get_cost()) {
+                        new_generation[ I[i] ] = spare_son;
+                    }
+
                     new_mean_cost += new_generation[i].get_cost();
-                }
-            }
 
-            //cout << "       iteration " << g << ": elite population processed\n";
+                    if (new_generation[ I[i] ].get_cost() < best_cost)
+                    {
+                        best_cost = new_generation[ I[i] ].get_cost();
+                        best_individual = new_generation[ I[i] ];
+                        repeated = 0;
 
-            //dobbiamo inserire il rimanente 90% della popolazione
-            for (; i < popsize; ++i)
-            {
-                        
-                p1 = random_parent(mt);
-                std::uniform_int_distribution<unsigned> left(0, p1-1);
-                std::uniform_int_distribution<unsigned> right(p1 + 1, popsize - 1);
-                if(random_choice(mt))
-                    p2 = left(mt);
-                else
-                    p2 = right(mt);
+                        if ((unsigned)best_individual.get_cost() == instance.known_solution)
+                        {
 #ifdef PRINT
-                switch (GeneticAlgorithmData::crossover)
-                {
-                case 0:
-
-                    spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::one_point_cross_over, 
-                                            individuals[ I[p1] ], individuals[ I[p2] ]);
-                    break;
-                case 1:
-
-                    spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::two_point_cross_over,
-                                            individuals[ I[p1] ], individuals[ I[p2] ]);
-                    break;
-                case 2:
-
-                    spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::best_order_cross_over,
-                                            individuals[ I[p1] ], individuals[ I[p2] ], best_individual);
-                    break;
-                case 3:
-
-                    spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::position_based_cross_over,
-                                            individuals[ I[p1] ], individuals[ I[p2] ]);
-                    break;
-                case 4:
-
-                    spare_son = crossover.measure_time(new_generation[ I[i] ], &Individual::uniform_cross_over, 
-                                            individuals[ I[p1] ], individuals[ I[p2] ]);
-                    break;
-                }
-
-                repair.measure_time(new_generation[ I[i] ], &Individual::repair);
-                repair.measure_time(spare_son, &Individual::repair);
-
-                costs.measure_time(new_generation[ I[i] ], &Individual::calculate_cost);
-                costs.measure_time(spare_son, &Individual::calculate_cost);
-
-                if(spare_son.get_cost() < new_generation[ I[i] ].get_cost())
-                    new_generation[ I[i] ] = spare_son;
-
-                //mutazione genetica solo con un certo rateo
-                if (random_mut(mt) == 0)
-                {
-                    switch (GeneticAlgorithmData::mutator)
-                    {
-                    case 0:
-
-                        mutation.measure_time(new_generation[ I[i] ], &Individual::swap2);
-                        mutation.measure_time(spare_son, &Individual::swap2);
-                        break;
-                    case 1:
-
-                        mutation.measure_time(new_generation[ I[i] ], &Individual::swap3);
-                        mutation.measure_time(spare_son, &Individual::swap3);
-                        break;
-                    case 2:
-
-                        mutation.measure_time(new_generation[ I[i] ], &Individual::scramble);
-                        mutation.measure_time(spare_son, &Individual::scramble);
-                        break;
-                    case 3:
-
-                        mutation.measure_time(new_generation[ I[i] ], &Individual::inversion);
-                        mutation.measure_time(spare_son, &Individual::inversion);
-                        break;
-                    case 4:
-
-                        mutation.measure_time(new_generation[ I[i] ], &Individual::insertion);
-                        mutation.measure_time(spare_son, &Individual::insertion);
-                        break;
-                    }
-                }
-
-                improvement.measure_time(new_generation[ I[i] ], &Individual::improvement_algorithm);
-                improvement.measure_time(spare_son, &Individual::improvement_algorithm);
-
-                costs.measure_time( new_generation[ I[i] ], &Individual::calculate_cost );
-                costs.measure_time( spare_son, &Individual::calculate_cost );
-#else
-                switch (GeneticAlgorithmData::crossover)
-                {
-                case 0:
-
-                    spare_son = new_generation[ I[i] ].one_point_cross_over(individuals[ I[p1] ], individuals[ I[p2] ]);
-                    break;
-                case 1:
-
-                    spare_son = new_generation[ I[i] ].two_point_cross_over(individuals[ I[p1] ], individuals[ I[p2] ]);
-                    break;
-                case 2:
-
-                    spare_son = new_generation[ I[i] ].best_order_cross_over(individuals[ I[p1] ], individuals[ I[p2] ], best_individual);
-                    break;
-                case 3:
-
-                    spare_son = new_generation[ I[i] ].position_based_cross_over(individuals[ I[p1] ], individuals[ I[p2] ]);
-                    break;
-                case 4:
-
-                    spare_son =  new_generation[ I[i] ].uniform_cross_over(individuals[ I[p1] ], individuals[ I[p2] ]);
-                    break;
-                }
-
-                new_generation[ I[i] ].repair();
-                spare_son.repair();
-
-                //mutazione genetica solo con un certo rateo
-                if (random_mut(mt) == 0)
-                {
-                    switch (GeneticAlgorithmData::mutator)
-                    {
-                    case 0:
-
-                        new_generation[ I[i] ].swap2();
-                        spare_son.swap2();
-                        break;
-                    case 1:
-
-                        new_generation[ I[i] ].swap3();
-                        spare_son.swap3();
-                        break;
-                    case 2:
-                        
-                        new_generation[ I[i] ].scramble();
-                        spare_son.scramble();
-                        break;
-                    case 3:
-
-                        new_generation[ I[i] ].inversion();
-                        spare_son.inversion();
-                        break;
-                    case 4:
-
-                        new_generation[ I[i] ].insertion();
-                        spare_son.insertion();
-                        break;
-                    }
-                }
-
-                new_generation[ I[i] ].improvement_algorithm();
-                spare_son.improvement_algorithm();
-
-                new_generation[ I[i] ].calculate_cost();
-                spare_son.calculate_cost();
+                            printStats();
+                            best_individual.print_tour();
 #endif
-
-                if(spare_son.get_cost() < new_generation[ I[i] ].get_cost()) {
-                    new_generation[ I[i] ] = spare_son;
-                }
-
-                new_mean_cost += new_generation[i].get_cost();
-
-                if (new_generation[ I[i] ].get_cost() < best_cost)
-                {
-                    best_cost = new_generation[ I[i] ].get_cost();
-                    best_individual = new_generation[ I[i] ];
-                    repeated = 0;
-
-                    if ((unsigned)best_individual.get_cost() == instance.known_solution)
-                    {
-#ifdef PRINT
-                        printStats();
-                        best_individual.print_tour();
-#endif
-                        cout << "known solution ";
-                        return best_individual.get_cost();
+                            cout << "known solution ";
+                            return best_individual.get_cost();
+                        }
+                        //std::cout << "Child improved: " << best_cost << "\n";
                     }
-                    //std::cout << "Child improved: " << best_cost << "\n";
+
+                    new_mean_cost /= (double)popsize;
+                    mean_cost = new_mean_cost;
                 }
 
-                new_mean_cost /= (double)popsize;
-                mean_cost = new_mean_cost;
-            }
+                //cout << "       iteration " << g << ": entire population processed\n";
 
-            //cout << "       iteration " << g << ": entire population processed\n";
+                std::vector<Individual> *const temp = individuals_ptr;
+                individuals_ptr = new_generation_ptr;
+                new_generation_ptr = temp;
 
-            std::vector<Individual> *const temp = individuals_ptr;
-            individuals_ptr = new_generation_ptr;
-            new_generation_ptr = temp;
-
-            
-            std::sort(I.begin(), I.end(), sorts);
-            sorts._swap();
+                
+                std::sort(I.begin(), I.end(), sorts);
+                sorts._swap();
 #ifdef TIMELIMIT            
-            std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+                std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
 
-            time_elapsed = (double)std::chrono::duration_cast
-                <std::chrono::nanoseconds>(end_time - start_time)
-                .count() / (double)1000000000;
-            
-            if(time_elapsed > timelimit)
-                break;
+                time_elapsed = (double)std::chrono::duration_cast
+                    <std::chrono::nanoseconds>(end_time - start_time)
+                    .count() / (double)1000000000;
+                
+                if(time_elapsed > timelimit)
+                    break;
 #else
-            ++g;
+                ++g;
 #endif
+            }
         }
 
         cost = best_individual.get_cost();
