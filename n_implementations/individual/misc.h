@@ -129,17 +129,17 @@ class Metrics {
 
     private:
         const double popsize;
-        const unsigned max_prob;
+        const double max_prob;
         double mean;
         double accumulator;
         unsigned repeated;
         std::uniform_int_distribution<unsigned> u;
-        std::geometric_distribution<unsigned> p;
+        std::exponential_distribution<double> p;
 
     public:
         Metrics(double p): 
             popsize(p), 
-            max_prob(std::numeric_limits<unsigned>::max()),
+            max_prob(std::exponential_distribution(0.5).max()),
             mean(0),
             accumulator(0),
             repeated(0),
@@ -151,27 +151,26 @@ class Metrics {
         inline unsigned getFirstParent() {
             
             if(repeated < 500) {
-                return u(mt);
-            } else {
-                if(repeated % 500 == 0) {
-                    p = std::geometric_distribution<unsigned>( 1.0 - double(repeated)*0.00018 );
+                if(repeated % 50 == 0) {
+                    p = std::exponential_distribution<double>( 1.0 - double(repeated)*0.0018 );
                 }
                 
                 return (p(mt)/max_prob) * (popsize-1);
-            }
+            } 
+            
+            return u(mt); 
         }
 
         inline unsigned getSecondParent(unsigned first) {
 
             if(repeated < 500) {
-                std::uniform_int_distribution<unsigned> left(1, popsize/2-1-first);
-                return left(mt) + first;
-            
-            } else {
                 unsigned ret = (p(mt)/max_prob) * (popsize-2-first) + 1;
-
-                return ret + first;
+                return ret + first;    
             }
+            
+            std::uniform_int_distribution<unsigned> left(1, popsize/2-1-first);
+            return left(mt) + first;
+            
         }
 
         inline void addToMean(double x) {
@@ -179,24 +178,26 @@ class Metrics {
             accumulator += x;
         }
 
-        inline double updateMean() {
+        inline void updateMean() {
             
             mean = accumulator / popsize;
             accumulator = 0;
-            
-            return mean;
         }
 
         inline void increaseRepeated() {
-            repeated = repeated < 5000 ? ++repeated : 0;
+            repeated = repeated < std::numeric_limits<unsigned>::max() ? ++repeated : 0;
         }
 
         inline void resetRepeated() {
             repeated = 0;
         }
 
-        inline unsigned getRepeated() {
+        inline unsigned getRepeated() const {
             return repeated;
+        }
+
+        inline double getMean() const {
+            return mean;
         }
 }; 
 
