@@ -10,7 +10,7 @@ struct GeneticAlgorithmData {
     static constexpr unsigned mutator = SCRAMBLE;
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
-    static constexpr double timelimit = 20.0;
+    static constexpr double timelimit = 10.0;
 #endif
     static constexpr unsigned max_evaluations_GA = 3000000; 
     //va letto: 1/mut_rate prob di mutazione

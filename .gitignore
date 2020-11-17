@@ -10,3 +10,5 @@ log_base_2.txt
 log_3.txt
 *.csv
 *.xlsx
+*.xlsx#
+*.csv#
