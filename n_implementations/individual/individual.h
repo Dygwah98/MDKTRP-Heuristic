@@ -722,12 +722,15 @@ class Individual {
             tours_start[0] = dp(mt);
             unsigned i = v(mt);
             
+            //cout << "until here";
+
             for(; i < vehicles;) {
                 tours_start[i] = dp(mt);
                 const unsigned val = v(mt);
-                i += val > customers-vehicles-2-i ? val-i : val;
+                i = val+i > customers-vehicles-2 ? i+1 : val+i;
             }
 
+            needs_repair = false;
             improved_called = false;
             needs_to_update_cost = true;
         }
@@ -1343,7 +1346,7 @@ class Individual {
                 double max_cost = getDepotCost(i, 0);
                 
                 mean += max_cost;
-                cout << mean << " " << max_cost << "\n";
+                //cout << mean << " " << max_cost << "\n";
                 //per ogni cliente dopo il primo
                 for(unsigned j = 1; j < customers; ++j) {
 
@@ -1356,7 +1359,7 @@ class Individual {
                         max_cost = cost;
                     }
 
-                    cout << mean << " " << max_cost << "\n";
+                    //cout << mean << " " << max_cost << "\n";
                 }
 
                 //calcolo della media e formula del costo d'attivazione
@@ -1366,7 +1369,7 @@ class Individual {
                 //il costo d'attivazione viene salvato
                 activation_costs[i] = result/(double)vehicles;
 
-                cout << "RESULT: " << activation_costs[i] << endl;
+                //cout << "RESULT: " << activation_costs[i] << endl;
             }
         }
 #endif

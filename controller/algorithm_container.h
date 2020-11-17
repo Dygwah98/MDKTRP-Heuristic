@@ -62,7 +62,7 @@ class AlgorithmContainer {
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-                cout << instance.prefix + number_instance << " : " << setprecision(2) << fixed << r <<  " : ";
+                cout << instance.prefix + number_instance << " " << setprecision(2) << fixed << r <<  " ";
                 cout << setprecision(2) << fixed
                      << (double)std::chrono::duration_cast
                         <std::chrono::milliseconds>(end - begin)

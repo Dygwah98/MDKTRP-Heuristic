@@ -10,10 +10,9 @@ struct GeneticAlgorithmData {
     static constexpr unsigned mutator = SCRAMBLE;
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
-    static constexpr double timelimit = 30.0;
-#else 
-    static constexpr unsigned max_evaluations_GA = 30000000; 
+    static constexpr double timelimit = 20.0;
 #endif
+    static constexpr unsigned max_evaluations_GA = 3000000; 
     //va letto: 1/mut_rate prob di mutazione
     static constexpr unsigned mut_rate = 6; 
     //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
@@ -40,10 +39,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     
     if(timelimit > 7200)
         timelimit = 7200;
-#else 
+#endif
     const unsigned max_evaluations = GeneticAlgorithmData::max_evaluations_GA * instance.factor_valuations;
     const unsigned max_g = (max_evaluations / GeneticAlgorithmData::tries) / GeneticAlgorithmData::population_size;
-#endif
 
     unsigned mut_rate = GeneticAlgorithmData::mut_rate;
 
@@ -73,9 +71,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     for (unsigned tries_i = 0; tries_i < max_tries; ++tries_i)
     {
         unsigned repeated = 0;
-#ifdef TIMELIMIT
+
         std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
-#endif
+
         double best_cost = std::numeric_limits<double>::max();
 
         //vettore che contiene la popolazione
@@ -106,7 +104,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     printStats();
                     best_individual.print_tour();
 #endif
-                    cout << "known solution ";
+                    //cout << "known solution ";
                     return cost;                    
                 }
             }
@@ -141,14 +139,12 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         //cout << "       starting evaluations\n";
         double time_elapsed = 0;
-#ifdef TIMELIMIT
-        while(true) {
-#else 
-        while (g < max_g) {
-#endif
+
+        while (g < max_g && time_elapsed < 7200) {
+
             double new_mean_cost = 0;
             ++repeated;
-            //cout<<"G: "<<g<<"\n";
+            //cout<<"G: "<<g << "| ";
 
             const std::vector<Individual> &individuals = *individuals_ptr;
             std::vector<Individual> &new_generation = *new_generation_ptr;
@@ -156,24 +152,24 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             //elitismo al 10%
             unsigned i = 0;
             if(repeated % mut_update_window == 0) {
-
+                
                 if(mut_rate-1 >= 2) {
                     --mut_rate;
                     random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
                 }
 
+                //cout << mut_update_window << " elite ";
                 for (; i < s/2; ++i) {
                     new_generation[ I[i] ] = individuals[ I[i] ];
                     new_mean_cost += new_generation[i].get_cost();
                 }
                 
+                //cout << "restart\n";
                 for (; i < s; ++i) {
 #ifdef PRINT
                     initialize.measure_time(new_generation[ I[i] ], &Individual::random_restart);
-                    repair.measure_time(new_generation[ I[i] ], &Individual::repair);
 #else
                     new_generation[ I[i] ].random_restart();
-                    new_generation[ I[i] ].repair();
 #endif
                     new_mean_cost += new_generation[i].get_cost();
                 }
@@ -181,6 +177,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 if(repeated == max_repeated) {
                     repeated = 0;
                 }
+                //cout << "restart complete\n";
 
             } else {
                 
@@ -189,9 +186,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     new_mean_cost += new_generation[i].get_cost();
                 }
             }
-
+            //cout << "\n";
             //cout << "       iteration " << g << ": elite population processed\n";
 
+            
             //dobbiamo inserire il rimanente 90% della popolazione
             for (; i < popsize; ++i)
             {
@@ -360,7 +358,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         printStats();
                         best_individual.print_tour();
 #endif
-                        cout << "known solution ";
+                        //cout << "known solution ";
                         return best_individual.get_cost();
                     }
                     //std::cout << "Child improved: " << best_cost << "\n";
@@ -379,19 +377,19 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             
             std::sort(I.begin(), I.end(), sorts);
             sorts._swap();
-#ifdef TIMELIMIT            
+           
             std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
 
             time_elapsed = (double)std::chrono::duration_cast
                 <std::chrono::nanoseconds>(end_time - start_time)
                 .count() / (double)1000000000;
-            
+#ifdef TIMELIMIT             
             //cout << time_elapsed << "\n";
             if(time_elapsed > timelimit)
                 break;
-#endif
+#else
             ++g;
-
+#endif
         }
 
         cost = best_individual.get_cost();
@@ -405,7 +403,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 printStats();
                 best_individual.print_tour();
 #endif
-                cout << "known solution ";
+                //cout << "known solution ";
                 //best_individual.print_tour();
                 return cost;
             }
