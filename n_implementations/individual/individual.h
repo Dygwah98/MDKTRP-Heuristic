@@ -207,8 +207,11 @@ class Individual {
 
         Individual one_point_cross_over(const Individual& p1, const Individual& p2)   {
             
+            Individual spare_son;
+
             unsigned *const tours = this->tours;
-		    const unsigned *const tours_p1 = p1.tours;
+		    unsigned *const stours = spare_son.tours;
+            const unsigned *const tours_p1 = p1.tours;
 		    const unsigned *const tours_p2 = p2.tours;
             std::uniform_int_distribution<unsigned> random_cell(0, customers-1);      
 
@@ -217,35 +220,46 @@ class Individual {
             unsigned index_child = 0;
             for(; index_child < cutting_point; ++index_child) {
                 tours[index_child] = tours_p1[index_child];
+                stours[index_child] = tours_p2[index_child];
             }
 
             for(; index_child < customers; ++index_child) {
                 tours[index_child] = tours_p2[index_child];
+                stours[index_child] = tours_p1[index_child];
             }
 
             auto& vmap = this->tours_start;
+            auto& svmap = spare_son.tours_start;
             auto& vmap_p1 = p1.tours_start;
             auto& vmap_p2 = p2.tours_start;
             const unsigned bound = min(vmap_p1.size(), vmap_p2.size());
-            std::uniform_int_distribution<unsigned> random_vehicle(0, bound);
+            std::uniform_int_distribution<unsigned> random_vehicle(0, bound-1);
             const unsigned vcutting_point = random_vehicle(mt);
 
             vmap.clear();
+            svmap.clear();
             
             auto p1b = vmap_p1.begin();
             auto vcp_1 = next(p1b, vcutting_point); 
             vmap.insert(p1b, vcp_1);
            
+            auto sp1b = vmap_p2.begin();
+            auto svcp_1 = next(sp1b, vcutting_point);
+            svmap.insert(sp1b, svcp_1);
+
             auto p2b = next(vmap_p2.begin(), vcutting_point);
             auto vcp_2 = vmap_p2.end();
             vmap.insert(p2b, vcp_2);
+
+            auto sp2b = vcp_1;
+            auto svcp_2 = vmap_p1.end();
+            svmap.insert(sp2b, svcp_2);
         
             needs_repair = true;
             improved_called = false;
             needs_to_update_cost = true;
 
-            //TODO
-            return Individual();
+            return spare_son;
         }
 		
         Individual two_point_cross_over(const Individual& p1, const Individual& p2) {
@@ -337,31 +351,37 @@ class Individual {
 		
         Individual uniform_cross_over(const Individual &p1, const Individual &p2)   {
 
+            Individual spare_son;
+
             std::uniform_int_distribution<unsigned> random_bit(0,1);
             unsigned index[2] = {0, 0};
             const Individual*const parents[2] = {&p1, &p2};
 
             for(unsigned i = 0; i < customers; ++i) {
                 
-                tours[i] = parents[random_bit(mt)]->tours[i];
-                
+                const unsigned r = random_bit(mt);
+                tours[i] = parents[r]->tours[i];
+                spare_son.tours[i] = parents[!r]->tours[i];
             }
 
             const unsigned vdim = min(p1.tours_start.size(), p2.tours_start.size());
 
             tours_start.clear();
+            spare_son.tours_start.clear();
             for(unsigned i = 0; i < vdim; ++i) {
 
                 const unsigned rand3 = random_bit(mt);
                 const auto it = parents[rand3]->tours_start.begin();
+                const auto it2 = parents[!rand3]->tours_start.begin();
                 tours_start.insert( *(next(it, i)) );
+                spare_son.tours_start.insert( *(next(it2, i)) );
             }
         
             needs_repair = true;
             improved_called = false;
             needs_to_update_cost = true;
 
-            return Individual();
+            return spare_son;
         }
 
         void random_initialize()   {
