@@ -85,47 +85,47 @@ class Individual {
     	
         void swap3()   {
 
-                const auto& tours_start = this->tours_start;
+            const auto& tours_start = this->tours_start;
 
-                std::uniform_int_distribution<unsigned> route(0, tours_start.size()-1);
+            std::uniform_int_distribution<unsigned> route(0, tours_start.size()-1);
 
-                auto it = next(tours_start.begin(), route(mt));
-                const unsigned route_c = it->first; 
-                ++it;
-                const unsigned route_e = it == tours_start.end() ? customers : it->first;
+            auto it = next(tours_start.begin(), route(mt));
+            const unsigned route_c = it->first; 
+            ++it;
+            const unsigned route_e = it == tours_start.end() ? customers : it->first;
 
-                if(route_e - route_c >= 3) {
+            if(route_e - route_c >= 3) {
+            
+                std::uniform_int_distribution<unsigned> choice(route_c, route_e-3);
+                const unsigned fst = choice(mt);
                 
-                    std::uniform_int_distribution<unsigned> choice(route_c, route_e-3);
-                    const unsigned fst = choice(mt);
-                    
-                    std::uniform_int_distribution<unsigned> choice2(fst+1, route_e-2);
-                    const unsigned snd = choice2(mt);
+                std::uniform_int_distribution<unsigned> choice2(fst+1, route_e-2);
+                const unsigned snd = choice2(mt);
 
-                    std::uniform_int_distribution<unsigned> choice3(snd+1, route_e-1);
-                    const unsigned trd = choice3(mt);
+                std::uniform_int_distribution<unsigned> choice3(snd+1, route_e-1);
+                const unsigned trd = choice3(mt);
 
-                    const unsigned node = tours[fst];
-                    tours[fst] = tours[snd];
-                    tours[snd] = tours[trd];
-                    tours[trd] = node;     
-                
-                } else {
+                const unsigned node = tours[fst];
+                tours[fst] = tours[snd];
+                tours[snd] = tours[trd];
+                tours[trd] = node;     
+            
+            } else {
 
-                    std::uniform_int_distribution<unsigned> random_cell(0, customers-3);
-                    const unsigned fst = random_cell(mt);
+                std::uniform_int_distribution<unsigned> random_cell(0, customers-3);
+                const unsigned fst = random_cell(mt);
 
-                    std::uniform_int_distribution<unsigned> random_cell2(fst+1, customers-2);
-                    const unsigned snd = random_cell2(mt);
+                std::uniform_int_distribution<unsigned> random_cell2(fst+1, customers-2);
+                const unsigned snd = random_cell2(mt);
 
-                    std::uniform_int_distribution<unsigned> random_cell3(snd+1, customers-1);
-                    const unsigned trd = random_cell3(mt);
+                std::uniform_int_distribution<unsigned> random_cell3(snd+1, customers-1);
+                const unsigned trd = random_cell3(mt);
 
-                    const unsigned node = tours[fst];
-                    tours[fst] = tours[snd];
-                    tours[snd] = tours[trd];
-                    tours[trd] = node;
-                }
+                const unsigned node = tours[fst];
+                tours[fst] = tours[snd];
+                tours[snd] = tours[trd];
+                tours[trd] = node;
+            }
 
             improved_called = false;
             needs_to_update_cost = true;
@@ -144,10 +144,10 @@ class Individual {
             std::uniform_int_distribution<unsigned> random_cell3(snd+1, customers-3);
             const unsigned trd = random_cell3(mt);
 
-            std::uniform_int_distribution<unsigned> random_cell4(snd+1, customers-2);
+            std::uniform_int_distribution<unsigned> random_cell4(trd+1, customers-2);
             const unsigned frt = random_cell4(mt);
 
-            std::uniform_int_distribution<unsigned> random_cell5(snd+1, customers-1);
+            std::uniform_int_distribution<unsigned> random_cell5(frt+1, customers-1);
             const unsigned fft = random_cell5(mt);
             
             const unsigned node = tours[fst];
@@ -507,6 +507,7 @@ class Individual {
                                 
                                 //fix temporaneo
                                 if(cost > past_cost) {
+//                                    cout << "ERROR ";
                                     if(ts.find(s1) != ts.end()) {
                                         ts[s1] = best_depots[ tours[s2] ];
                                     }
@@ -520,7 +521,8 @@ class Individual {
                                     tours[s1] = tours[s2];
                                     tours[s2] = node;
                                 
-                                } else {
+                                } else 
+                                {
                                     not_used = 0;
                                     improved_u = true;
                                 }
@@ -571,6 +573,7 @@ class Individual {
                                     
                                     //fix temporaneo
                                     if(cost > past_cost) {
+//                                        cout << "ERROR ";
                                         if(ts.find(s1) != ts.end()) {
                                             ts[s1] = best_depots[ tours[s2] ];
                                         }
@@ -585,7 +588,8 @@ class Individual {
                                         tours[s2] = node;
 
                                         
-                                    } else {
+                                    } else 
+                                    {
                                         improved = true;
                                         improved_u = true;
                                     }
@@ -598,12 +602,57 @@ class Individual {
                             else
                                 not_used = 0;
                         }
-
+/*
                         unsigned first = 0;
                         for(unsigned off = 1; off < customers-1; ++off) {
-                            //valuta se swappare col primo
+                            
+                            double old_cost = 0.0;
+                            double new_cost = 0.0;
+
+                            evaluate_first(old_cost, new_cost, off);
+
+                            if(old_cost - new_cost > 0.1) {
+
+                                ts[first] = best_depots[ tours[off] ];
+
+                                if(ts.find(off) != ts.end()) {
+                                    ts[off] = best_depots[ tours[first] ];
+                                }
+
+                                const unsigned node = tours[first]; 
+
+                                tours[first] = tours[off];
+                                tours[off] = node;
+
+                                //improved = true;
+
+                                double past_cost = this->cost;
+                                needs_to_update_cost = true;
+                                calculate_cost();
+                                
+                                //fix temporaneo
+                                if(cost > past_cost) {
+                                    
+                                    ts[first] = best_depots[ tours[off] ];
+
+                                    if(ts.find(off) != ts.end()) {
+                                        ts[off] = best_depots[ tours[first] ];
+                                    }
+
+                                    const unsigned node = tours[first]; 
+
+                                    tours[first] = tours[off];
+                                    tours[off] = node;
+
+                                    
+                                } else 
+                             {
+                                    improved_u = true;
+                                }
+                                //cout << not_used << " " << offset << " " << cost << endl;
+                            }
                         }
-                    
+*/                     
                         unsigned last = customers-1;
                         for(unsigned off = 1; off < customers-2; ++off) {
                             //valuta se swappare coll'ultimo
@@ -988,25 +1037,10 @@ class Individual {
 
         inline bool operator<(const Individual& o) const   {
 
-            //cout << "           individual " << this << " operator< called versus " << &o << "\n";
-            //print_tour();
-            //cout << cost << "\n";
-            //o.print_tour();
-            //cout << o.cost << "\n";
-
-//            if(this == &o) {
-//                return true;
-//            }
-
             return (unsigned)cost < (unsigned)o.cost;
         }
 
         inline bool operator==(const Individual& o) const   {
-            
-            //cout << "           individual " << this << " operator== called\n";
-
-//            if(this == &o)
-//                return true;
 
             return (unsigned)cost == (unsigned)o.cost;
 
@@ -1233,7 +1267,7 @@ class Individual {
             ++start;
             for(; start < end; ++start) {
                 if(len <= 0)
-                    cout << "ERROR";
+                    cout << "ERROR LEN < 0 ";
                 const unsigned c1 = tours[start-1];
                 const unsigned c2 = tours[start];
                 sum += getCustomerCost(c1, c2)*len;
@@ -1464,7 +1498,60 @@ class Individual {
         }
 
         inline void evaluate_first(double& old_cost, double& new_cost, unsigned new_pos) {
+            
+            auto& ts = this->tours_start;
+#ifndef BASE
+            const double *const ac = this->activation_costs;
+#endif
+            const unsigned first = tours[0];
+            const unsigned other = tours[new_pos];
 
+            //ci serve la posizione dei candidati nei rispettivi subtours
+            //per valutare correttamente il costo (latency)
+            const auto beg = ts.begin();
+            const auto end = ts.end();
+
+            auto b_end = beg; 
+            ++b_end;
+
+            unsigned f_len = b_end == end ? customers : b_end->first;
+
+            //calcoliamo la posizione del secondo candidato
+            auto j_end = beg;
+            while(j_end != end && j_end->first <= new_pos) {
+                ++j_end;
+            }
+
+            unsigned j_len = j_end == end ? customers : j_end->first;
+            j_len -= new_pos;
+
+            const unsigned depot = ts.at(0);
+            old_cost += getDepotCost(depot, first) * f_len;
+            new_cost += getDepotCost(best_depots[ other ], other) * f_len;
+#ifndef BASE
+            old_cost += ac[ depot ];
+            new_cost += ac[ best_depots[other] ];
+#endif
+
+            if(ts.find(new_pos) == ts.end()) {
+                const unsigned before_other = tours[new_pos-1];
+                old_cost += getCustomerCost(before_other, other) * j_len;
+                new_cost += getCustomerCost(before_other, first) * j_len;
+            } else {
+                const unsigned depot2 = ts.at(new_pos);
+                old_cost += getDepotCost(depot2, other) * j_len;
+                new_cost += getDepotCost(best_depots[ first ], first) * j_len;
+#ifndef BASE
+                old_cost += ac[ depot2 ];
+                new_cost += ac[ best_depots[ first ] ];
+#endif
+            }
+            
+            if(ts.find(new_pos+1) == ts.end()) {
+                const unsigned after_other = tours[new_pos+1];
+                old_cost += getCustomerCost(other, after_other) * (j_len-1);
+                new_cost += getCustomerCost(first, after_other) * (j_len-1);
+            }
         }
 
         inline void evaluate_last(double& old_cost, double& new_cost, unsigned new_pos) {

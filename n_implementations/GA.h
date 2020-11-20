@@ -17,6 +17,7 @@ struct GeneticAlgorithmData {
     static constexpr unsigned mut_rate = 6; 
     //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
     static constexpr unsigned mut_update_window = 100;
+    static constexpr double elite_ratio = 0.4;
 };
 
 double GeneticAlgorithm(const Test& instance, const Individual& ind) {
@@ -30,6 +31,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     Timer& improvement = printStats.improvement;
     Timer& repair = printStats.repair;
     Timer& costs = printStats.costs;
+    Timer& metrics = printStats.metrics;
+    Timer& sort_time = printStats.sort;
 #endif
     //schema genetico
 #ifdef TIMELIMIT    
@@ -43,6 +46,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     const unsigned max_evaluations = GeneticAlgorithmData::max_evaluations_GA * instance.factor_valuations;
     const unsigned max_g = (max_evaluations / GeneticAlgorithmData::tries) / GeneticAlgorithmData::population_size;
 
+    const unsigned original_mut_rate = GeneticAlgorithmData::mut_rate;
     unsigned mut_rate = GeneticAlgorithmData::mut_rate;
 
     const unsigned popsize = GeneticAlgorithmData::population_size;
@@ -87,7 +91,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             auto& i = individuals_original[pos];
 #ifdef PRINT
             initialize.measure_time(i, &Individual::random_initialize);
-
             costs.measure_time(i, &Individual::calculate_cost);
 #else
             i.random_initialize();
@@ -118,11 +121,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         for(unsigned pos = 0; pos < popsize; ++pos) {
             auto& i = individuals_original[pos];
+#ifdef PRINT
+            metrics.measure_time(i, &Individual::calculate_diversity_ratio, pos, individuals_original);
+#else
             i.calculate_diversity_ratio(pos, individuals_original);
+#endif
             i.set_normalized(best_cost);
         }
 
-        const double elite_ratio = 0.4;
+        const double elite_ratio = GeneticAlgorithmData::elite_ratio;
         const unsigned s  = elite_ratio * (double)popsize;
         
         std::uniform_int_distribution<unsigned> random_parent(1, popsize/2 - 2);
@@ -135,9 +142,12 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         keySort sorts(individuals_original, new_generation_original);
         keyDiversitySort sorts2(individuals_original, new_generation_original, 1.0 - elite_ratio);
 
+#ifdef PRINT
+        sort_time.measure_time(D, sorts2);
+#else
         std::sort(D.begin(), D.end(), sorts2);
         sorts2._swap();
-
+#endif
         unsigned g = 0;
         
         unsigned p1;
@@ -174,9 +184,13 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 }
 
                 for(; i < popsize; ++i) {
+#ifdef PRINT
+                    initialize.measure_time(new_generation[ D[i] ], &Individual::random_restart);
+                    costs.measure_time(new_generation[ D[i] ], &Individual::calculate_cost);
+#else
                     new_generation[ D[i] ].random_restart();
                     new_generation[ D[i] ].calculate_cost();
-
+#endif
                     new_mean_cost += new_generation[ D[i] ].get_cost();
 
                     if (new_generation[ D[i] ].get_cost() < best_cost)
@@ -247,11 +261,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         break;
                     }
 
-                    //if(random_choice(mt))
-                    repair.measure_time(new_generation[ D[i] ], &Individual::repair);
-                    //if(random_choice(mt))
-                    repair.measure_time(spare_son, &Individual::repair);
-
                     //mutazione genetica solo con un certo rateo
                     if (random_mut(mt) == 1)
                     {
@@ -282,6 +291,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         }
                     }
 
+                    repair.measure_time(new_generation[ D[i] ], &Individual::repair);
+                    repair.measure_time(spare_son, &Individual::repair);
+
                     improvement.measure_time(new_generation[ D[i] ], &Individual::local_search);
                     improvement.measure_time(spare_son, &Individual::local_search);
 
@@ -302,11 +314,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     default:
                         break;
                     }
-
-                    //if(random_choice(mt))
-                    new_generation[ D[i] ].repair();
-                    //if(random_choice(mt))
-                    spare_son.repair();
 
                     //mutazione genetica solo con un certo rateo
                     if (random_mut(mt) == 1)
@@ -337,6 +344,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             break;
                         }
                     }
+                    
+                    new_generation[ D[i] ].repair();
+                    spare_son.repair();
 
                     new_generation[ D[i] ].local_search();
                     spare_son.local_search();
@@ -356,7 +366,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         best_cost = new_generation[ D[i] ].get_cost();
                         best_individual = new_generation[ D[i] ];
                         repeated = 0;
-                        if(mut_rate < 6) {
+                        if(mut_rate < original_mut_rate) {
                             ++mut_rate;
                             random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
                         }
@@ -382,7 +392,11 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 unsigned j = 0;
 
                 for(; j < popsize; ++j) {
+#ifdef PRINT
+                    metrics.measure_time(new_generation[ D[j] ], &Individual::calculate_diversity_ratio, D[j], new_generation);
+#else
                     new_generation[ D[j] ].calculate_diversity_ratio(D[j], new_generation);
+#endif
                     new_generation[ D[j] ].set_normalized(best_cost);
                 }
 
@@ -395,10 +409,12 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             std::vector<Individual> *const temp = individuals_ptr;
             individuals_ptr = new_generation_ptr;
             new_generation_ptr = temp;
-
+#ifdef PRINT
+            sort_time.measure_time(D, sorts2);
+#else
             std::sort(D.begin(), D.end(), sorts2);
             sorts2._swap();
-           
+#endif           
             std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
 
             time_elapsed = (double)std::chrono::duration_cast

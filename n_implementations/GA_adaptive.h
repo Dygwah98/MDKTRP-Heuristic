@@ -8,14 +8,14 @@ class AdaptiveGeneticAlgorithmData {
     public:
         const unsigned tries = 1;
         const unsigned population_size = 250;
-        const unsigned mutator = SWAP2;
+        const unsigned mutator = SWAP3;
         const unsigned crossover = TWO_POINT;
         const unsigned max_evaluations_GA = 40000000 / 3;
         const unsigned mut_rate = 4;
 };
 
 double AdaptiveGeneticAlgorithm(const Test& instance, const Individual& ind) {
-
+/*
     const AdaptiveGeneticAlgorithmData gdata;
     
     const unsigned max_evaluations = gdata.max_evaluations_GA * instance.factor_valuations;
@@ -214,6 +214,8 @@ double AdaptiveGeneticAlgorithm(const Test& instance, const Individual& ind) {
     }
 
     return cost;
+*/
+    return 0.0;
 }
 
 #endif

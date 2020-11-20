@@ -85,6 +85,22 @@ class Timer {
             calls += 1;
         }
 
+        void measure_time(Individual& i, void(Individual::*function)(unsigned, std::vector<Individual>&),
+                    unsigned pos, std::vector<Individual>& population) {
+
+            begin = std::chrono::steady_clock::now();
+
+            (i.*function)(pos, population);
+            
+            end = std::chrono::steady_clock::now();
+            
+            time += (double)std::chrono::duration_cast
+                <std::chrono::nanoseconds>(end - begin)
+                .count() / (double)1000000000;
+            
+            calls += 1;
+        }
+
         Individual measure_time(Individual& i, Individual(Individual::*function)(const Individual&, const Individual&),
                     const Individual& p1, const Individual& p2 
              )  {
@@ -123,6 +139,23 @@ class Timer {
             return ind;
         }
 
+        void measure_time(std::vector<unsigned>& D, keyDiversitySort sorts2) {
+            
+            begin = std::chrono::steady_clock::now();
+
+            std::sort(D.begin(), D.end(), sorts2);
+            sorts2._swap();
+            
+            end = std::chrono::steady_clock::now();
+            
+            time += (double)std::chrono::duration_cast
+                <std::chrono::nanoseconds>(end - begin)
+                .count() / (double)1000000000;
+            
+            calls += 1;
+
+        }
+
         double getTotalTime() {
             
             return time;
@@ -143,16 +176,20 @@ class Analyzer {
         Timer improvement;
         Timer repair;
         Timer costs;
+        Timer metrics;
+        Timer sort;
 
         void operator()() {
 
             cout <<"\n    PERFORMANCE ANALYSIS (seconds):\n";
-            cout <<"    random_initalize: " << initialize.getTotalTime() << endl;
+            cout <<"    initialize/restart: " << initialize.getTotalTime() << endl;
             cout <<"    repair: " << repair.getTotalTime() << endl;
-            cout <<"    improvement algorithm: " << improvement.getTotalTime() << endl;
+            cout <<"    local search: " << improvement.getTotalTime() << endl;
             cout <<"    crossover: "  << crossover.getTotalTime() << endl;
             cout <<"    mutation: " << mutation.getTotalTime() << endl;
             cout <<"    calculate_cost: " << costs.getTotalTime() << endl;
+            cout <<"    metrics: " << metrics.getTotalTime() << endl;
+            cout <<"    sorting: " << sort.getTotalTime() << endl;
         }
 };
 
