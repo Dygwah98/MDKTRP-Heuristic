@@ -382,8 +382,6 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         }
                         //std::cout << "Child improved: " << best_cost << "\n";
                     }
-
-                    
                 }
                 
                 new_mean_cost /= (double)popsize;
@@ -418,13 +416,14 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
 
             time_elapsed = (double)std::chrono::duration_cast
-                <std::chrono::nanoseconds>(end_time - start_time)
-                .count() / (double)1000000000;
+                        <std::chrono::nanoseconds>(end_time - start_time)
+                        .count() / (double)1000000000;
 #ifdef TIMELIMIT             
             //cout << time_elapsed << "\n";
             if(time_elapsed > timelimit)
                 break;
 #endif
+
             ++g;
 
         }

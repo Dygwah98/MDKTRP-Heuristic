@@ -127,9 +127,9 @@ class Individual {
                 tours[trd] = node;
             }
 
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
+            //needs_repair = true;
+            //improved_called = false;
+            //needs_to_update_cost = true;
 
             //cout << "           individual " << this << ": swap2 executed\n";
         }
@@ -157,9 +157,9 @@ class Individual {
             tours[frt] = tours[fft];
             tours[fft] = node;
 
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
+            //needs_repair = true;
+            //improved_called = false;
+            //needs_to_update_cost = true;
         }
 		
         void inversion()   {
@@ -179,9 +179,9 @@ class Individual {
             unsigned *const tours = this->tours;
             std::reverse(tours + start, tours + end);
 
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
+            //needs_repair = true;
+            //improved_called = false;
+            //needs_to_update_cost = true;
         }
 		
         void scramble()   {
@@ -201,9 +201,9 @@ class Individual {
             unsigned *const tours = this->tours;
             std::shuffle(tours + start, tours + end, mt);
 
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
+            //needs_repair = true;
+            //improved_called = false;
+            //needs_to_update_cost = true;
 
         }
 
@@ -257,9 +257,9 @@ class Individual {
             auto svcp_2 = vmap_p1.end();
             svmap.insert(sp2b, svcp_2);
         
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
+            //needs_repair = true;
+            //improved_called = false;
+            //needs_to_update_cost = true;
 
             return spare_son;
         }
@@ -344,9 +344,9 @@ class Individual {
                 ++itp2;
             }
 
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
+            //needs_repair = true;
+            //improved_called = false;
+            //needs_to_update_cost = true;
         
             return spare_son;
         }
@@ -379,9 +379,9 @@ class Individual {
                 spare_son.tours_start.insert( *(next(it2, i)) );
             }
         
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
+            //needs_repair = true;
+            //improved_called = false;
+            //needs_to_update_cost = true;
 
             return spare_son;
         }
@@ -452,14 +452,14 @@ class Individual {
                 i = val+i > customers-vehicles-2 ? i+1 : val+i;
             }
 
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
+            //needs_repair = true;
+            //improved_called = false;
+            //needs_to_update_cost = true;
         }
         
         void local_search()   {
         
-            if(!improved_called) {
+            //if(!improved_called) {
 
                 //cout << this << endl;
 
@@ -471,7 +471,12 @@ class Individual {
                     auto& ts = this->tours_start;
 
                     bool improved_u = true;
-                    while(improved_u) {
+                    unsigned g = 0;
+                    //la local search viene ripetuta ogni volta che si verifica un improvement,
+                    //ma senza superare un certo numero di iterazioni
+                    while(improved_u && g < 50) {
+
+                        ++g;
 
                         improved_u = false;
                         const int customers_n = customers - 3;
@@ -487,7 +492,7 @@ class Individual {
                             const unsigned s2 = not_used + 2;
                             evaluate(old_cost, new_cost, not_used, 0);
 
-                            if(old_cost - new_cost > 0.1) {
+                            if(old_cost - new_cost > 1.1) {
 
                                 if(ts.find(s1) != ts.end()) {
                                     ts[s1] = best_depots[ tours[s2] ];
@@ -501,29 +506,6 @@ class Individual {
 
                                 tours[s1] = tours[s2];
                                 tours[s2] = node;
-
-                                //not_used = -1;
-                                double past_cost = this->cost;
-                                needs_to_update_cost = true;
-                                calculate_cost();
-                                
-                                //fix temporaneo
-                                if(cost > past_cost) {
-//                                    cout << "ERROR ";
-                                    if(ts.find(s1) != ts.end()) {
-                                        ts[s1] = best_depots[ tours[s2] ];
-                                    }
-
-                                    if(ts.find(s2) != ts.end()) {
-                                        ts[s2] = best_depots[ tours[s1] ];
-                                    }
-
-                                    const unsigned node = tours[s1]; 
-
-                                    tours[s1] = tours[s2];
-                                    tours[s2] = node;
-                                
-                                } else 
                                 {
                                     not_used = 0;
                                     improved_u = true;
@@ -552,7 +534,7 @@ class Individual {
 
                                 evaluate(old_cost, new_cost, not_used, offset);
 
-                                if(old_cost - new_cost > 0.1) {
+                                if(old_cost - new_cost > 1.1) {
 
                                     if(ts.find(s1) != ts.end()) {
                                         ts[s1] = best_depots[ tours[s2] ];
@@ -568,29 +550,6 @@ class Individual {
                                     tours[s2] = node;
 
                                     //improved = true;
-
-                                    double past_cost = this->cost;
-                                    needs_to_update_cost = true;
-                                    calculate_cost();
-                                    
-                                    //fix temporaneo
-                                    if(cost > past_cost) {
-//                                        cout << "ERROR ";
-                                        if(ts.find(s1) != ts.end()) {
-                                            ts[s1] = best_depots[ tours[s2] ];
-                                        }
-
-                                        if(ts.find(s2) != ts.end()) {
-                                            ts[s2] = best_depots[ tours[s1] ];
-                                        }
-
-                                        const unsigned node = tours[s1]; 
-
-                                        tours[s1] = tours[s2];
-                                        tours[s2] = node;
-
-                                        
-                                    } else 
                                     {
                                         improved = true;
                                         improved_u = true;
@@ -604,8 +563,10 @@ class Individual {
                             else
                                 not_used = 0;
                         }
-/*
-                        unsigned first = 0;
+
+                        //valuto lo swap del primo customer
+                        const unsigned first = 0;
+                        //se parto da 1 non funziona, non so perchè
                         for(unsigned off = 1; off < customers-1; ++off) {
                             
                             double old_cost = 0.0;
@@ -613,7 +574,7 @@ class Individual {
 
                             evaluate_first(old_cost, new_cost, off);
 
-                            if(old_cost - new_cost > 0.1) {
+                            if(old_cost - new_cost > 1.1) {
 
                                 ts[first] = best_depots[ tours[off] ];
 
@@ -627,59 +588,97 @@ class Individual {
                                 tours[off] = node;
 
                                 //improved = true;
-
-                                double past_cost = this->cost;
-                                needs_to_update_cost = true;
-                                calculate_cost();
-                                
-                                //fix temporaneo
-                                if(cost > past_cost) {
-                                    
-                                    ts[first] = best_depots[ tours[off] ];
-
-                                    if(ts.find(off) != ts.end()) {
-                                        ts[off] = best_depots[ tours[first] ];
-                                    }
-
-                                    const unsigned node = tours[first]; 
-
-                                    tours[first] = tours[off];
-                                    tours[off] = node;
-
-                                    
-                                } else 
-                             {
+                                {
                                     improved_u = true;
                                 }
                                 //cout << not_used << " " << offset << " " << cost << endl;
                             }
                         }
-*/                     
-                        unsigned last = customers-1;
-                        for(unsigned off = 1; off < customers-2; ++off) {
-                            //valuta se swappare coll'ultimo
+                    
+                        //valuto lo swap dell'ultimo customer
+                        const unsigned last = customers-1;
+                        //dovrebbe fermarsi a < customers-1, ma non so perchè non funziona
+                        for(unsigned off = 1; off < customers-1; ++off) {
+                            
+                            double old_cost = 0.0;
+                            double new_cost = 0.0;
+
+                            evaluate_last(old_cost, new_cost, off);
+
+                            if(old_cost - new_cost > 1.1) {
+
+                                if(ts.find(last) != ts.end()) {
+                                    ts[last] = best_depots[ tours[off] ];
+                                }
+
+                                if(ts.find(off) != ts.end()) {
+                                    ts[off] = best_depots[ tours[last] ];
+                                }
+
+                                const unsigned node = tours[last]; 
+
+                                tours[last] = tours[off];
+                                tours[off] = node;
+
+                                improved_u = true;
+                            }
                         }
 
                         //valuta se swappare primo e ultimo
-                    }
+                        {
+                            double old_cost = 0.0;
+                            double new_cost = 0.0;
+
+                            old_cost += getDepotCost(ts.at(0), tours[first]);
+                            new_cost += getDepotCost(best_depots[ tours[last] ], tours[last]);
+#ifndef BASE
+                            old_cost += activation_costs[ts.at(0)];
+                            new_cost += activation_costs[ best_depots[tours[last] ] ];
+#endif
+                            if(ts.find(1) == ts.end()) {
+                                old_cost += getCustomerCost(tours[first], tours[1]);
+                                new_cost += getCustomerCost(tours[last], tours[1]);
+                            }
+
+                            if(ts.find(last) == ts.end()) {
+                                old_cost += getCustomerCost(tours[customers-2], tours[last]);
+                                new_cost += getCustomerCost(tours[customers-2], tours[first]);
+                            } else {
+                                old_cost += getDepotCost(ts.at(last), tours[last]);
+                                new_cost += getDepotCost(best_depots[ tours[first] ], tours[first]);
+#ifndef BASE
+                                old_cost += activation_costs[ts.at(last)];
+                                new_cost += activation_costs[ best_depots[tours[first] ] ];
+#endif                                
+                            }
+
+                            if(old_cost - new_cost > 1.1) {
+
+                                ts[first] = best_depots[ tours[last] ];
+                                if(ts.find(last) != ts.end()) {
+                                    ts[last] = best_depots[ tours[first] ];
+                                }
+
+                                const unsigned node = tours[first];
+                                tours[first] = tours[last];
+                                tours[last] = node;
+
+                                improved_u = true;
+                            }
+                        }
+                    
 
                     //cout << endl;
 
-        // seconda parte: tento di aumentare il numero di subtours
+            // seconda parte: cerco di bilanciare i subtours
 #ifndef BASE
-                    const double *const ac = Individual::activation_costs;
+                        const double *const ac = Individual::activation_costs;
 #endif   
-                    if(ts.size() < vehicles) {
-                     
-                        const unsigned size = vehicles;
+                        vector<unsigned> p_pos(ts.size(), 0);
+                        vector<double> p_len(ts.size(), 0);
 
-                        vector<unsigned> pos(size, 0);
-                        vector<double> len(size, 0);
+                        for(unsigned ind = 0; ind < ts.size(); ++ind) {
 
-                        for(unsigned not_used = 0; 
-                            ts.size() < vehicles && not_used < ts.size(); 
-                            ++not_used) {
-                            
                             unsigned k = 0;
                             for(auto it = ts.begin(); it != ts.end(); ++it) {
                                 
@@ -689,78 +688,168 @@ class Individual {
                                 const unsigned start = it->first;
                                 const unsigned end = next_it == ts.end() ? customers : next_it->first;
 
-                                pos[k] = start;
-                                len[k] = calculate_tour_cost(it->first, end, false);
+                                p_pos[k] = start;
+                                p_len[k] = calculate_tour_cost(it->first, end, false);
 #ifndef BASE
-                                len[k] += ac[it->second];
+                                p_len[k] += ac[it->second];
 #endif
                                 ++k;
                             }
 
                             int i, j;
                             for (i = 1; i < ts.size(); i++) {
-                                    double tmp = len[i];
-                                    unsigned tmp2 = pos[i];
-                                    for (j = i; j >= 1 && tmp > len[j-1]; j--) {
-                                        len[j] = len[j-1];
-                                        pos[j] = pos[j-1];
+                                    double tmp = p_len[i];
+                                    unsigned tmp2 = p_pos[i];
+                                    for (j = i; j >= 1 && tmp > p_len[j-1]; j--) {
+                                        p_len[j] = p_len[j-1];
+                                        p_pos[j] = p_pos[j-1];
                                     }
-                                    len[j] = tmp;
-                                    pos[j] = tmp2;
+                                    p_len[j] = tmp;
+                                    p_pos[j] = tmp2;
                             }
-                            
-                            auto it_end = ++ts.find(pos[0]);
-                            unsigned end = it_end == ts.end() ? customers : it_end->first;
 
-                            unsigned best_new_start = pos[0] + 1;
-                            unsigned new_start = best_new_start;
-                            double best_new_cost = 
-                                calculate_tour_cost(new_start, end, false) + 
-                                calculate_tour_cost(pos[0], new_start, false);
-#ifndef BASE    
-                            best_new_cost += ac[ ( ts.find(pos[0]) )->second ];
-                            best_new_cost += ac[ best_depots[ tours[new_start] ] ];
-#endif                                  
-                            bool split_improving = false;
-                            
-                            while(new_start < end) {
+                            auto f = ts.find(p_pos[0]);
+                            auto s = next(f,1);
 
-                                double new_cost = 
-                                    calculate_tour_cost(new_start, end, false) + 
-                                    calculate_tour_cost(pos[0], new_start, false);
-#ifndef BASE    
-                                new_cost += ac[ ( ts.find(pos[0]) )->second ];
-                                new_cost += ac[ best_depots[ tours[new_start] ] ];
-#endif                          
-                                if(new_cost < best_new_cost) {
-                                    split_improving = true;
-                                    best_new_start = new_start;
-                                    best_new_cost = new_cost;
+                            if(s == ts.end()) {
+                                s = f = ts.find(p_pos[0]);
+                                if(f != ts.begin()) {
+                                    --f;
+                                } else {
+                                    continue;
                                 }
-                                ++new_start;
                             }
-                            
-                            if(split_improving) {
-                                ts[best_new_start] = best_depots[ tours[best_new_start] ];
+
+                            if(s != ts.end()) {
+
+                                const unsigned p_end = next(s,1) == ts.end() ? customers : next(s,1)->first;
+
+                                double old_cost = 
+                                    calculate_tour_cost(p_pos[0], s->first, false) + best_depots[ tours[ p_pos[0] ] ] + 
+                                    calculate_tour_cost(s->first, p_end, false) + best_depots[ tours[s->first] ];
+                                
+                                unsigned best_new_start = s->first;
+                                for(unsigned new_start = p_pos[0]+1; new_start < p_end; ++new_start) {
+                                    
+                                    double new_cost = 
+                                        calculate_tour_cost(p_pos[0], new_start, false) + best_depots[ tours[p_pos[0] ] ] +
+                                        calculate_tour_cost(new_start, p_end, false) + best_depots[ tours[new_start] ];
+
+                                    if(old_cost - new_cost > 1.1 && new_start != s->first) {
+                                        best_new_start = new_start;
+                                        old_cost = new_cost;
+                                    }
+                                }
+
+                                if(best_new_start != s->first) {
+
+                                    improved_u = true;
+                                    ts.erase(s->first);
+                                    ts[best_new_start] = best_depots[ tours[best_new_start] ];
+                                }
                             }
                         }
+            
+            // seconda parte bis: tento di aumentare il numero di subtours
 
+                        if(ts.size() < vehicles) {
+                            
+                            const unsigned size = vehicles;
+
+                            vector<unsigned> pos(size, 0);
+                            vector<double> len(size, 0);
+
+                            for(unsigned not_used = 0; 
+                                ts.size() < vehicles && not_used < ts.size(); 
+                                ++not_used) {
+                                
+                                unsigned k = 0;
+                                for(auto it = ts.begin(); it != ts.end(); ++it) {
+                                    
+                                    auto next_it = it;
+                                    ++next_it;
+
+                                    const unsigned start = it->first;
+                                    const unsigned end = next_it == ts.end() ? customers : next_it->first;
+
+                                    pos[k] = start;
+                                    len[k] = calculate_tour_cost(it->first, end, false);
+#ifndef BASE
+                                    len[k] += ac[it->second];
+#endif
+                                    ++k;
+                                }
+
+                                int i, j;
+                                for (i = 1; i < ts.size(); i++) {
+                                        double tmp = len[i];
+                                        unsigned tmp2 = pos[i];
+                                        for (j = i; j >= 1 && tmp > len[j-1]; j--) {
+                                            len[j] = len[j-1];
+                                            pos[j] = pos[j-1];
+                                        }
+                                        len[j] = tmp;
+                                        pos[j] = tmp2;
+                                }
+                                
+                                auto it_end = ++ts.find(pos[0]);
+                                unsigned end = it_end == ts.end() ? customers : it_end->first;
+
+                                unsigned best_new_start = pos[0] + 1;
+                                unsigned new_start = best_new_start;
+                                double best_new_cost = 
+                                    calculate_tour_cost(new_start, end, false) + best_depots[ tours[new_start] ] +
+                                    calculate_tour_cost(pos[0], new_start, false) + best_depots[ tours[ pos[0] ] ];
+#ifndef BASE    
+                                best_new_cost += ac[ ( ts.find(pos[0]) )->second ];
+                                best_new_cost += ac[ best_depots[ tours[new_start] ] ];
+#endif                                  
+                                bool split_improving = false;
+                                
+                                while(new_start < end) {
+
+                                    double new_cost = 
+                                        calculate_tour_cost(new_start, end, false) + best_depots[ tours[new_start] ] +
+                                        calculate_tour_cost(pos[0], new_start, false) + best_depots[ tours[ pos[0] ] ];
+#ifndef BASE    
+                                    new_cost += ac[ ( ts.find(pos[0]) )->second ];
+                                    new_cost += ac[ best_depots[ tours[new_start] ] ];
+#endif                          
+                                    if(new_cost < best_new_cost) {
+                                        split_improving = true;
+                                        best_new_start = new_start;
+                                        best_new_cost = new_cost;
+                                    }
+                                    ++new_start;
+                                }
+                                
+                                if(split_improving) {
+                                    improved_u = true;
+                                    ts[best_new_start] = best_depots[ tours[best_new_start] ];
+                                }
+                            }
+
+                        }
+
+            // terza parte: ottimizzo i depots
+
+                        for(unsigned i = 0; i < ts.size(); ++i) {
+                            auto it = next(ts.begin(), i);
+                            const unsigned dep = best_depots[ tours[it->first] ];
+                            if(it->second != dep) {
+
+                                improved_u = true;
+                                ts[it->first] = dep;
+                            }
+                        }
                     }
-
-        // terza parte: ottimizzo i depots
-
-                    for(unsigned i = 0; i < ts.size(); ++i) {
-                        auto it = next(ts.begin(), i);
-                        ts[it->first] = best_depots[ tours[it->first] ];
-                    }
-
-                    needs_to_update_cost = true;
-                } 
+                    //needs_to_update_cost = true;
+                //} 
         }
 
         void repair()   {
             
-            if(needs_repair) {
+            //if(needs_repair) {
 
                 //cout << "           Individual: " << this << " repair(";
                 //print_tour();
@@ -915,14 +1004,14 @@ class Individual {
                 //print_tour();
                 //cout << "           individual " << this << " repaired\n";
                 //cout << ")\n";
-                needs_to_update_cost = true;
-            }
+                //needs_to_update_cost = true;
+           // }
         }
 
         void calculate_cost()   {
             
-            if(!needs_to_update_cost)
-                return;
+            //if(!needs_to_update_cost)
+            //    return;
             //print_tour();
 
             //cout << "\n       calculating all subtour costs\n";
@@ -1501,6 +1590,8 @@ class Individual {
 
         inline void evaluate_first(double& old_cost, double& new_cost, unsigned new_pos) {
             
+            //print_tour();
+
             auto& ts = this->tours_start;
 #ifndef BASE
             const double *const ac = this->activation_costs;
@@ -1527,7 +1618,7 @@ class Individual {
             unsigned j_len = j_end == end ? customers : j_end->first;
             j_len -= new_pos;
 
-            const unsigned depot = ts.at(0);
+            const unsigned depot = best_depots[ first ];
             old_cost += getDepotCost(depot, first) * f_len;
             new_cost += getDepotCost(best_depots[ other ], other) * f_len;
 #ifndef BASE
@@ -1535,10 +1626,21 @@ class Individual {
             new_cost += ac[ best_depots[other] ];
 #endif
 
+            if(ts.find(1) == ts.end()) {
+                if(new_pos > 1) {
+                    old_cost += getCustomerCost(first, tours[1]) * (f_len-1);
+                    new_cost += getCustomerCost(other, tours[1]) * (f_len-1);
+                }
+            }
+
             if(ts.find(new_pos) == ts.end()) {
-                const unsigned before_other = tours[new_pos-1];
-                old_cost += getCustomerCost(before_other, other) * j_len;
-                new_cost += getCustomerCost(before_other, first) * j_len;
+                if(new_pos > 1) {
+                    const unsigned before_other = tours[new_pos-1];
+                    old_cost += getCustomerCost(before_other, other) * j_len;
+                    new_cost += getCustomerCost(before_other, first) * j_len;
+
+                   // cout << "if1 " << old_cost << " " << new_cost << endl;
+                }
             } else {
                 const unsigned depot2 = ts.at(new_pos);
                 old_cost += getDepotCost(depot2, other) * j_len;
@@ -1547,17 +1649,75 @@ class Individual {
                 old_cost += ac[ depot2 ];
                 new_cost += ac[ best_depots[ first ] ];
 #endif
+                //cout << "if2 " << old_cost << " " << new_cost << endl;
             }
             
+            //questo if funziona male ma non so perchè
             if(ts.find(new_pos+1) == ts.end()) {
-                const unsigned after_other = tours[new_pos+1];
-                old_cost += getCustomerCost(other, after_other) * (j_len-1);
-                new_cost += getCustomerCost(first, after_other) * (j_len-1);
+                if(new_pos+1 < customers) {
+                    const unsigned after_other = tours[new_pos+1];
+                    old_cost += getCustomerCost(other, after_other) * (j_len-1);
+                    new_cost += getCustomerCost(first, after_other) * (j_len-1);
+                
+                    //cout << "if3 " << old_cost << " " << new_cost << " " << other << " " << after_other << " " << first << endl;      
+                }
             }
         }
 
         inline void evaluate_last(double& old_cost, double& new_cost, unsigned new_pos) {
+            
+            auto& ts = this->tours_start;
+#ifndef BASE
+            const double *const ac = this->activation_costs;
+#endif
+            const unsigned last = tours[customers-1];
+            const unsigned other = tours[new_pos];
+        
+            //ci serve la posizione dei candidati nei rispettivi subtours
+            //per valutare correttamente il costo (latency)
+            const auto beg = ts.begin();
+            const auto end = ts.end();
 
+            //calcoliamo la posizione del secondo candidato
+            auto j_end = beg;
+            while(j_end != end && j_end->first <= new_pos) {
+                ++j_end;
+            }
+
+            unsigned j_len = j_end == end ? customers : j_end->first;
+            j_len -= new_pos;
+
+            if(ts.find(new_pos) == ts.end()) {
+                if(new_pos > 0) {
+                    const unsigned before_other = tours[new_pos-1];
+                    old_cost += getCustomerCost(before_other, other) * j_len;
+                    new_cost += getCustomerCost(before_other, last) * j_len;
+                }
+            } else {
+                const unsigned depot = ts.at(new_pos);
+                old_cost += getDepotCost(depot, other) * j_len;
+                new_cost += getDepotCost(best_depots[ last ], last) * j_len;
+            }
+
+            if(ts.find(new_pos+1) == ts.end()) {
+                if(new_pos+1 < customers-1) {
+                    const unsigned after_other = tours[new_pos+1];
+                    old_cost += getCustomerCost(other, after_other) * (j_len-1);
+                    new_cost += getCustomerCost(last, after_other) * (j_len-1);
+                }
+            }
+
+            if(ts.find(customers-1) == ts.end()) {
+                if(new_pos < customers-2) {
+                    const unsigned before_last = tours[customers-2];
+                    old_cost += getCustomerCost(before_last, last);
+                    new_cost += getCustomerCost(before_last, other);
+                }
+            } else {
+                const unsigned depot = ts.at(customers-1);
+                old_cost += getCustomerCost(depot, last);
+                new_cost += getCustomerCost(best_depots[ other ], other);
+            }
         }
             
 };
