@@ -127,6 +127,7 @@ class Individual {
                 tours[trd] = node;
             }
 
+            needs_repair = true;
             improved_called = false;
             needs_to_update_cost = true;
 
@@ -156,6 +157,7 @@ class Individual {
             tours[frt] = tours[fft];
             tours[fft] = node;
 
+            needs_repair = true;
             improved_called = false;
             needs_to_update_cost = true;
         }
@@ -177,7 +179,7 @@ class Individual {
             unsigned *const tours = this->tours;
             std::reverse(tours + start, tours + end);
 
-            
+            needs_repair = true;
             improved_called = false;
             needs_to_update_cost = true;
         }
@@ -199,7 +201,7 @@ class Individual {
             unsigned *const tours = this->tours;
             std::shuffle(tours + start, tours + end, mt);
 
-            
+            needs_repair = true;
             improved_called = false;
             needs_to_update_cost = true;
 
@@ -450,7 +452,7 @@ class Individual {
                 i = val+i > customers-vehicles-2 ? i+1 : val+i;
             }
 
-            needs_repair = false;
+            needs_repair = true;
             improved_called = false;
             needs_to_update_cost = true;
         }
@@ -1162,7 +1164,7 @@ class Individual {
 
             for(unsigned i = 1; i < depots; ++i) {
 #ifndef BASE        
-
+//si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
                 const double nval = ac[i] + getDepotCost(i, first);
 
                 //se il costo complessivo è minore, si effettua lo swap di depot
@@ -1171,7 +1173,7 @@ class Individual {
                     oval = nval;
                 }
 #else
-                //si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
+                
                 
                 const double nval = getDepotCost(i, first);
 

@@ -15,13 +15,14 @@ class AlgorithmSelector {
     private:
         const map<unsigned, AlgorithmContainer > funcs = {
             {0, AlgorithmContainer(GeneticAlgorithm)         },
-            {1, AlgorithmContainer(AdaptiveGeneticAlgorithm) }
+            {1, AlgorithmContainer(AllEqualGeneticAlgorithm) },
+            {2, AlgorithmContainer(AdaptiveGeneticAlgorithm) }
         };
 
         const map<unsigned, string > names = {
             {0, "GeneticAlgorithm"},
-            {1, "AdaptiveGeneticAlgorithm"},
-            {2, "AllEqualGeneticAlgorithm"}
+            {2, "AdaptiveGeneticAlgorithm"},
+            {1, "AllEqualGeneticAlgorithm"}
         };
 
         AlgorithmSelector() {};

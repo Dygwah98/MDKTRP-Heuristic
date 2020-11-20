@@ -5,6 +5,7 @@
 #include<vector>
 #include"../n_implementations/GA.h"
 #include"../n_implementations/GA_adaptive.h"
+#include"../n_implementations/GA_all_equal.h"
 
 class AlgorithmContainer {
 
