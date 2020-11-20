@@ -19,7 +19,38 @@ class keySort {
         : a(&_a), b(&_b) {}
 
         inline bool operator()(unsigned A, unsigned B) {
-            return (*a)[A].get_cost() < (*a)[B].get_cost();
+            return ( (*a)[A].is_feasible() && !(*a)[B].is_feasible() )
+                || ( (*a)[A].is_feasible() && (*a)[B].is_feasible() 
+                &&   (*a)[A].get_cost() < (*a)[B].get_cost() );
+        }
+
+        inline void _swap() { std::swap(a, b); }
+};
+
+class keyDiversitySort {
+
+    private:
+        std::vector<Individual>* a;
+        std::vector<Individual>* b;
+        double ratio;
+
+        
+        
+    public:
+        keyDiversitySort(std::vector<Individual>& _a, 
+                    std::vector<Individual>& _b,
+                    double ratio = 1.0)
+        : a(&_a), b(&_b), ratio(ratio) {}
+
+        inline double biased_rank(const Individual& ind) {
+            return ind.get_normalized_cost() + ratio*ind.get_diversity();
+        }
+
+        inline bool operator()(unsigned A, unsigned B) {
+            return ( (*a)[A].is_feasible() && !(*a)[B].is_feasible() )
+                || ( (*a)[A].is_feasible() && (*a)[B].is_feasible() 
+                &&   biased_rank((*a)[A]) < biased_rank((*a)[B])
+                    );
         }
 
         inline void _swap() { std::swap(a, b); }

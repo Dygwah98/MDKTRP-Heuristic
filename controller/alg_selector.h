@@ -5,6 +5,8 @@
 #include<map>
 #include<vector>
 #include<algorithm>
+#include<iostream>
+#include<iterator>
 #include"algorithm_container.h"
 using namespace std;
 
@@ -33,7 +35,8 @@ class AlgorithmSelector {
                 TestInstances test;
                 AlgorithmContainer choice = instance.funcs.at(key);
                 
-                cout << "seed " << seed << endl;
+                cout << "seed " << seed; 
+                cout << endl;
                 cout << instance.names.at(key) << endl;
                 cout << "Instance cost time" << endl;
                 choice.execute(test);
