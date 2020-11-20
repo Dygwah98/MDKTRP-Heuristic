@@ -83,10 +83,7 @@ class Individual {
             delete[] tours;
         }
     	
-        void swap2()   {
-
-            if(std::uniform_int_distribution<unsigned>(0,1)(mt)) {
-                //interroute swap
+        void swap3()   {
 
                 const auto& tours_start = this->tours_start;
 
@@ -97,25 +94,38 @@ class Individual {
                 ++it;
                 const unsigned route_e = it == tours_start.end() ? customers : it->first;
 
-                std::uniform_int_distribution<unsigned> choice(route_c, route_e-1);
-                const unsigned fst = choice(mt);
-                const unsigned snd = choice(mt);
+                if(route_e - route_c >= 3) {
+                
+                    std::uniform_int_distribution<unsigned> choice(route_c, route_e-3);
+                    const unsigned fst = choice(mt);
+                    
+                    std::uniform_int_distribution<unsigned> choice2(fst+1, route_e-2);
+                    const unsigned snd = choice2(mt);
 
-                const unsigned node = tours[fst];
-                tours[fst] = tours[snd];
-                tours[snd] = node;
+                    std::uniform_int_distribution<unsigned> choice3(snd+1, route_e-1);
+                    const unsigned trd = choice3(mt);
 
-            } else {
+                    const unsigned node = tours[fst];
+                    tours[fst] = tours[snd];
+                    tours[snd] = tours[trd];
+                    tours[trd] = node;     
+                
+                } else {
 
-                std::uniform_int_distribution<unsigned> random_cell(0, customers-1);
+                    std::uniform_int_distribution<unsigned> random_cell(0, customers-3);
+                    const unsigned fst = random_cell(mt);
 
-                const unsigned fst = random_cell(mt);
-                const unsigned snd = random_cell(mt);
+                    std::uniform_int_distribution<unsigned> random_cell2(fst+1, customers-2);
+                    const unsigned snd = random_cell2(mt);
 
-                const unsigned node = tours[fst];
-                tours[fst] = tours[snd];
-                tours[snd] = node;
-            }
+                    std::uniform_int_distribution<unsigned> random_cell3(snd+1, customers-1);
+                    const unsigned trd = random_cell3(mt);
+
+                    const unsigned node = tours[fst];
+                    tours[fst] = tours[snd];
+                    tours[snd] = tours[trd];
+                    tours[trd] = node;
+                }
 
             improved_called = false;
             needs_to_update_cost = true;
@@ -123,29 +133,29 @@ class Individual {
             //cout << "           individual " << this << ": swap2 executed\n";
         }
 		
-        void swap3()   {
+        void swap5()   {
 
-            std::uniform_int_distribution<unsigned> random_cell(0, customers-1);
+            std::uniform_int_distribution<unsigned> random_cell(0, customers-5);
+            const unsigned fst = random_cell(mt);
 
-            unsigned fst = random_cell(mt);
-            unsigned snd = random_cell(mt);
+            std::uniform_int_distribution<unsigned> random_cell2(fst+1, customers-4);
+            const unsigned snd = random_cell2(mt);
 
-            while(snd == fst) {
-                snd = random_cell(mt);
-            }
+            std::uniform_int_distribution<unsigned> random_cell3(snd+1, customers-3);
+            const unsigned trd = random_cell3(mt);
 
-            unsigned trd = random_cell(mt);
+            std::uniform_int_distribution<unsigned> random_cell4(snd+1, customers-2);
+            const unsigned frt = random_cell4(mt);
 
-            while(trd == fst || trd == snd) {
-                trd = random_cell(mt);
-            }
-
+            std::uniform_int_distribution<unsigned> random_cell5(snd+1, customers-1);
+            const unsigned fft = random_cell5(mt);
+            
             const unsigned node = tours[fst];
             tours[fst] = tours[snd];
             tours[snd] = tours[trd];
-            tours[trd] = node;
+            tours[frt] = tours[fft];
+            tours[fft] = node;
 
-            
             improved_called = false;
             needs_to_update_cost = true;
         }
@@ -194,75 +204,7 @@ class Individual {
             needs_to_update_cost = true;
 
         }
-		
-        void insertion()   {
 
-            auto& dt = this->tours_start;
-            const unsigned position = std::uniform_int_distribution<unsigned>(0, customers-1)(mt);
-            const unsigned node = tours[position];
-
-            unsigned scroll1 = position;
-            unsigned pos = node;
-            while(dt.find(pos) == dt.end()) {
-                pos = tours[--scroll1];
-            }
-
-            unsigned scroll2 = position;
-            unsigned end = node;
-            while(scroll2 < customers && dt.find(end) == dt.end()) {
-                end = tours[++scroll2];
-            }
-            
-            //viene cercato un depot migliore
-            if( std::uniform_int_distribution<unsigned> (0, 1)(mt) ) {
-
-                unsigned best_depot = dt.at(pos);
-                double min_latency = calculate_tour_cost(scroll1, scroll2, true);
-                bool improved = false;
-                for(unsigned i = 0; i < depots; ++i) {
-                    
-                    dt[pos] = i;
-                    
-                    double latency = calculate_tour_cost(scroll1, scroll2, true);
-                    if(latency < min_latency) {
-
-                        best_depot = i;
-                        min_latency = latency;
-                        improved = true;
-                    }
-                }
-
-                if(!improved) {
-                    dt[pos] = best_depot;
-                }
-            
-            } 
-            //viene cercata una posizione migliore
-            else {
-
-                unsigned best_position = scroll1;
-                double min_latency = calculate_tour_cost(scroll1, scroll2, true);
-                for(unsigned swap = scroll1; swap < scroll2; ++swap) {
-
-                    tours[position] = tours[swap];
-                    tours[swap] = node;
-
-                    double latency = calculate_tour_cost(scroll1, scroll2, true);
-                    if(latency < min_latency) {
-                        min_latency = latency;
-                        best_position = swap;
-                    } else {
-                        tours[swap] = tours[position];
-                        tours[position] = node;
-                    }
-                }
-            }
-
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
-        }
-		
         Individual one_point_cross_over(const Individual& p1, const Individual& p2)   {
             
             unsigned *const tours = this->tours;
@@ -393,249 +335,6 @@ class Individual {
             return spare_son;
         }
 		
-        Individual best_order_cross_over(const Individual&p1, const Individual&p2, const Individual& best)   {
-
-            std::uniform_int_distribution<unsigned> len_random_cutting_point(1, customers / 3);
-		    std::uniform_int_distribution<unsigned> random_value_sequence(0, 2);
-		    const Individual*const parents[3] = {&p1, &p2, &best};
-            unsigned len_1 = len_random_cutting_point(mt);
-		    unsigned cutting_point_1 = 0 + len_1;
-            const unsigned value_sequence = random_value_sequence(mt);
-            unsigned last_cutting_point = cutting_point_1;
-		    unsigned len_before_end = customers - last_cutting_point;
-
-            bool *customers_in_sequence = new bool[customers];
-            for (unsigned i = depots; i < customers; ++i)
-            {
-                customers_in_sequence[i] = false;
-            }
-            
-            if (value_sequence == 0)
-            {
-                //copia interamente la sequenza dal genitore principale
-                for (unsigned i = 0; i < cutting_point_1; ++i)
-                {
-                    const unsigned node = p1.tours[i];
-                    tours[i] = node;
-                }
-                
-            }
-            else
-            {
-                //copia la sequenza dal genitore principale ma con l'ordine dettato da un altro genitore
-                const unsigned *other_tours = p2.tours;
-                if (value_sequence == 2)
-                {
-                    other_tours = best.tours;
-                }
-
-                for (unsigned i = 0; i < cutting_point_1; ++i)
-                {
-                    customers_in_sequence[p1.tours[i]] = true;
-                }
-
-                for (unsigned index_child = 0; index_child < cutting_point_1; ++index_child)
-                {
-                    const unsigned node = other_tours[index_child];
-                    
-                    if (customers_in_sequence[node])
-                    {
-                        tours[index_child] = node;
-                        customers_in_sequence[node] = false;
-                    }
-                    
-                }
-            }
-
-            const Individual& p = *(parents[value_sequence]);
-            auto p1b = p.tours_start.begin();
-            auto p1e = p1b;
-            while(p1e != p.tours_start.end() && p1e->first < cutting_point_1) {
-                ++p1e;
-            }
-            tours_start.clear();
-            tours_start.insert(p1b, p1e);
-
-            while (len_before_end > customers / 3)
-            {
-                unsigned next_cutting_point = last_cutting_point + len_random_cutting_point(mt);
-
-                //scegli una modalità
-                const unsigned value_sequence = random_value_sequence(mt);
-                if (value_sequence == 0)
-                {
-                    //copia interamente la sequenza dal genitore principale
-                    for (unsigned i = last_cutting_point; i < next_cutting_point; ++i)
-                    {
-                        const unsigned node = p1.tours[i];
-                        tours[i] = node;
-                    }
-                }
-                else
-                {
-                    //copia la sequenza dal genitore principale ma con l'ordine dettato da un altro genitore
-                    const unsigned *other_tours = p2.tours;
-                    if (value_sequence == 2)
-                    {
-                        other_tours = best.tours;
-                    }
-
-                    //conta il numero di depot presenti nella sequenza
-                    for (unsigned i = last_cutting_point; i < next_cutting_point; ++i)
-                    {
-                        const unsigned node = p1.tours[i];
-                        customers_in_sequence[node] = true;
-                        
-                    }
-
-                    
-                    for (unsigned index_child = last_cutting_point; index_child < next_cutting_point; ++index_child)
-                    {
-                        const unsigned node = other_tours[index_child];
-                        //voglio inserire un customer
-                        if (customers_in_sequence[node])
-                        {
-                            tours[index_child] = node;
-                            customers_in_sequence[node] = false;
-                        }
-                    
-                    }
-                }
-
-                auto p2e = p1e;
-                while(p2e != p.tours_start.end() && p2e->first < next_cutting_point) {
-                    ++p2e;
-                }
-                tours_start.insert(p1e, p2e);
-
-                p1e = p2e;
-
-                last_cutting_point = next_cutting_point;
-                len_before_end = customers - last_cutting_point;
-            }
-
-            const unsigned end_sequence_value = random_value_sequence(mt);
-            if (end_sequence_value == 0)
-            {
-                //copia interamente la sequenza dal genitore principale
-                for (unsigned i = last_cutting_point; i < customers; ++i)
-                {
-                    const unsigned node = p1.tours[i];
-                    tours[i] = node;
-                }
-            }
-            else
-            {
-                //copia la sequenza dal genitore principale ma con l'ordine dettato da un altro genitore
-                const unsigned *other_tours = p2.tours;
-                if (value_sequence == 2)
-                {
-                    other_tours = best.tours;
-                }
-
-                //conta il numero di depot presenti nella sequenza
-                unsigned vehicles_insertable = 0;
-                for (unsigned i = last_cutting_point; i < customers; ++i)
-                {
-                    const unsigned node = p1.tours[i];
-                    customers_in_sequence[node] = true;
-                }
-
-                
-                for (unsigned index_child = last_cutting_point; index_child < customers; ++index_child)
-                {
-                    const unsigned node = other_tours[index_child];
-                    
-                    //voglio inserire un customer
-                    if (customers_in_sequence[node])
-                    {
-                        tours[index_child] = node;
-                
-                        customers_in_sequence[node] = false;
-                    }
-                
-                }
-            }
-
-            tours_start.insert(p1e, p.tours_start.end());
-            
-		    delete[] customers_in_sequence;
-
-            needs_repair = true;
-            improved_called = false;
-            needs_to_update_cost = true;
-
-            return Individual();
-        }
-		
-        Individual position_based_cross_over(const Individual&p1, const Individual&p2)   {
-
-            unsigned *const tours = this->tours;
-            const Individual *const parents[2] = {&p1, &p2};
-            std::uniform_int_distribution<unsigned> random_n(0,customers-1);
-            std::uniform_int_distribution<unsigned> random_bit(0,1);
-
-            const unsigned n_positions = random_n(mt);
-            unsigned p = random_bit(mt);
-
-            set<unsigned> swap_pos;
-            for(unsigned i = 0; i < n_positions; ++i) {
-                swap_pos.insert(random_n(mt));
-            }
-
-            for(unsigned i = 0; i < customers; ++i) {
-                tours[i] = parents[p]->tours[i];
-            }
-
-            p = (p + 1) % 2;
-            for(auto& swap_index : swap_pos) {
-                
-                bool swap = false;
-                const unsigned swap_2 = parents[p]->tours[ swap_index ];
-                
-                unsigned swap_1 = tours[ swap_index ];
-                tours[ swap_index ] = swap_2;
-                
-                for(unsigned j = 0; !swap && j < swap_index; ++j) {
-                    if(tours[j] == swap_2 ) {
-                        tours[j] = swap_1;
-                        swap = true;
-                    }
-                }
-                
-                for(unsigned j = swap_index + 1; !swap && j < customers; ++j) {
-                    if(tours[j] == swap_2 ) {
-                        tours[j] = swap_1;
-                        swap = true;
-                    }
-                }
-            }
-
-            unsigned vp = random_bit(mt);
-            unsigned nvp = (vp + 1) % 2;
-            const unsigned vdim = min(parents[nvp]->tours_start.size(), parents[p]->tours_start.size());
-            auto random_v = std::uniform_int_distribution<unsigned>(0, vdim);
-            
-            const unsigned vn_positions = random_v(mt);
-            
-            set<unsigned> vswap_pos;
-            for(unsigned i = 0; i < vn_positions; ++i) {
-                vswap_pos.insert(random_v(mt));
-            }
-
-            tours_start.clear();
-            tours_start.insert(parents[vp]->tours_start.begin(), parents[vp]->tours_start.end());
-
-            for(auto& i : vswap_pos) {
-                tours_start[i] = parents[vp]->tours_start.at(i);
-            }
-
-            needs_repair = true;
-            improved_called = false;
-
-            return Individual();
-        }
-		
         Individual uniform_cross_over(const Individual &p1, const Individual &p2)   {
 
             std::uniform_int_distribution<unsigned> random_bit(0,1);
@@ -749,77 +448,22 @@ class Individual {
                     auto& dt = this->distance_table;
                     auto& ts = this->tours_start;
 
-                    const int customers_n = customers - 3;
-                    int not_used = 0;
-                    while(not_used < customers_n) {
+                    bool improved_u = true;
+                    while(improved_u) {
 
-                        double old_cost = 0;
-                        double new_cost = 0;
+                        improved_u = false;
+                        const int customers_n = customers - 3;
+                        int not_used = 0;
 
-                        const unsigned s1 = not_used + 1;
-                        const unsigned s2 = not_used + 2;
-                        evaluate(old_cost, new_cost, not_used, 0);
-
-                        if(old_cost - new_cost > 0.1) {
-
-                            if(ts.find(s1) != ts.end()) {
-                                ts[s1] = best_depots[ tours[s2] ];
-                            }
-
-                            if(ts.find(s2) != ts.end()) {
-                                ts[s2] = best_depots[ tours[s1] ];
-                            }
-
-                            const unsigned node = tours[s1]; 
-
-                            tours[s1] = tours[s2];
-                            tours[s2] = node;
-
-                            //not_used = -1;
-                            double past_cost = this->cost;
-                            needs_to_update_cost = true;
-                            calculate_cost();
-                            
-                            //fix temporaneo
-                            if(cost > past_cost) {
-                                if(ts.find(s1) != ts.end()) {
-                                    ts[s1] = best_depots[ tours[s2] ];
-                                }
-
-                                if(ts.find(s2) != ts.end()) {
-                                    ts[s2] = best_depots[ tours[s1] ];
-                                }
-
-                                const unsigned node = tours[s1]; 
-
-                                tours[s1] = tours[s2];
-                                tours[s2] = node;
-                            
-                            } else {
-                                not_used = 0;
-                            }
-                            //cout << not_used << " " << cost << endl; 
-                        } else {
-                            ++not_used;
-                        }
-                    }
-        
-        // prima parte-bis: riscrittura iterata tramite 2-swap (non contigui)
-                
-                    not_used = 0;
-                    while(not_used < customers_n-1) {
-    
-                        bool improved = false;
-                        const unsigned s1 = not_used+1;
-
-                        for(int offset = 1; offset < customers_n-not_used; ++ offset) {
+                        //cout << "c1 ";
+                        while(not_used < customers_n) {
 
                             double old_cost = 0;
                             double new_cost = 0;
 
-                            const unsigned s2 = not_used+2+offset;
-
-                            evaluate(old_cost, new_cost, not_used, offset);
+                            const unsigned s1 = not_used + 1;
+                            const unsigned s2 = not_used + 2;
+                            evaluate(old_cost, new_cost, not_used, 0);
 
                             if(old_cost - new_cost > 0.1) {
 
@@ -836,8 +480,7 @@ class Individual {
                                 tours[s1] = tours[s2];
                                 tours[s2] = node;
 
-                                //improved = true;
-
+                                //not_used = -1;
                                 double past_cost = this->cost;
                                 needs_to_update_cost = true;
                                 calculate_cost();
@@ -856,20 +499,100 @@ class Individual {
 
                                     tours[s1] = tours[s2];
                                     tours[s2] = node;
-
-                                    
+                                
                                 } else {
-                                    improved = true;
+                                    not_used = 0;
+                                    improved_u = true;
                                 }
-                                //cout << not_used << " " << offset << " " << cost << endl;
+                                //cout << not_used << " " << cost << endl; 
+                            } else {
+                                ++not_used;
                             }
                         }
+            
+            // prima parte-bis: riscrittura iterata tramite 2-swap (non contigui)
 
-                        if(!improved)
-                            ++not_used;
-                        else
-                            not_used = 0;
+                        //cout << "c2 ";
+                        not_used = 0;
+                        while(not_used < customers_n) {
+
+                            bool improved = false;
+                            const unsigned s1 = not_used+1;
+
+                            for(int offset = 1; offset < customers_n-not_used; ++ offset) {
+
+                                double old_cost = 0;
+                                double new_cost = 0;
+
+                                const unsigned s2 = not_used+2+offset;
+
+                                evaluate(old_cost, new_cost, not_used, offset);
+
+                                if(old_cost - new_cost > 0.1) {
+
+                                    if(ts.find(s1) != ts.end()) {
+                                        ts[s1] = best_depots[ tours[s2] ];
+                                    }
+
+                                    if(ts.find(s2) != ts.end()) {
+                                        ts[s2] = best_depots[ tours[s1] ];
+                                    }
+
+                                    const unsigned node = tours[s1]; 
+
+                                    tours[s1] = tours[s2];
+                                    tours[s2] = node;
+
+                                    //improved = true;
+
+                                    double past_cost = this->cost;
+                                    needs_to_update_cost = true;
+                                    calculate_cost();
+                                    
+                                    //fix temporaneo
+                                    if(cost > past_cost) {
+                                        if(ts.find(s1) != ts.end()) {
+                                            ts[s1] = best_depots[ tours[s2] ];
+                                        }
+
+                                        if(ts.find(s2) != ts.end()) {
+                                            ts[s2] = best_depots[ tours[s1] ];
+                                        }
+
+                                        const unsigned node = tours[s1]; 
+
+                                        tours[s1] = tours[s2];
+                                        tours[s2] = node;
+
+                                        
+                                    } else {
+                                        improved = true;
+                                        improved_u = true;
+                                    }
+                                    //cout << not_used << " " << offset << " " << cost << endl;
+                                }
+                            }
+
+                            if(!improved)
+                                ++not_used;
+                            else
+                                not_used = 0;
+                        }
+
+                        unsigned first = 0;
+                        for(unsigned off = 1; off < customers-1; ++off) {
+                            //valuta se swappare col primo
+                        }
+                    
+                        unsigned last = customers-1;
+                        for(unsigned off = 1; off < customers-2; ++off) {
+                            //valuta se swappare coll'ultimo
+                        }
+
+                        //valuta se swappare primo e ultimo
                     }
+
+                    //cout << endl;
 
         // seconda parte: tento di aumentare il numero di subtours
 #ifndef BASE
@@ -953,73 +676,7 @@ class Individual {
 
                     }
 
-        // terza parte: cerco di bilanciare i tour
-/*
-                    const int s = (int)ts.size()-3;
-                    for(int i = 1; i < s; ++i) {
-                        
-                        const unsigned first = next(ts.begin(), i)->first;
-                        unsigned second = next(ts.begin(), i+1)->first;
-                        const unsigned third = next(ts.begin(), i+2)->first;
-
-                        double c_first = calculate_tour_cost(first, second, false);
-                        double c_second = calculate_tour_cost(second, third, false);
-
-                        const unsigned len_first = second - first;
-                        const unsigned len_second = third - second;
-
-                        bool revert = false;
-                        double nc_first;
-                        double nc_second;
-                        while(second-1 < len_first && second+1 < len_second) {    
-
-                            if(c_first < c_second) {
-                                
-                                nc_first = calculate_tour_cost(first, second+1, true);
-                                nc_second = calculate_tour_cost(second+1, third, false);
-
-                                nc_second += getDepotCost(best_depots[ tours[second+1] ], second+1);
-#ifndef BASE
-                                nc_second += ac[ best_depots[ tours[second+1] ] ];
-#endif
-                                if(nc_first + nc_second < c_first + c_second) {
-                                    c_first = nc_first;
-                                    c_second = nc_second;
-
-                                    ts.erase(second);
-                                    ts[second+1] = best_depots[ tours[second + 1] ];
-                                    second += 1;
-
-                                    revert = true;
-                                }
-
-                            } else {
-                                
-                                nc_first = calculate_tour_cost(first, second-1, true);
-                                nc_second = calculate_tour_cost(second-1, third, false);
-
-                                nc_second += getDepotCost(best_depots[ tours[second-1] ], second-1);
-#ifndef BASE
-                                nc_second += ac[ best_depots[ tours[second-1] ] ];
-#endif
-                                if(nc_first + nc_second < c_first + c_second) {
-                                    c_first = nc_first;
-                                    c_second = nc_second;
-
-                                    ts.erase(second);
-                                    ts[second-1] = best_depots[ tours[second-1] ];
-
-                                    second -= 1;
-
-                                    revert = true;
-                                }
-                            }
-                        }
-                        
-                    }
-*/
-
-        // quarta parte: ottimizzo i depots
+        // terza parte: ottimizzo i depots
 
                     for(unsigned i = 0; i < ts.size(); ++i) {
                         auto it = next(ts.begin(), i);
@@ -1681,7 +1338,7 @@ class Individual {
             }
         }
 
-        void evaluate(double& old_cost, double& new_cost, int pos, int offset) {
+        inline void evaluate(double& old_cost, double& new_cost, int pos, int offset) {
             
             const auto& ts = this->tours_start;
 #ifndef BASE
@@ -1785,6 +1442,15 @@ class Individual {
                 //cout << "if6 " << old_cost << " " << new_cost << endl;
             }
         }
+
+        inline void evaluate_first(double& old_cost, double& new_cost, unsigned new_pos) {
+
+        }
+
+        inline void evaluate_last(double& old_cost, double& new_cost, unsigned new_pos) {
+
+        }
+            
 };
 
 #endif

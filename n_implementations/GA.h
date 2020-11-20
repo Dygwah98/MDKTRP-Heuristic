@@ -10,9 +10,9 @@ struct GeneticAlgorithmData {
     static constexpr unsigned mutator = SCRAMBLE;
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
-    static constexpr double timelimit = 180.0;
+    static constexpr double timelimit = 30.0;
 #endif
-    static constexpr unsigned max_evaluations_GA = 1000000; 
+    static constexpr unsigned max_evaluations_GA = 10000; 
     //va letto: 1/mut_rate prob di mutazione
     static constexpr unsigned mut_rate = 6; 
     //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
@@ -240,18 +240,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         break;
                     case 2:
 
-                        spare_son = crossover.measure_time(new_generation[ D[i] ], &Individual::best_order_cross_over,
-                                                individuals[ D[p1] ], individuals[ D[p2] ], best_individual);
-                        break;
-                    case 3:
-
-                        spare_son = crossover.measure_time(new_generation[ D[i] ], &Individual::position_based_cross_over,
-                                                individuals[ D[p1] ], individuals[ D[p2] ]);
-                        break;
-                    case 4:
-
                         spare_son = crossover.measure_time(new_generation[ D[i] ], &Individual::uniform_cross_over, 
                                                 individuals[ D[p1] ], individuals[ D[p2] ]);
+                        break;
+                    default:
                         break;
                     }
 
@@ -267,13 +259,13 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         {
                         case 0:
 
-                            mutation.measure_time(new_generation[ D[i] ], &Individual::swap2);
-                            mutation.measure_time(spare_son, &Individual::swap2);
+                            mutation.measure_time(new_generation[ D[i] ], &Individual::swap3);
+                            mutation.measure_time(spare_son, &Individual::swap3);
                             break;
                         case 1:
 
-                            mutation.measure_time(new_generation[ D[i] ], &Individual::swap3);
-                            mutation.measure_time(spare_son, &Individual::swap3);
+                            mutation.measure_time(new_generation[ D[i] ], &Individual::swap5);
+                            mutation.measure_time(spare_son, &Individual::swap5);
                             break;
                         case 2:
 
@@ -285,10 +277,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             mutation.measure_time(new_generation[ D[i] ], &Individual::inversion);
                             mutation.measure_time(spare_son, &Individual::inversion);
                             break;
-                        case 4:
-
-                            mutation.measure_time(new_generation[ D[i] ], &Individual::insertion);
-                            mutation.measure_time(spare_son, &Individual::insertion);
+                        default:
                             break;
                         }
                     }
@@ -302,24 +291,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     switch (GeneticAlgorithmData::crossover)
                     {
                     case 0:
-
                         spare_son = new_generation[ D[i] ].one_point_cross_over(individuals[ D[p1] ], individuals[ D[p2] ]);
                         break;
                     case 1:
-
                         spare_son = new_generation[ D[i] ].two_point_cross_over(individuals[ D[p1] ], individuals[ D[p2] ]);
                         break;
                     case 2:
-
-                        spare_son = new_generation[ D[i] ].best_order_cross_over(individuals[ D[p1] ], individuals[ D[p2] ], best_individual);
-                        break;
-                    case 3:
-
-                        spare_son = new_generation[ D[i] ].position_based_cross_over(individuals[ D[p1] ], individuals[ D[p2] ]);
-                        break;
-                    case 4:
-
                         spare_son =  new_generation[ D[i] ].uniform_cross_over(individuals[ D[p1] ], individuals[ D[p2] ]);
+                        break;
+                    default:
                         break;
                     }
 
@@ -335,13 +315,13 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         {
                         case 0:
 
-                            new_generation[ D[i] ].swap2();
-                            spare_son.swap2();
+                            new_generation[ D[i] ].swap3();
+                            spare_son.swap3();
                             break;
                         case 1:
 
-                            new_generation[ D[i] ].swap3();
-                            spare_son.swap3();
+                            new_generation[ D[i] ].swap5();
+                            spare_son.swap5();
                             break;
                         case 2:
                             
@@ -353,10 +333,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             new_generation[ D[i] ].inversion();
                             spare_son.inversion();
                             break;
-                        case 4:
-
-                            new_generation[ D[i] ].insertion();
-                            spare_son.insertion();
+                        default:
                             break;
                         }
                     }

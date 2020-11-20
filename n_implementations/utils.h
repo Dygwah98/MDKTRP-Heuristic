@@ -7,8 +7,8 @@
 #include <cmath>
 using namespace std;
 
-enum {SWAP2 = 0, SWAP3, SCRAMBLE, INVERSION, INSERTION};
-enum {ONE_POINT = 0, TWO_POINT, BEST_ORDER, POSITION_BASED, UNIFORM, NO_CROSSOVER};
+enum {SWAP3 = 0, SWAP5, SCRAMBLE, INVERSION, NO_MUTATION};
+enum {ONE_POINT = 0, TWO_POINT, UNIFORM, NO_CROSSOVER};
 
 
 void read_first_line_cordeau(string file, int &depots, int &vehicles, int &customers)
