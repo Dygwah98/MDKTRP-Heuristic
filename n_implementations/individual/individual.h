@@ -795,7 +795,6 @@ class Individual {
                                 auto it_end = ++ts.find(pos[0]);
                                 unsigned end = it_end == ts.end() ? customers : it_end->first;
 
-                                unsigned best_new_start = pos[0] + 1;
                                 unsigned new_start = best_new_start;
                                 double best_new_cost = 
                                     calculate_tour_cost(new_start, end, false) + best_depots[ tours[new_start] ] +
