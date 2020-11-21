@@ -795,6 +795,7 @@ class Individual {
                                 auto it_end = ++ts.find(pos[0]);
                                 unsigned end = it_end == ts.end() ? customers : it_end->first;
 
+                                unsigned best_new_start = pos[0];
                                 unsigned new_start = best_new_start;
                                 double best_new_cost = 
                                     calculate_tour_cost(new_start, end, false) + best_depots[ tours[new_start] ] +
@@ -1262,7 +1263,7 @@ class Individual {
                 const double nval = ac[i] + getDepotCost(i, first);
 
                 //se il costo complessivo è minore, si effettua lo swap di depot
-                if(nval < oval) {
+                if(oval - nval > std::numeric_limits<double>::epsilon()) {
                     depot = i;
                     oval = nval;
                 }
@@ -1272,7 +1273,7 @@ class Individual {
                 const double nval = getDepotCost(i, first);
 
                 //se il costo complessivo è minore, si effettua lo swap di depot
-                if(nval < oval) {
+                if(oval - nval > std::numeric_limits<double>::epsilon()) {
                     depot = i;
                     oval = nval;
                 }
@@ -1306,7 +1307,7 @@ class Individual {
                     mean += cost;
 
                     //se è la distanza massima trovata finora, conservala
-                    if(cost > max_cost) {
+                    if(cost - max_cost > std::numeric_limits<double>::epsilon()) {
                         max_cost = cost;
                     }
 
