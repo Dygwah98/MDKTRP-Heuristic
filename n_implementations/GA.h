@@ -193,7 +193,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 #endif
                     new_mean_cost += new_generation[ D[i] ].get_cost();
 
-                    if (new_generation[ D[i] ].get_cost() < best_cost)
+                    if (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon())
                     {
                         best_cost = new_generation[ D[i] ].get_cost();
                         best_individual = new_generation[ D[i] ];
@@ -355,13 +355,14 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     spare_son.calculate_cost();
         #endif
 
-                    if(spare_son.get_cost() < new_generation[ D[i] ].get_cost()) {
+                    if(new_generation[ D[i] ].get_cost() - spare_son.get_cost() > std::numeric_limits<double>::epsilon()) {
                         new_generation[ D[i] ] = spare_son;
                     }
 
                     new_mean_cost += new_generation[ D[i] ].get_cost();
 
-                    if (new_generation[ D[i] ].is_feasible() && new_generation[ D[i] ].get_cost() < best_cost)
+                    if (new_generation[ D[i] ].is_feasible() 
+                        && (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon()))
                     {
                         best_cost = new_generation[ D[i] ].get_cost();
                         best_individual = new_generation[ D[i] ];
@@ -429,7 +430,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         }
 
         cost = best_individual.get_cost();
-        if (cost < global_best)
+        if (global_best - cost > std::numeric_limits<double>::epsilon())
         {
             global_best = cost;    
 

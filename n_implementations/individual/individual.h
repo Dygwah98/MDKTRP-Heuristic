@@ -408,7 +408,7 @@ class Individual {
                     if(visited.find(j) == end) {
 
                         cost = getCustomerCost(tours[i], j);
-                        if(cost < best_cost) {
+                        if(best_cost - cost > std::numeric_limits<double>::epsilon()) {
                             next = j;
                             best_cost = cost;
                         }
@@ -492,7 +492,7 @@ class Individual {
                             const unsigned s2 = not_used + 2;
                             evaluate(old_cost, new_cost, not_used, 0);
 
-                            if(old_cost - new_cost > 1.1) {
+                            if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
 
                                 if(ts.find(s1) != ts.end()) {
                                     ts[s1] = best_depots[ tours[s2] ];
@@ -534,7 +534,7 @@ class Individual {
 
                                 evaluate(old_cost, new_cost, not_used, offset);
 
-                                if(old_cost - new_cost > 1.1) {
+                                if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
 
                                     if(ts.find(s1) != ts.end()) {
                                         ts[s1] = best_depots[ tours[s2] ];
@@ -574,7 +574,7 @@ class Individual {
 
                             evaluate_first(old_cost, new_cost, off);
 
-                            if(old_cost - new_cost > 1.1) {
+                            if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
 
                                 ts[first] = best_depots[ tours[off] ];
 
@@ -605,7 +605,7 @@ class Individual {
 
                             evaluate_last(old_cost, new_cost, off);
 
-                            if(old_cost - new_cost > 1.1) {
+                            if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
 
                                 if(ts.find(last) != ts.end()) {
                                     ts[last] = best_depots[ tours[off] ];
@@ -652,7 +652,7 @@ class Individual {
 #endif                                
                             }
 
-                            if(old_cost - new_cost > 1.1) {
+                            if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
 
                                 ts[first] = best_depots[ tours[last] ];
                                 if(ts.find(last) != ts.end()) {
@@ -735,7 +735,7 @@ class Individual {
                                         calculate_tour_cost(p_pos[0], new_start, false) + best_depots[ tours[p_pos[0] ] ] +
                                         calculate_tour_cost(new_start, p_end, false) + best_depots[ tours[new_start] ];
 
-                                    if(old_cost - new_cost > 1.1 && new_start != s->first) {
+                                    if(old_cost - new_cost > std::numeric_limits<double>::epsilon() && new_start != s->first) {
                                         best_new_start = new_start;
                                         old_cost = new_cost;
                                     }
@@ -815,7 +815,7 @@ class Individual {
                                     new_cost += ac[ ( ts.find(pos[0]) )->second ];
                                     new_cost += ac[ best_depots[ tours[new_start] ] ];
 #endif                          
-                                    if(new_cost < best_new_cost) {
+                                    if(best_new_cost - new_cost > std::numeric_limits<double>::epsilon()) {
                                         split_improving = true;
                                         best_new_start = new_start;
                                         best_new_cost = new_cost;
@@ -893,9 +893,12 @@ class Individual {
 
                     if(last) {
 
-                        if( ts.find(customers-2) == ts.end() ) {
+                        if( ts.find(customers-1) == ts.end() ) {
                             
                             cost += getCustomerCost(tours[customers-2], toInsert);
+                        } else {
+                            
+                            cost += getDepotCost(best_depots[ toInsert ], toInsert);
                         }
 
                         if(cost < best_cost) {
@@ -909,27 +912,32 @@ class Individual {
                         cost = 0;
 
                         if(ts.find(i) == ts.end()) {
-                                
+                            
                             cost += getCustomerCost(tours[i-1], toInsert);
                         
-                            if( ts.find(i+1) == ts.end() ) {
-                                
-                                cost += getCustomerCost(toInsert, tours[i+1]);
-                            }
-
                         } else {
 
                             const unsigned depot = best_depots[ toInsert ];
                             cost += getDepotCost(depot, toInsert);
+
                         }
                         
-                        if(cost < best_cost) {
+                        if( i < customers-1 && ts.find(i+1) == ts.end() ) {
+                                
+                            cost += getCustomerCost(toInsert, tours[i+1]);
+                        }
+                        
+                        if(best_cost - cost > std::numeric_limits<double>::epsilon()) {
                             best_cost = cost;
                             replaced = i;
                         }
                     }
                        
                     tours[replaced] = toInsert;
+                    
+                    if(ts.find(replaced) != ts.end())
+                        ts[replaced] = best_depots[ toInsert ]; 
+
                     found[i] = true;
                     toReplace.erase(replaced);
                     if(replaced == customers-1)
@@ -965,10 +973,10 @@ class Individual {
 
                             pos[k] = start;
                             len[k] = calculate_tour_cost(prev_it->first, end, false);
+                            len[k] += best_depots[ tours[prev_it->first] ];
 #ifndef BASE
                             len[k] += ac[it->second];
 #endif
-
                             ++k;
                         }
 
@@ -976,7 +984,6 @@ class Individual {
                             pos[k] = customers;
                             len[k] = std::numeric_limits<double>::max();
                         }
-
 
                         int i, j;
                         for (i = 1; i < size; i++) {
@@ -1040,12 +1047,11 @@ class Individual {
             }
 
             this->cost = sum;
-            needs_to_update_cost = false;
 
             //cout << "           individual " << this << " cost updated from: " << oldcost <<" to: " << cost <<"\n";
         }
 
-        void calculate_diversity_ratio(unsigned himself, std::vector<Individual>& pop) {
+        void calculate_diversity_ratio(unsigned himself, const std::vector<Individual>& pop) {
 
             double sum = 0;
             //meglio se un divisore di pop.size()
@@ -1439,9 +1445,9 @@ class Individual {
                 cost += getDepotCost(best_depot, i-1);
 
 #ifndef BASE
-                if( distances[i-1] + cost + ac[best_depot] < distances[i] ) {
+                if( distances[i] - distances[i-1] - cost - ac[best_depot] > std::numeric_limits<double>::epsilon() ) {
 #else 
-                if( distances[i-1] + cost < distances[i] ) {
+                if( distances[i] - distances[i-1] - cost > std::numeric_limits<double>::epsilon() ) {
 #endif
                     distances[i] = distances[i-1] + cost;
                     predecessor[i] = best_depot;
@@ -1453,9 +1459,9 @@ class Individual {
                     double scost = calculate_tour_cost(i-1, j, false);
 
 #ifdef BASE
-                    if( distances[i-1] + scost < distances[j] ) {
+                    if( distances[j] - distances[i-1] - scost > std::numeric_limits<double>::epsilon() ) {
 #else
-                    if( distances[i-1]*(j-i) + scost + ac[best_depot] < distances[j] ) {
+                    if( distances[j] - distances[i-1]*(j-i) - scost - ac[best_depot] > std::numeric_limits<double>::epsilon() ) {
 #endif 
                         distances[j] = distances[i-1]*(j-i) + scost;
                         predecessor[j] = depots;
