@@ -5,6 +5,7 @@
 #include<vector>
 using namespace std;
 
+//parametri utiizzati per una singola istanza
 class Test {
 
     public:
@@ -31,6 +32,7 @@ class Test {
         }
 };
 
+//tutte le istanze
 class TestInstances {
 
     public:

@@ -9,6 +9,7 @@ int main(int argc, char const *argv[])
         return 1;
     }
 
+    //seleziona l'algoritmo da eseguire
     AlgorithmSelector::execute( argv[1][0] - '0' );
 
     return 0;

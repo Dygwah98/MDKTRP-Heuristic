@@ -1,22 +1,29 @@
 #ifndef GA_EQ_H
 #define GA_EQ_H
 
-#include"individual/misc.h"
+#include"../individual/misc.h"
 
+//parametri dell'algoritmo
 struct AllEqualGeneticAlgorithmData {
 
+    //numero di esecuzioni dell'algoritmo
     static constexpr unsigned tries = 1;
+    //cardinalità della popolazione
     static constexpr unsigned population_size = 25;
+    // numero di mutators e crossover (incrementato di 1 per aggiungere la possibilità che non venga eseguito)
     static constexpr unsigned mutator_choice = 5;
     static constexpr unsigned crossover_choice = 4;
 #ifdef TIMELIMIT
-    static constexpr double timelimit = 30.0;
+    //timelimit minimo (a seconda dell'istanza, può essere fino a 20 volte più grande)
+    static constexpr double timelimit = 180.0;
 #endif
-    static constexpr unsigned max_evaluations_GA = 10000; 
-    //va letto: 1/mut_rate prob di mutazione
+    //numero massimo di iterazioni
+    static constexpr unsigned max_evaluations_GA = 1000000; 
+    //probabilità di mutazione, va letto: 1/mut_rate
     static constexpr unsigned mut_rate = 6; 
     //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
     static constexpr unsigned mut_update_window = 100;
+    //frazione di individui mantenuti durante l'esecuzione
     static constexpr double elite_ratio = 0.4;
 };
 
@@ -61,9 +68,9 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 #else
     best_individual.random_initialize();
 #endif
-    //cout << "       parameters set\n";
     const unsigned max_tries = GeneticAlgorithmData::tries;
 
+    //vettore d'appoggio, contenente gli indici degli individui
     std::vector<unsigned> D;
     for(unsigned i = 0; i < popsize; ++i)
         D.push_back(i);
@@ -115,7 +122,6 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
             mean_cost += cost;
         }
-        //cout << "       population initialized\n";
 
         mean_cost /= (double)popsize;
 
@@ -141,7 +147,9 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
         std::vector<Individual> new_generation_original;
         new_generation_original.assign(popsize, ind);
 
-        keySort sorts(individuals_original, new_generation_original);
+        //keySort sorts(individuals_original, new_generation_original);
+        
+        //si occupa di ordinare il vector di indici in base al rank degli individui
         keyDiversitySort sorts2(individuals_original, new_generation_original, 1.0 - elite_ratio);
 
 #ifdef PRINT
@@ -158,20 +166,19 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
         std::vector<Individual> *individuals_ptr = &individuals_original;
         std::vector<Individual> *new_generation_ptr = &new_generation_original; 
 
-        //cout << "       starting evaluations\n";
         double time_elapsed = 0;
 
         while (g < max_g && time_elapsed < 7200) {
 
             double new_mean_cost = 0;
             ++repeated;
-            //cout<<"G: "<<g << "| ";
 
             const std::vector<Individual> &individuals = *individuals_ptr;
             std::vector<Individual> &new_generation = *new_generation_ptr;
 
             
             unsigned i = 0;
+            //restart procedure
             if(repeated % mut_update_window == 0) {
                 
                 if(mut_rate-1 >= 1) {
@@ -179,7 +186,6 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                     random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
                 }
 
-                //cout << mut_update_window << " elite ";
                 for (; i < s; ++i) {
                     new_generation[ D[i] ] = individuals[ D[i] ];
                     new_mean_cost += new_generation[ D[i] ].get_cost();
@@ -214,7 +220,6 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                             //cout << "known solution ";
                             return best_individual.get_cost();
                         }
-                        //std::cout << "Child improved: " << best_cost << "\n";
                     }
                 }
 
@@ -224,16 +229,18 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
             } else {
 
-                //elitismo al 10%
+                //elitismo
                 for (; i < s; ++i) {
                     new_generation[ D[i] ] = individuals[ D[i] ];
                     new_mean_cost += new_generation[ D[i] ].get_cost();
                 }
-                //dobbiamo inserire il rimanente 90% della popolazione
+                //dobbiamo inserire la popolazione rimanente
                 for (; i < popsize; ++i)
                 {
-                            
+                    //scelta dei parent per il crossover
+                    //il primo è in range [0, popsize/2]
                     p1 = random_parent(mt);
+                    //il secondo è in range [0, popsize-1]
                     std::uniform_int_distribution<unsigned> left(0, p1-1);
                     std::uniform_int_distribution<unsigned> right(p1 + 1, popsize - 1);
                     if(random_choice(mt))
@@ -357,6 +364,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                     spare_son.calculate_cost();
         #endif
 
+                    //conserviamo solo il figlio migliore
                     if(new_generation[ D[i] ].get_cost() - spare_son.get_cost() > std::numeric_limits<double>::epsilon() ) {
                         new_generation[ D[i] ] = spare_son;
                     }
@@ -383,10 +391,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                             //cout << "known solution ";
                             return best_individual.get_cost();
                         }
-                        //std::cout << "Child improved: " << best_cost << "\n";
-                    }
-
-                    
+                    } 
                 }
                 
                 new_mean_cost /= (double)popsize;
@@ -402,12 +407,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 #endif
                     new_generation[ D[j] ].set_normalized(best_cost);
                 }
-
             }
-            //cout << "\n";
-            //cout << "       iteration " << g << ": elite population processed\n";
-
-            //cout << "       iteration " << g << ": entire population processed\n";
 
             std::vector<Individual> *const temp = individuals_ptr;
             individuals_ptr = new_generation_ptr;
@@ -424,7 +424,6 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                 <std::chrono::nanoseconds>(end_time - start_time)
                 .count() / (double)1000000000;
 #ifdef TIMELIMIT             
-            //cout << time_elapsed << "\n";
             if(time_elapsed > timelimit)
                 break;
 #endif
@@ -444,7 +443,6 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                 best_individual.print_tour();
 #endif
                 //cout << "known solution ";
-                //best_individual.print_tour();
                 return cost;
             }
         } 

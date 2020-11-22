@@ -14,6 +14,7 @@
 #include "../utils.h"
 using namespace std;
 
+//seed
 std::uint_least64_t seed(11363585407706497491U);     
 std::mt19937 mt(seed);
 
@@ -30,7 +31,6 @@ class Individual {
             tours( new unsigned[customers] ),
 	        tours_start()
         {
-            //cout << "           default constructor called\n";
             for(unsigned i = 0; i < customers; ++i)
                 tours[i] = i;
             
@@ -45,8 +45,6 @@ class Individual {
             tours( new unsigned[o.customers] ),
             tours_start(o.tours_start)
         {
-            //cout << "           copy constructor called\n";
-
             for(unsigned i = 0; i < customers; ++i)
                 tours[i] = o.tours[i];
         }
@@ -87,6 +85,7 @@ class Individual {
 
             const auto& tours_start = this->tours_start;
 
+            //si seleziona uno dei subtours (numero subtours = numero veicoli attivi)
             std::uniform_int_distribution<unsigned> route(0, tours_start.size()-1);
 
             auto it = next(tours_start.begin(), route(mt));
@@ -94,6 +93,7 @@ class Individual {
             ++it;
             const unsigned route_e = it == tours_start.end() ? customers : it->first;
 
+            //se il subtour scelto ha più di tre customers...
             if(route_e - route_c >= 3) {
             
                 std::uniform_int_distribution<unsigned> choice(route_c, route_e-3);
@@ -105,11 +105,13 @@ class Individual {
                 std::uniform_int_distribution<unsigned> choice3(snd+1, route_e-1);
                 const unsigned trd = choice3(mt);
 
+                //...eseguo un intratour swap...
                 const unsigned node = tours[fst];
                 tours[fst] = tours[snd];
                 tours[snd] = tours[trd];
                 tours[trd] = node;     
             
+            //...altrimenti...
             } else {
 
                 std::uniform_int_distribution<unsigned> random_cell(0, customers-3);
@@ -121,17 +123,12 @@ class Individual {
                 std::uniform_int_distribution<unsigned> random_cell3(snd+1, customers-1);
                 const unsigned trd = random_cell3(mt);
 
+                //... swappo tre customers casuali fra tutti
                 const unsigned node = tours[fst];
                 tours[fst] = tours[snd];
                 tours[snd] = tours[trd];
                 tours[trd] = node;
             }
-
-            //needs_repair = true;
-            //improved_called = false;
-            //needs_to_update_cost = true;
-
-            //cout << "           individual " << this << ": swap2 executed\n";
         }
 		
         void swap5()   {
@@ -156,10 +153,6 @@ class Individual {
             tours[snd] = tours[trd];
             tours[frt] = tours[fft];
             tours[fft] = node;
-
-            //needs_repair = true;
-            //improved_called = false;
-            //needs_to_update_cost = true;
         }
 		
         void inversion()   {
@@ -177,11 +170,8 @@ class Individual {
                 std::swap(start, end);
 
             unsigned *const tours = this->tours;
+            //inverto d'ordine la porzione del giant tour selezionata
             std::reverse(tours + start, tours + end);
-
-            //needs_repair = true;
-            //improved_called = false;
-            //needs_to_update_cost = true;
         }
 		
         void scramble()   {
@@ -199,16 +189,13 @@ class Individual {
                 std::swap(start, end);
 
             unsigned *const tours = this->tours;
+            //scambio randomicamente di posto la porzione del giant tour selezionata
             std::shuffle(tours + start, tours + end, mt);
-
-            //needs_repair = true;
-            //improved_called = false;
-            //needs_to_update_cost = true;
-
         }
 
         Individual one_point_cross_over(const Individual& p1, const Individual& p2)   {
             
+            //secondo individuo (il primo è quello che lancia la funzione)
             Individual spare_son;
 
             unsigned *const tours = this->tours;
@@ -217,16 +204,21 @@ class Individual {
 		    const unsigned *const tours_p2 = p2.tours;
             std::uniform_int_distribution<unsigned> random_cell(0, customers-1);      
 
+            //seleziono un cutting point
             const unsigned cutting_point = random_cell(mt);
 
             unsigned index_child = 0;
             for(; index_child < cutting_point; ++index_child) {
+                
                 tours[index_child] = tours_p1[index_child];
+                
                 stours[index_child] = tours_p2[index_child];
             }
 
             for(; index_child < customers; ++index_child) {
+                
                 tours[index_child] = tours_p2[index_child];
+                
                 stours[index_child] = tours_p1[index_child];
             }
 
@@ -236,53 +228,61 @@ class Individual {
             auto& vmap_p2 = p2.tours_start;
             const unsigned bound = min(vmap_p1.size(), vmap_p2.size());
             std::uniform_int_distribution<unsigned> random_vehicle(0, bound-1);
+            
+            //seleziono un cutting point per i veicoli
             const unsigned vcutting_point = random_vehicle(mt);
 
             vmap.clear();
             svmap.clear();
             
+            //inserisco il primo segmento del primo genitore
             auto p1b = vmap_p1.begin();
             auto vcp_1 = next(p1b, vcutting_point); 
             vmap.insert(p1b, vcp_1);
            
+            //inserisco il primo segmento del secondo genitore nell'altro figlio
             auto sp1b = vmap_p2.begin();
             auto svcp_1 = next(sp1b, vcutting_point);
             svmap.insert(sp1b, svcp_1);
 
+            //inserisco il secondo segmento del secondo genitore
             auto p2b = next(vmap_p2.begin(), vcutting_point);
             auto vcp_2 = vmap_p2.end();
             vmap.insert(p2b, vcp_2);
 
+            //inserisco il secondo segmento del primo genitore nell'altro figlio
             auto sp2b = vcp_1;
             auto svcp_2 = vmap_p1.end();
             svmap.insert(sp2b, svcp_2);
-        
-            //needs_repair = true;
-            //improved_called = false;
-            //needs_to_update_cost = true;
 
             return spare_son;
         }
 		
         Individual two_point_cross_over(const Individual& p1, const Individual& p2) {
 
+            //secondo individuo (il primo è quello che lancia la funzione)
             Individual spare_son;
 
             const unsigned size = std::min(p1.tours_start.size(), p2.tours_start.size());
 
             unsigned first_cutting_point;
             unsigned second_cutting_point;
+
+            //se ci sono almeno 3 suboturs...
             if(size >= 3) {
 
                 const unsigned bound = size / 2;
                 std::uniform_int_distribution<unsigned> cpoint1(1, bound);
                 std::uniform_int_distribution<unsigned> cpoint2(bound + 1, size-1);
 
+                //...trovo dei cutting point che mantengono il più possibile la struttura di tour...
                 first_cutting_point = next(p1.tours_start.begin(), cpoint1(mt))->first;
                 second_cutting_point = next(p2.tours_start.begin(), cpoint2(mt))->first;
 
+            //...altrimenti...
             } else {
                 
+                //...seleziono dei cutting point senza considerare i subtours
                 std::uniform_int_distribution<unsigned> crossing_point1(1, customers-2);
 
                 first_cutting_point = crossing_point1(mt);
@@ -296,6 +296,8 @@ class Individual {
             unsigned *const tours = this->tours;
             const unsigned *const toursp1 = p1.tours;
             const unsigned *const toursp2 = p2.tours;
+
+            //inserisco in contemporanea le sezioni di cromosoma nei due individui offspring
 
             unsigned i = 0;
             for(; i < first_cutting_point; ++i) {
@@ -323,6 +325,8 @@ class Individual {
             auto itp1 = tsp1.begin();
             const auto endp1 = tsp1.end();
 
+            //come sopra, ma per i veicoli
+            
             while(itp1 != endp1) {
                 
                 if(itp1->first < first_cutting_point || itp1->first > second_cutting_point)
@@ -343,16 +347,13 @@ class Individual {
                     ts2.insert(*itp2);
                 ++itp2;
             }
-
-            //needs_repair = true;
-            //improved_called = false;
-            //needs_to_update_cost = true;
         
             return spare_son;
         }
 		
         Individual uniform_cross_over(const Individual &p1, const Individual &p2)   {
 
+            //secondo individuo (il primo è quello che lancia la funzione)
             Individual spare_son;
 
             std::uniform_int_distribution<unsigned> random_bit(0,1);
@@ -360,7 +361,7 @@ class Individual {
             const Individual*const parents[2] = {&p1, &p2};
 
             for(unsigned i = 0; i < customers; ++i) {
-                
+                //ad ogni step, si seleziona da quale parent prendere informazioni
                 const unsigned r = random_bit(mt);
                 tours[i] = parents[r]->tours[i];
                 spare_son.tours[i] = parents[!r]->tours[i];
@@ -372,27 +373,26 @@ class Individual {
             spare_son.tours_start.clear();
             for(unsigned i = 0; i < vdim; ++i) {
 
+                //come sopra, ma per i veicoli
                 const unsigned rand3 = random_bit(mt);
                 const auto it = parents[rand3]->tours_start.begin();
                 const auto it2 = parents[!rand3]->tours_start.begin();
                 tours_start.insert( *(next(it, i)) );
                 spare_son.tours_start.insert( *(next(it2, i)) );
             }
-        
-            //needs_repair = true;
-            //improved_called = false;
-            //needs_to_update_cost = true;
 
             return spare_son;
         }
 
         void random_initialize()   {
             
-            //euristica costruttiva: si parte da un nodo random e da lì si prende ogni volta la scelta migliore
-
+            //euristica costruttiva: si parte da un nodo random e da lì si fa ogni volta la scelta migliore
+            
+            //selezione primo nodo randomico
             tours[0] = std::uniform_int_distribution<unsigned>(0,customers-1)(mt);
             tours_start[0] = best_depots[ tours[0] ];
 
+            //manteniamo memoria dei customer già inseriti
             unordered_set<unsigned> visited;
             visited.insert(tours[0]);
 
@@ -405,8 +405,10 @@ class Individual {
                 
                 for(unsigned j = 0; j < customers; ++j) {
                     
+                    //se non è già stato inserito...
                     if(visited.find(j) == end) {
 
+                        //...valuta il valore dell'inserimento
                         cost = getCustomerCost(tours[i], j);
                         if(best_cost - cost > std::numeric_limits<double>::epsilon()) {
                             next = j;
@@ -425,8 +427,6 @@ class Individual {
             repair();
             splitting_algorithm();
             repair();
-
-            //cout << "           individual " << this << " randomly initialized\n";
         }
 
         void random_restart() {
@@ -443,553 +443,338 @@ class Individual {
             std::uniform_int_distribution<unsigned> v(1, customers-vehicles-2);
             tours_start[0] = dp(mt);
             unsigned i = v(mt);
-            
-            //cout << "until here";
 
+            //posiziono randomicamente il numero massimo di veicoli
+            //seleziono per ciascuno un depot random
             for(; i < vehicles;) {
                 tours_start[i] = dp(mt);
                 const unsigned val = v(mt);
                 i = val+i > customers-vehicles-2 ? i+1 : val+i;
             }
 
-            //needs_repair = true;
-            //improved_called = false;
-            //needs_to_update_cost = true;
         }
         
         void local_search()   {
         
-            //if(!improved_called) {
+            improved_called = true;
 
-                //cout << this << endl;
+            auto& dt = this->distance_table;
+            auto& ts = this->tours_start;
 
-                improved_called = true;
+            bool improved_u = true;
+            unsigned g = 0;
+            //la local search viene ripetuta ogni volta che si verifica un improvement,
+            //ma senza superare un certo numero di iterazioni
+            while(improved_u && g < 50) {
 
-        // prima parte: riscrittura iterata tramite 2-swap (contigui)
+                ++g;
 
-                    auto& dt = this->distance_table;
-                    auto& ts = this->tours_start;
+                improved_u = false;
+                const int customers_n = customers - 3;
+                int not_used = 0;
 
-                    bool improved_u = true;
-                    unsigned g = 0;
-                    //la local search viene ripetuta ogni volta che si verifica un improvement,
-                    //ma senza superare un certo numero di iterazioni
-                    while(improved_u && g < 50) {
+                //riscrittura iterata tramite 2-swap (contigui)
+                while(not_used < customers_n) {
 
-                        ++g;
+                    double old_cost = 0;
+                    double new_cost = 0;
 
-                        improved_u = false;
-                        const int customers_n = customers - 3;
-                        int not_used = 0;
+                    const unsigned s1 = not_used + 1;
+                    const unsigned s2 = not_used + 2;
+                    evaluate(old_cost, new_cost, not_used, 0);
 
-                        //cout << "c1 ";
-                        while(not_used < customers_n) {
+                    if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
 
-                            double old_cost = 0;
-                            double new_cost = 0;
-
-                            const unsigned s1 = not_used + 1;
-                            const unsigned s2 = not_used + 2;
-                            evaluate(old_cost, new_cost, not_used, 0);
-
-                            if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
-
-                                if(ts.find(s1) != ts.end()) {
-                                    ts[s1] = best_depots[ tours[s2] ];
-                                }
-
-                                if(ts.find(s2) != ts.end()) {
-                                    ts[s2] = best_depots[ tours[s1] ];
-                                }
-
-                                const unsigned node = tours[s1]; 
-
-                                tours[s1] = tours[s2];
-                                tours[s2] = node;
-                                {
-                                    not_used = 0;
-                                    improved_u = true;
-                                }
-                                //cout << not_used << " " << cost << endl; 
-                            } else {
-                                ++not_used;
-                            }
-                        }
-            
-            // prima parte-bis: riscrittura iterata tramite 2-swap (non contigui)
-
-                        //cout << "c2 ";
-                        not_used = 0;
-                        while(not_used < customers_n) {
-
-                            bool improved = false;
-                            const unsigned s1 = not_used+1;
-
-                            for(int offset = 1; offset < customers_n-not_used; ++ offset) {
-
-                                double old_cost = 0;
-                                double new_cost = 0;
-
-                                const unsigned s2 = not_used+2+offset;
-
-                                evaluate(old_cost, new_cost, not_used, offset);
-
-                                if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
-
-                                    if(ts.find(s1) != ts.end()) {
-                                        ts[s1] = best_depots[ tours[s2] ];
-                                    }
-
-                                    if(ts.find(s2) != ts.end()) {
-                                        ts[s2] = best_depots[ tours[s1] ];
-                                    }
-
-                                    const unsigned node = tours[s1]; 
-
-                                    tours[s1] = tours[s2];
-                                    tours[s2] = node;
-
-                                    //improved = true;
-                                    {
-                                        improved = true;
-                                        improved_u = true;
-                                    }
-                                    //cout << not_used << " " << offset << " " << cost << endl;
-                                }
-                            }
-
-                            if(!improved)
-                                ++not_used;
-                            else
-                                not_used = 0;
+                        if(ts.find(s1) != ts.end()) {
+                            ts[s1] = best_depots[ tours[s2] ];
                         }
 
-                        //valuto lo swap del primo customer
-                        const unsigned first = 0;
-                        //se parto da 1 non funziona, non so perchè
-                        for(unsigned off = 1; off < customers-1; ++off) {
-                            
-                            double old_cost = 0.0;
-                            double new_cost = 0.0;
-
-                            evaluate_first(old_cost, new_cost, off);
-
-                            if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
-
-                                ts[first] = best_depots[ tours[off] ];
-
-                                if(ts.find(off) != ts.end()) {
-                                    ts[off] = best_depots[ tours[first] ];
-                                }
-
-                                const unsigned node = tours[first]; 
-
-                                tours[first] = tours[off];
-                                tours[off] = node;
-
-                                //improved = true;
-                                {
-                                    improved_u = true;
-                                }
-                                //cout << not_used << " " << offset << " " << cost << endl;
-                            }
-                        }
-                    
-                        //valuto lo swap dell'ultimo customer
-                        const unsigned last = customers-1;
-                        //dovrebbe fermarsi a < customers-1, ma non so perchè non funziona
-                        for(unsigned off = 1; off < customers-1; ++off) {
-                            
-                            double old_cost = 0.0;
-                            double new_cost = 0.0;
-
-                            evaluate_last(old_cost, new_cost, off);
-
-                            if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
-
-                                if(ts.find(last) != ts.end()) {
-                                    ts[last] = best_depots[ tours[off] ];
-                                }
-
-                                if(ts.find(off) != ts.end()) {
-                                    ts[off] = best_depots[ tours[last] ];
-                                }
-
-                                const unsigned node = tours[last]; 
-
-                                tours[last] = tours[off];
-                                tours[off] = node;
-
-                                improved_u = true;
-                            }
+                        if(ts.find(s2) != ts.end()) {
+                            ts[s2] = best_depots[ tours[s1] ];
                         }
 
-                        //valuta se swappare primo e ultimo
+                        const unsigned node = tours[s1]; 
+
+                        tours[s1] = tours[s2];
+                        tours[s2] = node;
                         {
-                            double old_cost = 0.0;
-                            double new_cost = 0.0;
-
-                            old_cost += getDepotCost(ts.at(0), tours[first]);
-                            new_cost += getDepotCost(best_depots[ tours[last] ], tours[last]);
-#ifndef BASE
-                            old_cost += activation_costs[ts.at(0)];
-                            new_cost += activation_costs[ best_depots[tours[last] ] ];
-#endif
-                            if(ts.find(1) == ts.end()) {
-                                old_cost += getCustomerCost(tours[first], tours[1]);
-                                new_cost += getCustomerCost(tours[last], tours[1]);
-                            }
-
-                            if(ts.find(last) == ts.end()) {
-                                old_cost += getCustomerCost(tours[customers-2], tours[last]);
-                                new_cost += getCustomerCost(tours[customers-2], tours[first]);
-                            } else {
-                                old_cost += getDepotCost(ts.at(last), tours[last]);
-                                new_cost += getDepotCost(best_depots[ tours[first] ], tours[first]);
-#ifndef BASE
-                                old_cost += activation_costs[ts.at(last)];
-                                new_cost += activation_costs[ best_depots[tours[first] ] ];
-#endif                                
-                            }
-
-                            if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
-
-                                ts[first] = best_depots[ tours[last] ];
-                                if(ts.find(last) != ts.end()) {
-                                    ts[last] = best_depots[ tours[first] ];
-                                }
-
-                                const unsigned node = tours[first];
-                                tours[first] = tours[last];
-                                tours[last] = node;
-
-                                improved_u = true;
-                            }
+                            not_used = 0;
+                            improved_u = true;
                         }
-                    
-
-                    //cout << endl;
-
-            // seconda parte: cerco di bilanciare i subtours
-#ifndef BASE
-                        const double *const ac = Individual::activation_costs;
-#endif   
-                        vector<unsigned> p_pos(ts.size(), 0);
-                        vector<double> p_len(ts.size(), 0);
-
-                        for(unsigned ind = 0; ind < ts.size(); ++ind) {
-
-                            unsigned k = 0;
-                            for(auto it = ts.begin(); it != ts.end(); ++it) {
-                                
-                                auto next_it = it;
-                                ++next_it;
-
-                                const unsigned start = it->first;
-                                const unsigned end = next_it == ts.end() ? customers : next_it->first;
-
-                                p_pos[k] = start;
-                                p_len[k] = calculate_tour_cost(it->first, end, false);
-#ifndef BASE
-                                p_len[k] += ac[it->second];
-#endif
-                                ++k;
-                            }
-
-                            int i, j;
-                            for (i = 1; i < ts.size(); i++) {
-                                    double tmp = p_len[i];
-                                    unsigned tmp2 = p_pos[i];
-                                    for (j = i; j >= 1 && tmp > p_len[j-1]; j--) {
-                                        p_len[j] = p_len[j-1];
-                                        p_pos[j] = p_pos[j-1];
-                                    }
-                                    p_len[j] = tmp;
-                                    p_pos[j] = tmp2;
-                            }
-
-                            auto f = ts.find(p_pos[0]);
-                            auto s = next(f,1);
-
-                            if(s == ts.end()) {
-                                s = f = ts.find(p_pos[0]);
-                                if(f != ts.begin()) {
-                                    --f;
-                                } else {
-                                    continue;
-                                }
-                            }
-
-                            if(s != ts.end()) {
-
-                                const unsigned p_end = next(s,1) == ts.end() ? customers : next(s,1)->first;
-
-                                double old_cost = 
-                                    calculate_tour_cost(p_pos[0], s->first, false) + best_depots[ tours[ p_pos[0] ] ] + 
-                                    calculate_tour_cost(s->first, p_end, false) + best_depots[ tours[s->first] ];
-                                
-                                unsigned best_new_start = s->first;
-                                for(unsigned new_start = p_pos[0]+1; new_start < p_end; ++new_start) {
-                                    
-                                    double new_cost = 
-                                        calculate_tour_cost(p_pos[0], new_start, false) + best_depots[ tours[p_pos[0] ] ] +
-                                        calculate_tour_cost(new_start, p_end, false) + best_depots[ tours[new_start] ];
-
-                                    if(old_cost - new_cost > std::numeric_limits<double>::epsilon() && new_start != s->first) {
-                                        best_new_start = new_start;
-                                        old_cost = new_cost;
-                                    }
-                                }
-
-                                if(best_new_start != s->first) {
-
-                                    improved_u = true;
-                                    ts.erase(s->first);
-                                    ts[best_new_start] = best_depots[ tours[best_new_start] ];
-                                }
-                            }
-                        }
-            
-            // seconda parte bis: tento di aumentare il numero di subtours
-
-                        if(ts.size() < vehicles) {
-                            
-                            const unsigned size = vehicles;
-
-                            vector<unsigned> pos(size, 0);
-                            vector<double> len(size, 0);
-
-                            for(unsigned not_used = 0; 
-                                ts.size() < vehicles && not_used < ts.size(); 
-                                ++not_used) {
-                                
-                                unsigned k = 0;
-                                for(auto it = ts.begin(); it != ts.end(); ++it) {
-                                    
-                                    auto next_it = it;
-                                    ++next_it;
-
-                                    const unsigned start = it->first;
-                                    const unsigned end = next_it == ts.end() ? customers : next_it->first;
-
-                                    pos[k] = start;
-                                    len[k] = calculate_tour_cost(it->first, end, false);
-#ifndef BASE
-                                    len[k] += ac[it->second];
-#endif
-                                    ++k;
-                                }
-
-                                int i, j;
-                                for (i = 1; i < ts.size(); i++) {
-                                        double tmp = len[i];
-                                        unsigned tmp2 = pos[i];
-                                        for (j = i; j >= 1 && tmp > len[j-1]; j--) {
-                                            len[j] = len[j-1];
-                                            pos[j] = pos[j-1];
-                                        }
-                                        len[j] = tmp;
-                                        pos[j] = tmp2;
-                                }
-                                
-                                auto it_end = ++ts.find(pos[0]);
-                                unsigned end = it_end == ts.end() ? customers : it_end->first;
-
-                                unsigned best_new_start = pos[0];
-                                unsigned new_start = best_new_start;
-                                double best_new_cost = 
-                                    calculate_tour_cost(new_start, end, false) + best_depots[ tours[new_start] ] +
-                                    calculate_tour_cost(pos[0], new_start, false) + best_depots[ tours[ pos[0] ] ];
-#ifndef BASE    
-                                best_new_cost += ac[ ( ts.find(pos[0]) )->second ];
-                                best_new_cost += ac[ best_depots[ tours[new_start] ] ];
-#endif                                  
-                                bool split_improving = false;
-                                
-                                while(new_start < end) {
-
-                                    double new_cost = 
-                                        calculate_tour_cost(new_start, end, false) + best_depots[ tours[new_start] ] +
-                                        calculate_tour_cost(pos[0], new_start, false) + best_depots[ tours[ pos[0] ] ];
-#ifndef BASE    
-                                    new_cost += ac[ ( ts.find(pos[0]) )->second ];
-                                    new_cost += ac[ best_depots[ tours[new_start] ] ];
-#endif                          
-                                    if(best_new_cost - new_cost > std::numeric_limits<double>::epsilon()) {
-                                        split_improving = true;
-                                        best_new_start = new_start;
-                                        best_new_cost = new_cost;
-                                    }
-                                    ++new_start;
-                                }
-                                
-                                if(split_improving) {
-                                    improved_u = true;
-                                    ts[best_new_start] = best_depots[ tours[best_new_start] ];
-                                }
-                            }
-
-                        }
-
-            // terza parte: ottimizzo i depots
-
-                        for(unsigned i = 0; i < ts.size(); ++i) {
-                            auto it = next(ts.begin(), i);
-                            const unsigned dep = best_depots[ tours[it->first] ];
-                            if(it->second != dep) {
-
-                                improved_u = true;
-                                ts[it->first] = dep;
-                            }
-                        }
-                    }
-                    //needs_to_update_cost = true;
-                //} 
-        }
-
-        void repair()   {
-            
-            //if(needs_repair) {
-
-                //cout << "           Individual: " << this << " repair(";
-                //print_tour();
-
-                needs_repair = false;
-                improved_called = false;         
-
-                std::vector<bool> found(customers, false);
-
-                std::unordered_set<unsigned> toReplace;
-                unsigned *const tours = this->tours;
-
-                for(unsigned i = 0; i < customers; ++i) {
-
-                    const unsigned node = tours[i];
-                    if(!found[node]) {
-                        found[node] = true;
                     } else {
-                        toReplace.insert(i);
+                        ++not_used;
                     }
                 }
+    
+                not_used = 0;
+                //riscrittura iterata tramite 2-swap (non contigui)
+                while(not_used < customers_n) {
 
-                bool last = false;
-                if(toReplace.find(customers-1) != toReplace.end()) {
-                    last = true;
-                    toReplace.erase(customers-1);
+                    bool improved = false;
+                    const unsigned s1 = not_used+1;
+
+                    for(int offset = 1; offset < customers_n-not_used; ++ offset) {
+
+                        double old_cost = 0;
+                        double new_cost = 0;
+
+                        const unsigned s2 = not_used+2+offset;
+
+                        evaluate(old_cost, new_cost, not_used, offset);
+
+                        if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
+
+                            if(ts.find(s1) != ts.end()) {
+                                ts[s1] = best_depots[ tours[s2] ];
+                            }
+
+                            if(ts.find(s2) != ts.end()) {
+                                ts[s2] = best_depots[ tours[s1] ];
+                            }
+
+                            const unsigned node = tours[s1]; 
+
+                            tours[s1] = tours[s2];
+                            tours[s2] = node;
+
+                            {
+                                improved = true;
+                                improved_u = true;
+                            }
+                            
+                        }
+                    }
+
+                    if(!improved)
+                        ++not_used;
+                    else
+                        not_used = 0;
                 }
 
-                auto& ts = this->tours_start;
-                auto& dt = this->distance_table;
-
-                unsigned replaced = 0;
-                double best_cost;
-                double cost;
-                for(unsigned i = 0; i < customers; ++i) 
-                if(!found[i]) {
-
-                    unsigned toInsert = i;
-                    best_cost = std::numeric_limits<double>::max();
-                    replaced = cost = 0;
-
-                    if(last) {
-
-                        if( ts.find(customers-1) == ts.end() ) {
-                            
-                            cost += getCustomerCost(tours[customers-2], toInsert);
-                        } else {
-                            
-                            cost += getDepotCost(best_depots[ toInsert ], toInsert);
-                        }
-
-                        if(cost < best_cost) {
-                            best_cost = cost;
-                            replaced = customers-1;
-                        }
-                    }
-
-                    for(unsigned i : toReplace) {
-                        
-                        cost = 0;
-
-                        if(ts.find(i) == ts.end()) {
-                            
-                            cost += getCustomerCost(tours[i-1], toInsert);
-                        
-                        } else {
-
-                            const unsigned depot = best_depots[ toInsert ];
-                            cost += getDepotCost(depot, toInsert);
-
-                        }
-                        
-                        if( i < customers-1 && ts.find(i+1) == ts.end() ) {
-                                
-                            cost += getCustomerCost(toInsert, tours[i+1]);
-                        }
-                        
-                        if(best_cost - cost > std::numeric_limits<double>::epsilon()) {
-                            best_cost = cost;
-                            replaced = i;
-                        }
-                    }
-                       
-                    tours[replaced] = toInsert;
+                //valuto lo swap del primo customer
+                const unsigned first = 0;
+                for(unsigned off = 1; off < customers-1; ++off) {
                     
-                    if(ts.find(replaced) != ts.end())
-                        ts[replaced] = best_depots[ toInsert ]; 
+                    double old_cost = 0.0;
+                    double new_cost = 0.0;
 
-                    found[i] = true;
-                    toReplace.erase(replaced);
-                    if(replaced == customers-1)
-                        last = false;
+                    evaluate_first(old_cost, new_cost, off);
+
+                    if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
+
+                        ts[first] = best_depots[ tours[off] ];
+
+                        if(ts.find(off) != ts.end()) {
+                            ts[off] = best_depots[ tours[first] ];
+                        }
+
+                        const unsigned node = tours[first]; 
+
+                        tours[first] = tours[off];
+                        tours[off] = node;
+
+                        //improved = true;
+                        {
+                            improved_u = true;
+                        }
+                    }
+                }
+            
+                //valuto lo swap dell'ultimo customer
+                const unsigned last = customers-1;
+                for(unsigned off = 1; off < customers-1; ++off) {
                     
+                    double old_cost = 0.0;
+                    double new_cost = 0.0;
+
+                    evaluate_last(old_cost, new_cost, off);
+
+                    if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
+
+                        if(ts.find(last) != ts.end()) {
+                            ts[last] = best_depots[ tours[off] ];
+                        }
+
+                        if(ts.find(off) != ts.end()) {
+                            ts[off] = best_depots[ tours[last] ];
+                        }
+
+                        const unsigned node = tours[last]; 
+
+                        tours[last] = tours[off];
+                        tours[off] = node;
+
+                        improved_u = true;
+                    }
                 }
 
-                //usando una map per rappresentare i veicoli, l'ordine è già mantenuto
-                //bisogna limitare il numero di veicoli
+                //valuta se swappare primo e ultimo
+                {
+                    double old_cost = 0.0;
+                    double new_cost = 0.0;
 
-                if(ts.size() > vehicles) {
+                    old_cost += getDepotCost(ts.at(0), tours[first]);
+                    new_cost += getDepotCost(best_depots[ tours[last] ], tours[last]);
 #ifndef BASE
-                    const double *const ac = activation_costs;
+                    old_cost += activation_costs[ts.at(0)];
+                    new_cost += activation_costs[ best_depots[tours[last] ] ];
 #endif
-                    const unsigned size = ts.size();
+                    if(ts.find(1) == ts.end()) {
+                        old_cost += getCustomerCost(tours[first], tours[1]);
+                        new_cost += getCustomerCost(tours[last], tours[1]);
+                    }
+
+                    if(ts.find(last) == ts.end()) {
+                        old_cost += getCustomerCost(tours[customers-2], tours[last]);
+                        new_cost += getCustomerCost(tours[customers-2], tours[first]);
+                    } else {
+                        old_cost += getDepotCost(ts.at(last), tours[last]);
+                        new_cost += getDepotCost(best_depots[ tours[first] ], tours[first]);
+#ifndef BASE
+                        old_cost += activation_costs[ts.at(last)];
+                        new_cost += activation_costs[ best_depots[tours[first] ] ];
+#endif                                
+                    }
+
+                    if(old_cost - new_cost > std::numeric_limits<double>::epsilon()) {
+
+                        ts[first] = best_depots[ tours[last] ];
+                        if(ts.find(last) != ts.end()) {
+                            ts[last] = best_depots[ tours[first] ];
+                        }
+
+                        const unsigned node = tours[first];
+                        tours[first] = tours[last];
+                        tours[last] = node;
+
+                        improved_u = true;
+                    }
+                }
+
+                //cerco di bilanciare i subtours
+#ifndef BASE
+                const double *const ac = Individual::activation_costs;
+#endif   
+                vector<unsigned> p_pos(ts.size(), 0);
+                vector<double> p_len(ts.size(), 0);
+
+                //per ogni subtour...
+                for(unsigned ind = 0; ind < ts.size(); ++ind) {
+
+                    unsigned k = 0;
+                    //...calcolo il suo costo
+                    for(auto it = ts.begin(); it != ts.end(); ++it) {
+                        
+                        auto next_it = it;
+                        ++next_it;
+
+                        const unsigned start = it->first;
+                        const unsigned end = next_it == ts.end() ? customers : next_it->first;
+
+                        p_pos[k] = start;
+                        p_len[k] = calculate_tour_cost(it->first, end, false);
+#ifndef BASE
+                        p_len[k] += ac[it->second];
+#endif
+                        ++k;
+                    }
+
+                    //ordino i subtours per costo (decrescente)
+                    int i, j;
+                    for (i = 1; i < ts.size(); i++) {
+                            double tmp = p_len[i];
+                            unsigned tmp2 = p_pos[i];
+                            for (j = i; j >= 1 && tmp > p_len[j-1]; j--) {
+                                p_len[j] = p_len[j-1];
+                                p_pos[j] = p_pos[j-1];
+                            }
+                            p_len[j] = tmp;
+                            p_pos[j] = tmp2;
+                    }
+
+                    auto f = ts.find(p_pos[0]);
+                    auto s = next(f,1);
+
+                    if(s == ts.end()) {
+                        s = f = ts.find(p_pos[0]);
+                        if(f != ts.begin()) {
+                            --f;
+                        } else {
+                            continue;
+                        }
+                    }
+
+                    if(s != ts.end()) {
+
+                        //valuto il costo dei subtours ottenibili shiftando l'inizio del subtour s
+
+                        const unsigned p_end = next(s,1) == ts.end() ? customers : next(s,1)->first;
+
+                        double old_cost = 
+                            calculate_tour_cost(p_pos[0], s->first, false) + best_depots[ tours[ p_pos[0] ] ] + 
+                            calculate_tour_cost(s->first, p_end, false) + best_depots[ tours[s->first] ];
+                        
+                        unsigned best_new_start = s->first;
+                        for(unsigned new_start = p_pos[0]+1; new_start < p_end; ++new_start) {
+                            
+                            double new_cost = 
+                                calculate_tour_cost(p_pos[0], new_start, false) + best_depots[ tours[p_pos[0] ] ] +
+                                calculate_tour_cost(new_start, p_end, false) + best_depots[ tours[new_start] ];
+
+                            if(old_cost - new_cost > std::numeric_limits<double>::epsilon() && new_start != s->first) {
+                                best_new_start = new_start;
+                                old_cost = new_cost;
+                            }
+                        }
+
+                        //se ho trovato una coppia di subtour migliori, sposto l'inizio del subtour s
+                        if(best_new_start != s->first) {
+
+                            improved_u = true;
+                            ts.erase(s->first);
+                            ts[best_new_start] = best_depots[ tours[best_new_start] ];
+                        }
+                    }
+                }
+    
+                //tento di aumentare il numero di subtours
+
+                if(ts.size() < vehicles) {
+                    
+                    const unsigned size = vehicles;
 
                     vector<unsigned> pos(size, 0);
                     vector<double> len(size, 0);
 
-                    while(ts.size() > vehicles) {
+                    //finchè non ho analizzato tutti i subtour, o raggiunto il numero massimo...
+                    for(unsigned not_used = 0; 
+                        ts.size() < vehicles && not_used < ts.size(); 
+                        ++not_used) {
                         
                         unsigned k = 0;
-                        for(auto it = ++ts.begin(); it != ts.end(); ++it) {
+                        //...calcolo il costo di ogni subtour
+                        for(auto it = ts.begin(); it != ts.end(); ++it) {
                             
                             auto next_it = it;
                             ++next_it;
-
-                            auto prev_it = it;
-                            --prev_it;
 
                             const unsigned start = it->first;
                             const unsigned end = next_it == ts.end() ? customers : next_it->first;
 
                             pos[k] = start;
-                            len[k] = calculate_tour_cost(prev_it->first, end, false);
-                            len[k] += best_depots[ tours[prev_it->first] ];
+                            len[k] = calculate_tour_cost(it->first, end, false);
 #ifndef BASE
                             len[k] += ac[it->second];
 #endif
                             ++k;
                         }
 
-                        for(; k < size; ++k) {
-                            pos[k] = customers;
-                            len[k] = std::numeric_limits<double>::max();
-                        }
-
+                        //ordino i subtour per costo (decrescente)
                         int i, j;
-                        for (i = 1; i < size; i++) {
+                        for (i = 1; i < ts.size(); i++) {
                                 double tmp = len[i];
                                 unsigned tmp2 = pos[i];
-                                for (j = i; j >= 1 && tmp < len[j-1]; j--) {
+                                for (j = i; j >= 1 && tmp > len[j-1]; j--) {
                                     len[j] = len[j-1];
                                     pos[j] = pos[j-1];
                                 }
@@ -997,32 +782,232 @@ class Individual {
                                 pos[j] = tmp2;
                         }
                         
-                        ts.erase(pos[0]);
-                        len[0] = std::numeric_limits<double>::max();
-                        pos[0] = customers;
+                        auto it_end = ++ts.find(pos[0]);
+                        unsigned end = it_end == ts.end() ? customers : it_end->first;
+
+                        unsigned best_new_start = pos[0];
+                        unsigned new_start = best_new_start;
+                        double best_new_cost = 
+                            calculate_tour_cost(new_start, end, false) + best_depots[ tours[new_start] ] +
+                            calculate_tour_cost(pos[0], new_start, false) + best_depots[ tours[ pos[0] ] ];
+#ifndef BASE    
+                        best_new_cost += ac[ ( ts.find(pos[0]) )->second ];
+                        best_new_cost += ac[ best_depots[ tours[new_start] ] ];
+#endif                                  
+                        bool split_improving = false;
+
+                        //valuto il vantaggio di ogni possibile punto di splitting del subtour                                
+                        while(new_start < end) {
+
+                            double new_cost = 
+                                calculate_tour_cost(new_start, end, false) + best_depots[ tours[new_start] ] +
+                                calculate_tour_cost(pos[0], new_start, false) + best_depots[ tours[ pos[0] ] ];
+#ifndef BASE    
+                            new_cost += ac[ ( ts.find(pos[0]) )->second ];
+                            new_cost += ac[ best_depots[ tours[new_start] ] ];
+#endif                          
+                            if(best_new_cost - new_cost > std::numeric_limits<double>::epsilon()) {
+                                split_improving = true;
+                                best_new_start = new_start;
+                                best_new_cost = new_cost;
+                            }
+                            ++new_start;
+                        }
+                        
+                        //se ho trovato un punto di splitting migliorativo, lo eseguo
+                        if(split_improving) {
+                            improved_u = true;
+                            ts[best_new_start] = best_depots[ tours[best_new_start] ];
+                        }
                     }
-                    
-                    if(tours_start.find(0) == tours_start.end()) {
-                        tours_start.erase(tours_start.begin());
-                        tours_start[0] = best_depots[ tours[0] ];
+
+                }
+
+                //ottimizzo i depots
+
+                for(unsigned i = 0; i < ts.size(); ++i) {
+                    auto it = next(ts.begin(), i);
+                    const unsigned dep = best_depots[ tours[it->first] ];
+                    if(it->second != dep) {
+
+                        improved_u = true;
+                        ts[it->first] = dep;
+                    }
+                }
+            }
+        }
+
+        void repair()   {
+            
+            needs_repair = false;
+            improved_called = false;         
+
+            //vettore di bool per tenere traccia di quali customers sono stati inseriti
+            std::vector<bool> found(customers, false);
+
+            //insieme di posizioni di customers da sostituire (doppioni o più)
+            std::unordered_set<unsigned> toReplace;
+            unsigned *const tours = this->tours;
+
+            for(unsigned i = 0; i < customers; ++i) {
+
+                const unsigned node = tours[i];
+                //se il nodo non è stato ancora trovato, found va a true
+                if(!found[node]) {
+                    found[node] = true;
+                //se è già stato trovato, allora è un doppione e conservo la posizione
+                } else {
+                    toReplace.insert(i);
+                }
+            }
+
+            bool last = false;
+            if(toReplace.find(customers-1) != toReplace.end()) {
+                last = true;
+                toReplace.erase(customers-1);
+            }
+
+            auto& ts = this->tours_start;
+            auto& dt = this->distance_table;
+
+            unsigned replaced = 0;
+            double best_cost;
+            double cost;
+            for(unsigned i = 0; i < customers; ++i) 
+            //se il customer non è stato ancora inserito
+            if(!found[i]) {
+
+                unsigned toInsert = i;
+                best_cost = std::numeric_limits<double>::max();
+                replaced = cost = 0;
+
+                //valuta il costo nell'inserirlo al posto dell'ultimo (se è da sostituire)
+                if(last) {
+
+                    if( ts.find(customers-1) == ts.end() ) {
+                        
+                        cost += getCustomerCost(tours[customers-2], toInsert);
+                    } else {
+                        
+                        cost += getDepotCost(best_depots[ toInsert ], toInsert);
+                    }
+
+                    if(cost < best_cost) {
+                        best_cost = cost;
+                        replaced = customers-1;
                     }
                 }
 
-                //print_tour();
-                //cout << "           individual " << this << " repaired\n";
-                //cout << ")\n";
-                //needs_to_update_cost = true;
-           // }
+                //per ogni posizione da sostituire
+                for(unsigned i : toReplace) {
+                    
+                    cost = 0;
+
+                    //valuto il costo nell'inserimento in posizione i nel giant tour
+
+                    if(ts.find(i) == ts.end()) {
+                        
+                        cost += getCustomerCost(tours[i-1], toInsert);
+                    
+                    } else {
+
+                        const unsigned depot = best_depots[ toInsert ];
+                        cost += getDepotCost(depot, toInsert);
+
+                    }
+                    
+                    if( i < customers-1 && ts.find(i+1) == ts.end() ) {
+                            
+                        cost += getCustomerCost(toInsert, tours[i+1]);
+                    }
+                    
+                    if(best_cost - cost > std::numeric_limits<double>::epsilon()) {
+                        best_cost = cost;
+                        replaced = i;
+                    }
+                }
+                
+                //sostituisco il customer già presente con quello da inserire
+                tours[replaced] = toInsert;
+                
+                if(ts.find(replaced) != ts.end())
+                    ts[replaced] = best_depots[ toInsert ]; 
+
+                found[i] = true;
+                toReplace.erase(replaced);
+                if(replaced == customers-1)
+                    last = false;
+                
+            }
+
+            //usando una map per rappresentare i veicoli, l'ordine è già mantenuto
+            //bisogna limitare però il numero di veicoli
+            if(ts.size() > vehicles) {
+    #ifndef BASE
+                const double *const ac = activation_costs;
+    #endif
+                const unsigned size = ts.size();
+
+                vector<unsigned> pos(size, 0);
+                vector<double> len(size, 0);
+
+                while(ts.size() > vehicles) {
+                    
+                    unsigned k = 0;
+                    //calcolo il costo di ogni subtour ottenibile eliminando un veicolo
+                    for(auto it = ++ts.begin(); it != ts.end(); ++it) {
+                        
+                        auto next_it = it;
+                        ++next_it;
+
+                        auto prev_it = it;
+                        --prev_it;
+
+                        const unsigned start = it->first;
+                        const unsigned end = next_it == ts.end() ? customers : next_it->first;
+
+                        pos[k] = start;
+                        len[k] = calculate_tour_cost(prev_it->first, end, false);
+                        len[k] += best_depots[ tours[prev_it->first] ];
+    #ifndef BASE
+                        len[k] += ac[it->second];
+    #endif
+                        ++k;
+                    }
+
+                    for(; k < size; ++k) {
+                        pos[k] = customers;
+                        len[k] = std::numeric_limits<double>::max();
+                    }
+
+                    //ordino i subtour potenziali per costo (crescente)
+                    int i, j;
+                    for (i = 1; i < size; i++) {
+                            double tmp = len[i];
+                            unsigned tmp2 = pos[i];
+                            for (j = i; j >= 1 && tmp < len[j-1]; j--) {
+                                len[j] = len[j-1];
+                                pos[j] = pos[j-1];
+                            }
+                            len[j] = tmp;
+                            pos[j] = tmp2;
+                    }
+
+                    //elimino il subtour con costo minimo (impatto minore sul costo totale)    
+                    ts.erase(pos[0]);
+                    len[0] = std::numeric_limits<double>::max();
+                    pos[0] = customers;
+                }
+                
+                if(tours_start.find(0) == tours_start.end()) {
+                    tours_start.erase(tours_start.begin());
+                    tours_start[0] = best_depots[ tours[0] ];
+                }
+            }
         }
 
         void calculate_cost()   {
             
-            //if(!needs_to_update_cost)
-            //    return;
-            //print_tour();
-
-            //cout << "\n       calculating all subtour costs\n";
-
             double sum = 0;
             auto& ts = this->tours_start;
             
@@ -1033,30 +1018,29 @@ class Individual {
             while(next_it != end) {
                 
                 sum += calculate_tour_cost(it->first, next_it->first, true);
-                //cout << "sum : " << sum << endl;
 
                 ++it;
                 ++next_it;
             }
 
             if(next_it == end) {
-                
-                
+                                
                 sum += calculate_tour_cost(it->first, customers, true);
-                //cout << "sum : " << sum << endl;
+
             }
 
             this->cost = sum;
 
-            //cout << "           individual " << this << " cost updated from: " << oldcost <<" to: " << cost <<"\n";
         }
 
+        //ERRORE: dovrebbe ricevere anche il vettore di indici, così si confronta con individui non ordinati
         void calculate_diversity_ratio(unsigned himself, const std::vector<Individual>& pop) {
 
             double sum = 0;
             //meglio se un divisore di pop.size()
             static const unsigned d = 5;
-
+            
+            //calcolo i bound della popolazione
             const unsigned min_i = (pop.size()/d) * (himself / (pop.size()/d));
             unsigned max_i = min_i + (pop.size()/d);
             max_i = max_i > pop.size() ? pop.size() : max_i;
@@ -1152,9 +1136,11 @@ class Individual {
             coordinate_matrix = m;
             distance_table = t;
 #ifndef BASE
+            //precalcolo i costi di attivazione
             calculate_activation_costs();
 #endif
 
+            //precalcolo il depot migliore per ogni customer
             best_depots = new unsigned[c];
             for(unsigned i = 0; i < c; ++i)
                 optimizeDepot(i);
@@ -1199,13 +1185,12 @@ class Individual {
 
         
         static inline unsigned getCustomerIndex(unsigned x, unsigned y) {
-
-            //cout << "\n customer index: " << x << " " << y << " " << customers * depots + x*customers + y << "| ";
+            
             return customers * depots + x*customers + y;
         }
 
         static inline unsigned getDepotIndex(unsigned x, unsigned y) {
-            //cout << "\n depot index: " << x << " " << y << " " << x*customers + y << "| ";
+            
             return x*customers + y;
         }
 
@@ -1259,7 +1244,7 @@ class Individual {
 
             for(unsigned i = 1; i < depots; ++i) {
 #ifndef BASE        
-//si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
+                //si somma il costo di attivazione col costo dell'arco depot->primo customer del subtour
                 const double nval = ac[i] + getDepotCost(i, first);
 
                 //se il costo complessivo è minore, si effettua lo swap di depot
@@ -1268,8 +1253,7 @@ class Individual {
                     oval = nval;
                 }
 #else
-                
-                
+                //il costo del depot è dato dall'arco depot->primo customer
                 const double nval = getDepotCost(i, first);
 
                 //se il costo complessivo è minore, si effettua lo swap di depot
@@ -1298,7 +1282,7 @@ class Individual {
                 double max_cost = getDepotCost(i, 0);
                 
                 mean += max_cost;
-                //cout << mean << " " << max_cost << "\n";
+
                 //per ogni cliente dopo il primo
                 for(unsigned j = 1; j < customers; ++j) {
 
@@ -1310,8 +1294,6 @@ class Individual {
                     if(cost - max_cost > std::numeric_limits<double>::epsilon()) {
                         max_cost = cost;
                     }
-
-                    //cout << mean << " " << max_cost << "\n";
                 }
 
                 //calcolo della media e formula del costo d'attivazione
@@ -1320,15 +1302,12 @@ class Individual {
 
                 //il costo d'attivazione viene salvato
                 activation_costs[i] = result/(double)vehicles;
-
-                //cout << "RESULT: " << activation_costs[i] << endl;
             }
         }
 #endif
 
         double calculate_tour_cost(const unsigned start_pos, const unsigned end_pos, bool consider_depot)   {
 
-            //cout << "\n           starting subtour calculation...\n";
             auto& ts = this->tours_start;
             auto& dc = this->distance_table;
 #ifndef BASE
@@ -1358,9 +1337,6 @@ class Individual {
 
             --len;
 
-            //cout << "       depot activation + first arc costs: " << sum << endl;
-
-            //cout << sum << endl;
             ++start;
             for(; start < end; ++start) {
                 if(len <= 0)
@@ -1369,14 +1345,8 @@ class Individual {
                 const unsigned c2 = tours[start];
                 sum += getCustomerCost(c1, c2)*len;
 
-                //cout << "\n depots: " << depots << "(" << dc.at(ci) << "*" << len <<") " << sum << endl;
                 --len;
-                //cout << "       sum: " << sum << endl;
             }
-
-            
-            //cout << "           individual " << this << " subtour: " << start_pos << "to: " << end_pos << "calculated\n";
-
 
             return sum;
  
@@ -1475,12 +1445,9 @@ class Individual {
             }
 
             //traduzione del risultato dell'algoritmo in termini di depots
-            //auto& ts = this->tours_start;
             
-        //#ifndef BASE
             ts.clear();
             ts[0] = best_depots[ tours[0] ];
-        //#endif
 
             for(unsigned i = 1; ts.size() < vehicles && i < customers; ++i) {
                 if(predecessor[i] < depots) {
@@ -1489,6 +1456,7 @@ class Individual {
             }
         }
 
+        //valutazione swap tours[pos+1] con tours[pos+2+offset]
         inline void evaluate(double& old_cost, double& new_cost, int pos, int offset) {
             
             const auto& ts = this->tours_start;
@@ -1530,15 +1498,10 @@ class Individual {
             unsigned j_len = j_end == end ? customers : j_end->first;
             j_len -= in_joined;
 
-            //print_tour();
-            //cout << pos << " " << offset << " " << b_len << " " << j_len << endl;
-
             if(ts.find(in_broken) == end) {
 
                 old_cost += getCustomerCost(chain, candidate) * b_len;
                 new_cost += getCustomerCost(chain, candidate2) * b_len;
-
-                //cout << "if1 " << old_cost << " " << new_cost << endl;
             
             } else {
 
@@ -1550,7 +1513,6 @@ class Individual {
                 new_cost += ac[best_depots[candidate2] ];
 #endif
 
-                //cout << "if2 " << old_cost << " " << new_cost << endl;
             }
 
             if(offset > 0) {
@@ -1560,7 +1522,6 @@ class Individual {
                     old_cost += getCustomerCost(candidate, tours[mid1]) * (b_len-1);
                     new_cost += getCustomerCost(candidate2, tours[mid1]) * (b_len-1);
 
-                    //cout << "if3 " << old_cost << " " << new_cost << endl;
                 }
 
             }
@@ -1574,30 +1535,25 @@ class Individual {
                 old_cost += ac[depot];
                 new_cost += ac[best_depots[candidate] ];
 #endif
-                //cout << "if4 " << old_cost << " " << new_cost << endl;
             
             } else if(offset > 0) {
 
                 const unsigned mid2 = in_joined-1;
                 old_cost += getCustomerCost(tours[mid2], candidate2) * j_len;
                 new_cost += getCustomerCost(tours[mid2], candidate) * j_len;      
-
-                //cout << "if5 " << old_cost << " " << new_cost << endl;      
+   
             }
 
             if(ts.find(other_chain) == end) {
 
                 old_cost += getCustomerCost(candidate2, chain2) * (j_len-1);
                 new_cost += getCustomerCost(candidate, chain2) * (j_len-1);
-            
-                //cout << "if6 " << old_cost << " " << new_cost << endl;
             }
         }
 
+        //valutazione swap tours[0] con tours[new_pos]
         inline void evaluate_first(double& old_cost, double& new_cost, unsigned new_pos) {
             
-            //print_tour();
-
             auto& ts = this->tours_start;
 #ifndef BASE
             const double *const ac = this->activation_costs;
@@ -1645,7 +1601,6 @@ class Individual {
                     old_cost += getCustomerCost(before_other, other) * j_len;
                     new_cost += getCustomerCost(before_other, first) * j_len;
 
-                   // cout << "if1 " << old_cost << " " << new_cost << endl;
                 }
             } else {
                 const unsigned depot2 = ts.at(new_pos);
@@ -1655,7 +1610,6 @@ class Individual {
                 old_cost += ac[ depot2 ];
                 new_cost += ac[ best_depots[ first ] ];
 #endif
-                //cout << "if2 " << old_cost << " " << new_cost << endl;
             }
             
             //questo if funziona male ma non so perchè
@@ -1664,12 +1618,11 @@ class Individual {
                     const unsigned after_other = tours[new_pos+1];
                     old_cost += getCustomerCost(other, after_other) * (j_len-1);
                     new_cost += getCustomerCost(first, after_other) * (j_len-1);
-                
-                    //cout << "if3 " << old_cost << " " << new_cost << " " << other << " " << after_other << " " << first << endl;      
                 }
             }
         }
 
+        //valutazione swap tours[cutomers-1] con tours[new_pos]
         inline void evaluate_last(double& old_cost, double& new_cost, unsigned new_pos) {
             
             auto& ts = this->tours_start;

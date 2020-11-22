@@ -8,6 +8,7 @@
 #include"individual.h"
 #include <algorithm>
 
+//classe che ordina gli indici degli individui in base al costo (unbiased fitness ranking)
 class keySort {
 
     private:
@@ -27,14 +28,13 @@ class keySort {
         inline void _swap() { std::swap(a, b); }
 };
 
+//classe che ordina gli indici degli individui in base alla misura di Vidal (biased fitness ranking)
 class keyDiversitySort {
 
     private:
         std::vector<Individual>* a;
         std::vector<Individual>* b;
         double ratio;
-
-        
         
     public:
         keyDiversitySort(std::vector<Individual>& _a, 
@@ -56,6 +56,7 @@ class keyDiversitySort {
         inline void _swap() { std::swap(a, b); }
 };
 
+//classe che memorizza i tempi di esecuzione di uno o più metodi
 class Timer {
 
     private:
@@ -63,8 +64,6 @@ class Timer {
         double calls = 0;
         std::chrono::steady_clock::time_point begin;
         std::chrono::steady_clock::time_point end;
-
-        
 
     public:
         Timer() {}
@@ -167,6 +166,7 @@ class Timer {
         }
 };
 
+//aggregatore di timer e responsabile delle stampe sulla performance dell'algoritmo
 class Analyzer {
 
     public:
@@ -192,81 +192,5 @@ class Analyzer {
             cout <<"    sorting: " << sort.getTotalTime() << endl;
         }
 };
-
-class Metrics {
-
-    private:
-        const double popsize;
-        const double max_prob;
-        double mean;
-        double accumulator;
-        unsigned repeated;
-        std::uniform_int_distribution<unsigned> u;
-        std::exponential_distribution<double> p;
-
-    public:
-        Metrics(double p): 
-            popsize(p), 
-            max_prob(std::exponential_distribution(0.5).max()),
-            mean(0),
-            accumulator(0),
-            repeated(0),
-            p()
-        {
-            u = std::uniform_int_distribution<unsigned>(1, popsize/2-3);
-        }
-
-        inline unsigned getFirstParent() {
-            
-            if(repeated < 500) {
-                if(repeated % 50 == 0) {
-                    p = std::exponential_distribution<double>( 1.0 - double(repeated)*0.0018 );
-                }
-                
-                return (p(mt)/max_prob) * (popsize-1);
-            } 
-            
-            return u(mt); 
-        }
-
-        inline unsigned getSecondParent(unsigned first) {
-
-            if(repeated < 500) {
-                unsigned ret = (p(mt)/max_prob) * (popsize-2-first) + 1;
-                return ret + first;    
-            }
-            
-            std::uniform_int_distribution<unsigned> left(1, popsize/2-1-first);
-            return left(mt) + first;
-            
-        }
-
-        inline void addToMean(double x) {
-            
-            accumulator += x;
-        }
-
-        inline void updateMean() {
-            
-            mean = accumulator / popsize;
-            accumulator = 0;
-        }
-
-        inline void increaseRepeated() {
-            repeated = repeated < std::numeric_limits<unsigned>::max() ? ++repeated : 0;
-        }
-
-        inline void resetRepeated() {
-            repeated = 0;
-        }
-
-        inline unsigned getRepeated() const {
-            return repeated;
-        }
-
-        inline double getMean() const {
-            return mean;
-        }
-}; 
 
 #endif

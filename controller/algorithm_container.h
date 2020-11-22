@@ -3,22 +3,29 @@
 
 #include<iomanip>
 #include<vector>
-#include"../n_implementations/GA.h"
-#include"../n_implementations/GA_adaptive.h"
-#include"../n_implementations/GA_all_equal.h"
+#include"../implementation/algorithm/GA.h"
+#include"../implementation/algorithm/GA_adaptive.h"
+#include"../implementation/algorithm/GA_all_equal.h"
 
+//wrapper dell'algoritmo, si occupa di inizializzare i dati ed eseguirlo per ogni istanza
 class AlgorithmContainer {
 
     private:
         using Algorithm = double(*)(const Test&, const Individual&);
 
+        //risultato dell'algoritmo
         double r;
+        //numero di depots
         unsigned depots;
+        //numero di customers
         unsigned customers;
+        //depots + customers
+        unsigned dpc;
+        //matrice di coordinate [depots+customers][2]
         double **coordinate_matrix;
+        //tabella di hash contenente le distanze
         distTable distances;
         const string dir = "./dat/";
-        unsigned dpc;
         
         Algorithm algorithm;
 
@@ -27,6 +34,7 @@ class AlgorithmContainer {
 
         void execute(const TestInstances& t) {
 
+            //per ogni istanza...
             for(auto& instance : t.tests) {
     
                 depots = 0;
@@ -45,24 +53,28 @@ class AlgorithmContainer {
 
                 std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
                 
-                //cout << "file\n";
+                //prendo in input le coordinate da giusto file
                 read_file_ruiz(file, depots, customers, coordinate_matrix);
                 dpc = depots + customers;
              
+                //resetto le distanze (cambiano da istanza a istanza)
                 distances.clear();
 
+                //setto un pò di costanti condivise da tutti gli Individual 
                 Individual::setEnv(instance.vehicles, customers, depots, coordinate_matrix, &distances);
 
                 Individual startingIndividual;
-                
+
+                //eseguo l'algoritmo                
                 r = (*algorithm)(instance, startingIndividual);
 
+                //libero la memoria dinamica allocata
                 free_matrix(coordinate_matrix, depots+customers);
-
                 Individual::freeEnv();
 
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
+                //stampa dei risultati
                 cout << instance.prefix + number_instance << " " << setprecision(2) << fixed << r <<  " ";
                 cout << setprecision(2) << fixed
                      << (double)std::chrono::duration_cast

@@ -10,7 +10,6 @@ using namespace std;
 enum {SWAP3 = 0, SWAP5, SCRAMBLE, INVERSION, NO_MUTATION};
 enum {ONE_POINT = 0, TWO_POINT, UNIFORM, NO_CROSSOVER};
 
-
 void read_first_line_cordeau(string file, int &depots, int &vehicles, int &customers)
 {
 	ifstream instance;
