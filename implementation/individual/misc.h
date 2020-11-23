@@ -84,12 +84,12 @@ class Timer {
             calls += 1;
         }
 
-        void measure_time(Individual& i, void(Individual::*function)(unsigned, std::vector<Individual>&),
-                    unsigned pos, std::vector<Individual>& population) {
+        void measure_time(Individual& i, void(Individual::*function)(unsigned, std::vector<unsigned>&, std::vector<Individual>&),
+                    unsigned pos, std::vector<unsigned>& indexes, std::vector<Individual>& population) {
 
             begin = std::chrono::steady_clock::now();
 
-            (i.*function)(pos, population);
+            (i.*function)(pos, indexes, population);
             
             end = std::chrono::steady_clock::now();
             

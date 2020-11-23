@@ -1034,7 +1034,7 @@ class Individual {
         }
 
         //ERRORE: dovrebbe ricevere anche il vettore di indici, così si confronta con individui non ordinati
-        void calculate_diversity_ratio(unsigned himself, const std::vector<Individual>& pop) {
+        void calculate_diversity_ratio(unsigned himself, const std::vector<unsigned>& D, const std::vector<Individual>& pop) {
 
             double sum = 0;
             //meglio se un divisore di pop.size()
@@ -1046,11 +1046,11 @@ class Individual {
             max_i = max_i > pop.size() ? pop.size() : max_i;
 
             for(unsigned i = min_i; i < himself; ++i) {
-                sum += calculate_diversity(pop[i]);
+                sum += calculate_diversity(pop[ D[i] ]);
             }
 
             for(unsigned i = himself+1; i < max_i; ++i) {
-                sum += calculate_diversity(pop[i]);
+                sum += calculate_diversity(pop[ D[i] ]);
             }
 
             sum /= (double)pop.size();

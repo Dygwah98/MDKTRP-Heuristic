@@ -15,10 +15,10 @@ struct GeneticAlgorithmData {
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
     //timelimit minimo (a seconda dell'istanza, può essere fino a 20 volte più grande)
-    static constexpr double timelimit = 180.0;
+    static constexpr double timelimit = 90.0;
 #endif
     //numero massimo di iterazioni
-    static constexpr unsigned max_evaluations_GA = 1000000; 
+    static constexpr unsigned max_evaluations_GA = 100000; 
     //probabilità di mutazione, va letto: 1/mut_rate
     static constexpr unsigned mut_rate = 6; 
     //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
@@ -129,9 +129,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         for(unsigned pos = 0; pos < popsize; ++pos) {
             auto& i = individuals_original[pos];
 #ifdef PRINT
-            metrics.measure_time(i, &Individual::calculate_diversity_ratio, pos, individuals_original);
+            metrics.measure_time(i, &Individual::calculate_diversity_ratio, pos, D, individuals_original);
 #else
-            i.calculate_diversity_ratio(pos, individuals_original);
+            i.calculate_diversity_ratio(pos, D, individuals_original);
 #endif
             i.set_normalized(best_cost);
         }
@@ -400,9 +400,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 unsigned j = 0;
                 for(; j < popsize; ++j) {
 #ifdef PRINT
-                    metrics.measure_time(new_generation[ D[j] ], &Individual::calculate_diversity_ratio, D[j], new_generation);
+                    metrics.measure_time(new_generation[ D[j] ], &Individual::calculate_diversity_ratio, j, D, new_generation);
 #else
-                    new_generation[ D[j] ].calculate_diversity_ratio(D[j], new_generation);
+                    new_generation[ D[j] ].calculate_diversity_ratio(j, D, new_generation);
 #endif
                     new_generation[ D[j] ].set_normalized(best_cost);
                 }

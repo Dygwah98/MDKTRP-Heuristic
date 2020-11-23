@@ -4,7 +4,6 @@
 #include<iomanip>
 #include<vector>
 #include"../implementation/algorithm/GA.h"
-#include"../implementation/algorithm/GA_adaptive.h"
 #include"../implementation/algorithm/GA_all_equal.h"
 
 //wrapper dell'algoritmo, si occupa di inizializzare i dati ed eseguirlo per ogni istanza
