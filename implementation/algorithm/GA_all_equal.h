@@ -28,7 +28,6 @@ struct AllEqualGeneticAlgorithmData {
 };
 
 double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
-
     //variabili per misurare le prestazioni
 #ifdef PRINT    
     Analyzer printStats; 
@@ -41,7 +40,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
     Timer& metrics = printStats.metrics;
     Timer& sort_time = printStats.sort;
 #endif
-    //schema genetico
+    
 #ifdef TIMELIMIT    
     double timelimit = 
         (GeneticAlgorithmData::timelimit / GeneticAlgorithmData::tries) 
@@ -68,6 +67,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 #else
     best_individual.random_initialize();
 #endif
+    
     const unsigned max_tries = GeneticAlgorithmData::tries;
 
     //vettore d'appoggio, contenente gli indici degli individui
@@ -79,7 +79,14 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
     
     const unsigned max_repeated = (mut_rate * mut_update_window)*2;
 
-    for (unsigned tries_i = 0; tries_i < max_tries; ++tries_i)
+#ifndef TIMELIMIT
+    double best_time = 7200;
+#else
+    double best_time = timelimit;
+#endif
+    unsigned best_iteration = max_evaluations;
+
+    for (unsigned tries_i = 1; tries_i <= max_tries; ++tries_i)
     {
         unsigned repeated = 0;
 
@@ -91,7 +98,6 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
         std::vector<Individual> individuals_original;
         individuals_original.assign(popsize, ind);
         
-        double mean_cost = 0;
         //inizializzazione della popolazione
         for (unsigned pos = 0; pos < popsize; ++pos)
         {
@@ -108,6 +114,13 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
             {
                 best_cost = cost;
                 best_individual = i;
+                std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+                best_time = (double)std::chrono::duration_cast
+                            <std::chrono::nanoseconds>(end_time - start_time)
+                            .count() / (double)1000000000;
+                
+                best_iteration = tries_i;
 
                 if (cost == instance.known_solution)
                 {
@@ -115,15 +128,13 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                     printStats();
                     best_individual.print_tour();
 #endif
-                    //cout << "known solution ";
+                    cout << best_time << " " << best_iteration << " ";
                     return cost;                    
                 }
             }
 
-            mean_cost += cost;
         }
-
-        mean_cost /= (double)popsize;
+    
 
         for(unsigned pos = 0; pos < popsize; ++pos) {
             auto& i = individuals_original[pos];
@@ -148,7 +159,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
         new_generation_original.assign(popsize, ind);
 
         //keySort sorts(individuals_original, new_generation_original);
-        
+
         //si occupa di ordinare il vector di indici in base al rank degli individui
         keyDiversitySort sorts2(individuals_original, new_generation_original, 1.0 - elite_ratio);
 
@@ -170,12 +181,10 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         while (g < max_g && time_elapsed < 7200) {
 
-            double new_mean_cost = 0;
             ++repeated;
-
+        
             const std::vector<Individual> &individuals = *individuals_ptr;
             std::vector<Individual> &new_generation = *new_generation_ptr;
-
             
             unsigned i = 0;
             //restart procedure
@@ -188,7 +197,6 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 for (; i < s; ++i) {
                     new_generation[ D[i] ] = individuals[ D[i] ];
-                    new_mean_cost += new_generation[ D[i] ].get_cost();
                 }
 
                 for(; i < popsize; ++i) {
@@ -199,12 +207,20 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                     new_generation[ D[i] ].random_restart();
                     new_generation[ D[i] ].calculate_cost();
 #endif
-                    new_mean_cost += new_generation[ D[i] ].get_cost();
 
                     if (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon())
                     {
                         best_cost = new_generation[ D[i] ].get_cost();
                         best_individual = new_generation[ D[i] ];
+
+                        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+                        best_time = (double)std::chrono::duration_cast
+                                    <std::chrono::nanoseconds>(end_time - start_time)
+                                    .count() / (double)1000000000;
+                        
+                        best_iteration = tries_i*g;
+
                         repeated = 0;
                         if(mut_rate < 6) {
                             ++mut_rate;
@@ -217,7 +233,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                             printStats();
                             best_individual.print_tour();
 #endif
-                            //cout << "known solution ";
+                            cout << best_time << " " << best_iteration << " ";
                             return best_individual.get_cost();
                         }
                     }
@@ -231,12 +247,13 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 //elitismo
                 for (; i < s; ++i) {
+                    
                     new_generation[ D[i] ] = individuals[ D[i] ];
-                    new_mean_cost += new_generation[ D[i] ].get_cost();
                 }
+
                 //dobbiamo inserire la popolazione rimanente
-                for (; i < popsize; ++i)
-                {
+                for (; i < popsize; ++i) {
+
                     //scelta dei parent per il crossover
                     //il primo è in range [0, popsize/2]
                     p1 = random_parent(mt);
@@ -248,7 +265,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                     else
                         p2 = right(mt);
         
-        #ifdef PRINT
+#ifdef PRINT
                     switch (random_cross(mt))
                     {
                     case 0:
@@ -270,45 +287,152 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                         break;
                     }
 
-                    //mutazione genetica solo con un certo rateo
-                    if (random_mut(mt) == 1)
-                    {
-                        switch (random_mutator(mt))
-                        {
-                        case 0:
-
-                            mutation.measure_time(new_generation[ D[i] ], &Individual::swap3);
-                            mutation.measure_time(spare_son, &Individual::swap3);
-                            break;
-                        case 1:
-
-                            mutation.measure_time(new_generation[ D[i] ], &Individual::swap5);
-                            mutation.measure_time(spare_son, &Individual::swap5);
-                            break;
-                        case 2:
-
-                            mutation.measure_time(new_generation[ D[i] ], &Individual::scramble);
-                            mutation.measure_time(spare_son, &Individual::scramble);
-                            break;
-                        case 3:
-
-                            mutation.measure_time(new_generation[ D[i] ], &Individual::inversion);
-                            mutation.measure_time(spare_son, &Individual::inversion);
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-
-                    repair.measure_time(new_generation[ D[i] ], &Individual::repair);
-                    repair.measure_time(spare_son, &Individual::repair);
-
-                    improvement.measure_time(new_generation[ D[i] ], &Individual::local_search);
-                    improvement.measure_time(spare_son, &Individual::local_search);
-
                     costs.measure_time( new_generation[ D[i] ], &Individual::calculate_cost );
                     costs.measure_time( spare_son, &Individual::calculate_cost );
-        #else
+
+                    if(new_generation[ D[i] ].is_feasible() && (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon())
+                    || spare_son.is_feasible() && (best_cost - spare_son.get_cost() > std::numeric_limits<double>::epsilon())) {
+
+                        if(new_generation[ D[i] ].get_cost() - spare_son.get_cost() > std::numeric_limits<double>::epsilon())
+                            new_generation[ D[i] ] = spare_son;
+
+                        best_cost = new_generation[ D[i] ].get_cost();
+                        best_individual = new_generation[ D[i] ];
+
+                        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+                        best_time = (double)std::chrono::duration_cast
+                                    <std::chrono::nanoseconds>(end_time - start_time)
+                                    .count() / (double)1000000000;
+                        
+                        best_iteration = tries_i*g;
+
+                        repeated = 0;
+                        if(mut_rate < original_mut_rate) {
+                            ++mut_rate;
+                            random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                        }
+
+                        if ((unsigned)best_individual.get_cost() == instance.known_solution)
+                        {
+
+                            printStats();
+                            best_individual.print_tour(); 
+                            cout << best_time << " " << best_iteration << " " << endl;
+                            return best_individual.get_cost();
+                        }
+                    } else {
+                        
+                        //mutazione genetica solo con un certo rateo
+                        if (random_mut(mt) == 1)
+                        {
+                            switch (random_mutator(mt))
+                            {
+                            case 0:
+
+                                mutation.measure_time(new_generation[ D[i] ], &Individual::swap3);
+                                mutation.measure_time(spare_son, &Individual::swap3);
+                                break;
+                            case 1:
+
+                                mutation.measure_time(new_generation[ D[i] ], &Individual::swap5);
+                                mutation.measure_time(spare_son, &Individual::swap5);
+                                break;
+                            case 2:
+
+                                mutation.measure_time(new_generation[ D[i] ], &Individual::scramble);
+                                mutation.measure_time(spare_son, &Individual::scramble);
+                                break;
+                            case 3:
+
+                                mutation.measure_time(new_generation[ D[i] ], &Individual::inversion);
+                                mutation.measure_time(spare_son, &Individual::inversion);
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+
+                        costs.measure_time( new_generation[ D[i] ], &Individual::calculate_cost );
+                        costs.measure_time( spare_son, &Individual::calculate_cost );
+
+                        if(new_generation[ D[i] ].is_feasible() && (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon())
+                        || spare_son.is_feasible() && (best_cost - spare_son.get_cost() > std::numeric_limits<double>::epsilon())) {
+
+                            if(new_generation[ D[i] ].get_cost() - spare_son.get_cost() > std::numeric_limits<double>::epsilon())
+                                new_generation[ D[i] ] = spare_son;
+
+                            best_cost = new_generation[ D[i] ].get_cost();
+                            best_individual = new_generation[ D[i] ];
+
+                            std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+                            best_time = (double)std::chrono::duration_cast
+                                        <std::chrono::nanoseconds>(end_time - start_time)
+                                        .count() / (double)1000000000;
+                            
+                            best_iteration = tries_i*g;
+
+                            repeated = 0;
+                            if(mut_rate < original_mut_rate) {
+                                ++mut_rate;
+                                random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                            }
+
+                            if ((unsigned)best_individual.get_cost() == instance.known_solution)
+                            {
+
+                                printStats();
+                                best_individual.print_tour();
+                                cout << best_time << " " << best_iteration << " ";
+                                return best_individual.get_cost();
+                            }
+                        } else {
+                            repair.measure_time(new_generation[ D[i] ], &Individual::repair);
+                            repair.measure_time(spare_son, &Individual::repair);
+
+                            improvement.measure_time(new_generation[ D[i] ], &Individual::local_search);
+                            improvement.measure_time(spare_son, &Individual::local_search);
+
+                            costs.measure_time( new_generation[ D[i] ], &Individual::calculate_cost );
+                            costs.measure_time( spare_son, &Individual::calculate_cost );
+
+                            if(new_generation[ D[i] ].is_feasible() && (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon())
+                            || spare_son.is_feasible() && (best_cost - spare_son.get_cost() > std::numeric_limits<double>::epsilon()))
+                            {
+                                //conserviamo solo il figlio migliore
+                                if(new_generation[ D[i] ].get_cost() - spare_son.get_cost() > std::numeric_limits<double>::epsilon()) {
+                                    new_generation[ D[i] ] = spare_son;
+                                }
+
+                                best_cost = new_generation[ D[i] ].get_cost();
+                                best_individual = new_generation[ D[i] ];
+
+                                std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+                                best_time = (double)std::chrono::duration_cast
+                                            <std::chrono::nanoseconds>(end_time - start_time)
+                                            .count() / (double)1000000000;
+                                
+                                best_iteration = tries_i*g;
+
+                                repeated = 0;
+                                if(mut_rate < original_mut_rate) {
+                                    ++mut_rate;
+                                    random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                }
+
+                                if ((unsigned)best_individual.get_cost() == instance.known_solution)
+                                {
+                                    printStats();
+                                    best_individual.print_tour(); 
+                                    cout << best_time << " " << best_iteration << " ";
+                                    return best_individual.get_cost();
+                                }
+                            }
+                        }                        
+                    }                   
+#else
                     switch (random_cross(mt))
                     {
                     case 0:
@@ -324,58 +448,26 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                         break;
                     }
 
-                    //mutazione genetica solo con un certo rateo
-                    if (random_mut(mt) == 1)
-                    {
-                        switch (random_mutator(mt))
-                        {
-                        case 0:
-
-                            new_generation[ D[i] ].swap3();
-                            spare_son.swap3();
-                            break;
-                        case 1:
-
-                            new_generation[ D[i] ].swap5();
-                            spare_son.swap5();
-                            break;
-                        case 2:
-                            
-                            new_generation[ D[i] ].scramble();
-                            spare_son.scramble();
-                            break;
-                        case 3:
-
-                            new_generation[ D[i] ].inversion();
-                            spare_son.inversion();
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-                    
-                    new_generation[ D[i] ].repair();
-                    spare_son.repair();
-
-                    new_generation[ D[i] ].local_search();
-                    spare_son.local_search();
-
                     new_generation[ D[i] ].calculate_cost();
                     spare_son.calculate_cost();
-        #endif
 
-                    //conserviamo solo il figlio migliore
-                    if(new_generation[ D[i] ].get_cost() - spare_son.get_cost() > std::numeric_limits<double>::epsilon() ) {
-                        new_generation[ D[i] ] = spare_son;
-                    }
+                    if(new_generation[ D[i] ].is_feasible() && (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon())
+                    || spare_son.is_feasible() && (best_cost - spare_son.get_cost() > std::numeric_limits<double>::epsilon())) {
 
-                    new_mean_cost += new_generation[ D[i] ].get_cost();
+                        if(new_generation[ D[i] ].get_cost() - spare_son.get_cost() > std::numeric_limits<double>::epsilon())
+                            new_generation[ D[i] ] = spare_son;
 
-                    if (new_generation[ D[i] ].is_feasible() 
-                        && (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon()))
-                    {
                         best_cost = new_generation[ D[i] ].get_cost();
                         best_individual = new_generation[ D[i] ];
+
+                        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+                        best_time = (double)std::chrono::duration_cast
+                                    <std::chrono::nanoseconds>(end_time - start_time)
+                                    .count() / (double)1000000000;
+                        
+                        best_iteration = tries_i*g;
+
                         repeated = 0;
                         if(mut_rate < original_mut_rate) {
                             ++mut_rate;
@@ -384,21 +476,120 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
                         {
-#ifdef PRINT
-                            printStats();
-                            best_individual.print_tour();
-#endif
-                            //cout << "known solution ";
+                            cout << best_time << " " << best_iteration << " ";
                             return best_individual.get_cost();
                         }
                     } 
+                    else 
+                    {
+                        //mutazione genetica solo con un certo rateo
+                        if (random_mut(mt) == 1)
+                        {
+                            switch (random_mutator(mt))
+                            {
+                            case 0:
+
+                                new_generation[ D[i] ].swap3();
+                                spare_son.swap3();
+                                break;
+                            case 1:
+
+                                new_generation[ D[i] ].swap5();
+                                spare_son.swap5();
+                                break;
+                            case 2:
+                                
+                                new_generation[ D[i] ].scramble();
+                                spare_son.scramble();
+                                break;
+                            case 3:
+
+                                new_generation[ D[i] ].inversion();
+                                spare_son.inversion();
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                        
+                        new_generation[ D[i] ].calculate_cost();
+                        spare_son.calculate_cost();
+
+                        if(new_generation[ D[i] ].is_feasible() && (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon())
+                        || spare_son.is_feasible() && (best_cost - spare_son.get_cost() > std::numeric_limits<double>::epsilon())) {
+
+                            if(new_generation[ D[i] ].get_cost() - spare_son.get_cost() > std::numeric_limits<double>::epsilon())
+                                new_generation[ D[i] ] = spare_son;
+
+                            best_cost = new_generation[ D[i] ].get_cost();
+                            best_individual = new_generation[ D[i] ];
+
+                            std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+                            best_time = (double)std::chrono::duration_cast
+                                        <std::chrono::nanoseconds>(end_time - start_time)
+                                        .count() / (double)1000000000;
+                            
+                            best_iteration = tries_i*g;
+
+                            repeated = 0;
+                            if(mut_rate < original_mut_rate) {
+                                ++mut_rate;
+                                random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                            }
+
+                            if ((unsigned)best_individual.get_cost() == instance.known_solution)
+                            {
+                                cout << best_time << " " << best_iteration << " ";
+                                return best_individual.get_cost();
+                            }
+                        } else {
+                            new_generation[ D[i] ].repair();
+                            spare_son.repair();
+
+                            new_generation[ D[i] ].local_search();
+                            spare_son.local_search();
+
+                            new_generation[ D[i] ].calculate_cost();
+                            spare_son.calculate_cost();
+
+                            //conserviamo solo il figlio migliore
+                            if(new_generation[ D[i] ].get_cost() - spare_son.get_cost() > std::numeric_limits<double>::epsilon()) {
+                                new_generation[ D[i] ] = spare_son;
+                            }
+
+                            if (new_generation[ D[i] ].is_feasible() 
+                                && (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon()))
+                            {
+                                best_cost = new_generation[ D[i] ].get_cost();
+                                best_individual = new_generation[ D[i] ];
+
+                                std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+                                best_time = (double)std::chrono::duration_cast
+                                            <std::chrono::nanoseconds>(end_time - start_time)
+                                            .count() / (double)1000000000;
+                                
+                                best_iteration = tries_i*g;
+
+                                repeated = 0;
+                                if(mut_rate < original_mut_rate) {
+                                    ++mut_rate;
+                                    random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                }
+
+                                if ((unsigned)best_individual.get_cost() == instance.known_solution)
+                                {
+                                    cout << best_time << " " << best_iteration << " ";
+                                    return best_individual.get_cost();
+                                }
+                            }
+                        }  
+                    }
+#endif
                 }
                 
-                new_mean_cost /= (double)popsize;
-                mean_cost = new_mean_cost;
-                
                 unsigned j = 0;
-
                 for(; j < popsize; ++j) {
 #ifdef PRINT
                     metrics.measure_time(new_generation[ D[j] ], &Individual::calculate_diversity_ratio, j, D, new_generation);
@@ -407,6 +598,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 #endif
                     new_generation[ D[j] ].set_normalized(best_cost);
                 }
+
             }
 
             std::vector<Individual> *const temp = individuals_ptr;
@@ -421,8 +613,8 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
             std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
 
             time_elapsed = (double)std::chrono::duration_cast
-                <std::chrono::nanoseconds>(end_time - start_time)
-                .count() / (double)1000000000;
+                        <std::chrono::nanoseconds>(end_time - start_time)
+                        .count() / (double)1000000000;
 #ifdef TIMELIMIT             
             if(time_elapsed > timelimit)
                 break;
@@ -442,7 +634,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                 printStats();
                 best_individual.print_tour();
 #endif
-                //cout << "known solution ";
+                cout << best_time << " " << best_iteration << " ";
                 return cost;
             }
         } 
@@ -453,6 +645,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
     printStats();
     best_individual.print_tour();
 #endif
+    cout << best_time << " " << best_iteration << " ";
     return cost;
 }
 
