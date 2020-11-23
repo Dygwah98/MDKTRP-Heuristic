@@ -15,10 +15,10 @@ struct GeneticAlgorithmData {
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
     //timelimit minimo (a seconda dell'istanza, può essere fino a 20 volte più grande)
-    static constexpr double timelimit = 90.0;
+    static constexpr double timelimit = 30.0;
 #endif
     //numero massimo di iterazioni
-    static constexpr unsigned max_evaluations_GA = 100000; 
+    static constexpr unsigned max_evaluations_GA = 10000; 
     //probabilità di mutazione, va letto: 1/mut_rate
     static constexpr unsigned mut_rate = 6; 
     //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
