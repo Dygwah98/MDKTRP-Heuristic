@@ -11,13 +11,14 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <deque>
+#include <cstdlib>
 #include "../utils.h"
 using namespace std;
 
 //seed
-//std::uint_least64_t seed(11363585407706497491U);     
-//std::mt19937 mt(seed);
-std::mt19937 mt(std::random_device{}());
+std::uint_least64_t seed(11363585407706497491U);     
+std::mt19937 mt(seed);
+//std::mt19937 mt(std::random_device{}());
 
 using distTable = unordered_map<unsigned, double>;
 
@@ -89,7 +90,7 @@ class Individual {
             //si seleziona uno dei subtours (numero subtours = numero veicoli attivi)
             std::uniform_int_distribution<unsigned> route(0, tours_start.size()-1);
 
-            auto it = next(tours_start.begin(), route(mt));
+            auto it = next(tours_start.begin(), mt() % (tours_start.size()) );
             const unsigned route_c = it->first; 
             ++it;
             const unsigned route_e = it == tours_start.end() ? customers : it->first;
@@ -98,13 +99,13 @@ class Individual {
             if(route_e - route_c >= 3) {
             
                 std::uniform_int_distribution<unsigned> choice(route_c, route_e-3);
-                const unsigned fst = choice(mt);
+                const unsigned fst = mt() % (route_e-2 - route_c) + route_c;
                 
                 std::uniform_int_distribution<unsigned> choice2(fst+1, route_e-2);
-                const unsigned snd = choice2(mt);
+                const unsigned snd = mt() % (route_e-1 - fst - 1) + fst + 1;
 
                 std::uniform_int_distribution<unsigned> choice3(snd+1, route_e-1);
-                const unsigned trd = choice3(mt);
+                const unsigned trd = mt() % (route_e - snd - 1) + snd + 1;
 
                 //...eseguo un intratour swap...
                 const unsigned node = tours[fst];
@@ -116,13 +117,13 @@ class Individual {
             } else {
 
                 std::uniform_int_distribution<unsigned> random_cell(0, customers-3);
-                const unsigned fst = random_cell(mt);
+                const unsigned fst = mt() % (customers-2);
 
                 std::uniform_int_distribution<unsigned> random_cell2(fst+1, customers-2);
-                const unsigned snd = random_cell2(mt);
+                const unsigned snd = mt() % (customers - 1 - fst - 1) + fst + 1;
 
                 std::uniform_int_distribution<unsigned> random_cell3(snd+1, customers-1);
-                const unsigned trd = random_cell3(mt);
+                const unsigned trd = mt() % (customers - snd - 1) + snd + 1;
 
                 //... swappo tre customers casuali fra tutti
                 const unsigned node = tours[fst];
@@ -135,19 +136,19 @@ class Individual {
         void swap5()   {
 
             std::uniform_int_distribution<unsigned> random_cell(0, customers-5);
-            const unsigned fst = random_cell(mt);
+            const unsigned fst = mt() % (customers-4);
 
             std::uniform_int_distribution<unsigned> random_cell2(fst+1, customers-4);
-            const unsigned snd = random_cell2(mt);
+            const unsigned snd = mt() % (customers - 3 - fst - 1) + fst + 1;
 
             std::uniform_int_distribution<unsigned> random_cell3(snd+1, customers-3);
-            const unsigned trd = random_cell3(mt);
+            const unsigned trd = mt() % (customers - 2 - snd -1) + snd + 1;
 
             std::uniform_int_distribution<unsigned> random_cell4(trd+1, customers-2);
-            const unsigned frt = random_cell4(mt);
+            const unsigned frt = mt() % (customers - 1 - trd - 1) + trd + 1;
 
             std::uniform_int_distribution<unsigned> random_cell5(frt+1, customers-1);
-            const unsigned fft = random_cell5(mt);
+            const unsigned fft = mt() % (customers - frt - 1) + frt + 1;
             
             const unsigned node = tours[fst];
             tours[fst] = tours[snd];
@@ -160,11 +161,11 @@ class Individual {
 
             std::uniform_int_distribution<unsigned> random_cell(0, customers-1);
 
-            unsigned start = random_cell(mt);
-            unsigned end = random_cell(mt);
+            unsigned start = mt() % customers;
+            unsigned end = mt() % customers;
 
             while(end == start) {
-                end = random_cell(mt);
+                end = mt() % customers;
             }
 
             if(end < start)
@@ -179,11 +180,11 @@ class Individual {
 
             std::uniform_int_distribution<unsigned> random_cell(0, customers-1);
 
-            unsigned start = random_cell(mt);
-            unsigned end = random_cell(mt);
+            unsigned start = mt() % customers;
+            unsigned end = mt() % customers;
 
             while(end == start) {
-                end = random_cell(mt);
+                end = mt() % customers;
             }
 
             if(end < start)
@@ -206,7 +207,7 @@ class Individual {
             std::uniform_int_distribution<unsigned> random_cell(0, customers-1);      
 
             //seleziono un cutting point
-            const unsigned cutting_point = random_cell(mt);
+            const unsigned cutting_point = mt() % customers;
 
             unsigned index_child = 0;
             for(; index_child < cutting_point; ++index_child) {
@@ -231,7 +232,7 @@ class Individual {
             std::uniform_int_distribution<unsigned> random_vehicle(0, bound-1);
             
             //seleziono un cutting point per i veicoli
-            const unsigned vcutting_point = random_vehicle(mt);
+            const unsigned vcutting_point = mt() % bound;
 
             vmap.clear();
             svmap.clear();
@@ -277,8 +278,8 @@ class Individual {
                 std::uniform_int_distribution<unsigned> cpoint2(bound + 1, size-1);
 
                 //...trovo dei cutting point che mantengono il più possibile la struttura di tour...
-                first_cutting_point = next(p1.tours_start.begin(), cpoint1(mt))->first;
-                second_cutting_point = next(p2.tours_start.begin(), cpoint2(mt))->first;
+                first_cutting_point = next(p1.tours_start.begin(), mt() % (bound) + 1 )->first;
+                second_cutting_point = next(p2.tours_start.begin(), mt() % (size - 1 - bound) + bound + 1)->first;
 
             //...altrimenti...
             } else {
@@ -286,11 +287,11 @@ class Individual {
                 //...seleziono dei cutting point senza considerare i subtours
                 std::uniform_int_distribution<unsigned> crossing_point1(1, customers-2);
 
-                first_cutting_point = crossing_point1(mt);
+                first_cutting_point = mt() % (customers-2) + 1;
                 
-                std::uniform_int_distribution<unsigned> crossing_point2(first_cutting_point, customers-1);
+                std::uniform_int_distribution<unsigned> crossing_point2(first_cutting_point+1, customers-1);
 
-                second_cutting_point = crossing_point2(mt);
+                second_cutting_point = mt() % (customers-1-first_cutting_point) + first_cutting_point + 1;
 
             }
 
@@ -363,7 +364,7 @@ class Individual {
 
             for(unsigned i = 0; i < customers; ++i) {
                 //ad ogni step, si seleziona da quale parent prendere informazioni
-                const unsigned r = random_bit(mt);
+                const unsigned r = mt() % 2;
                 tours[i] = parents[r]->tours[i];
                 spare_son.tours[i] = parents[!r]->tours[i];
             }
@@ -375,7 +376,7 @@ class Individual {
             for(unsigned i = 0; i < vdim; ++i) {
 
                 //come sopra, ma per i veicoli
-                const unsigned rand3 = random_bit(mt);
+                const unsigned rand3 = mt() % 2;
                 const auto it = parents[rand3]->tours_start.begin();
                 const auto it2 = parents[!rand3]->tours_start.begin();
                 tours_start.insert( *(next(it, i)) );
@@ -390,7 +391,7 @@ class Individual {
             //euristica costruttiva: si parte da un nodo random e da lì si fa ogni volta la scelta migliore
             
             //selezione primo nodo randomico
-            tours[0] = std::uniform_int_distribution<unsigned>(0,customers-1)(mt);
+            tours[0] = mt() % customers;
             tours_start[0] = best_depots[ tours[0] ];
 
             //manteniamo memoria dei customer già inseriti
@@ -442,14 +443,14 @@ class Individual {
 
             std::uniform_int_distribution<unsigned> dp(0, depots-1);
             std::uniform_int_distribution<unsigned> v(1, customers-vehicles-2);
-            tours_start[0] = dp(mt);
-            unsigned i = v(mt);
+            tours_start[0] = mt() % depots;
+            unsigned i = mt() % (customers-vehicles-2) + 1;
 
             //posiziono randomicamente il numero massimo di veicoli
             //seleziono per ciascuno un depot random
             for(; i < vehicles;) {
-                tours_start[i] = dp(mt);
-                const unsigned val = v(mt);
+                tours_start[i] = mt() % depots;
+                const unsigned val = mt() % (customers-vehicles-2) + 1;
                 i = val+i > customers-vehicles-2 ? i+1 : val+i;
             }
 

@@ -43,19 +43,19 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
     
 #ifdef TIMELIMIT    
     double timelimit = 
-        (GeneticAlgorithmData::timelimit / GeneticAlgorithmData::tries) 
+        (AllEqualGeneticAlgorithmData::timelimit / AllEqualGeneticAlgorithmData::tries) 
       * ( (instance.factor_valuations) );
     
     if(timelimit > 7200)
         timelimit = 7200;
 #endif
-    const unsigned max_evaluations = GeneticAlgorithmData::max_evaluations_GA * instance.factor_valuations;
-    const unsigned max_g = (max_evaluations / GeneticAlgorithmData::tries) / GeneticAlgorithmData::population_size;
+    const unsigned max_evaluations = AllEqualGeneticAlgorithmData::max_evaluations_GA * instance.factor_valuations;
+    const unsigned max_g = (max_evaluations / AllEqualGeneticAlgorithmData::tries) / AllEqualGeneticAlgorithmData::population_size;
 
-    const unsigned original_mut_rate = GeneticAlgorithmData::mut_rate;
-    unsigned mut_rate = GeneticAlgorithmData::mut_rate;
+    const unsigned original_mut_rate = AllEqualGeneticAlgorithmData::mut_rate;
+    unsigned mut_rate = AllEqualGeneticAlgorithmData::mut_rate;
 
-    const unsigned popsize = GeneticAlgorithmData::population_size;
+    const unsigned popsize = AllEqualGeneticAlgorithmData::population_size;
     
     double cost = std::numeric_limits<double>::max();
     double global_best = std::numeric_limits<double>::max();
@@ -68,14 +68,14 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
     best_individual.random_initialize();
 #endif
     
-    const unsigned max_tries = GeneticAlgorithmData::tries;
+    const unsigned max_tries = AllEqualGeneticAlgorithmData::tries;
 
     //vettore d'appoggio, contenente gli indici degli individui
     std::vector<unsigned> D;
     for(unsigned i = 0; i < popsize; ++i)
         D.push_back(i);
 
-    const unsigned mut_update_window = GeneticAlgorithmData::mut_update_window;
+    const unsigned mut_update_window = AllEqualGeneticAlgorithmData::mut_update_window;
     
     const unsigned max_repeated = (mut_rate * mut_update_window)*2;
 
@@ -128,7 +128,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                     printStats();
                     best_individual.print_tour();
 #endif
-                    cout << best_time << " " << best_iteration << " ";
+                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
                     return cost;                    
                 }
             }
@@ -146,14 +146,14 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
             i.set_normalized(best_cost);
         }
 
-        const double elite_ratio = GeneticAlgorithmData::elite_ratio;
+        const double elite_ratio = AllEqualGeneticAlgorithmData::elite_ratio;
         const unsigned s  = elite_ratio * (double)popsize;
         
-        std::uniform_int_distribution<unsigned> random_parent(1, popsize/2 - 2);
-        std::uniform_int_distribution<unsigned> random_mut(1, mut_rate);
-        std::uniform_int_distribution<unsigned> random_choice(0, 1);
-        std::uniform_int_distribution<unsigned> random_cross(0, AllEqualGeneticAlgorithmData::crossover_choice);
-        std::uniform_int_distribution<unsigned> random_mutator(0, AllEqualGeneticAlgorithmData::mutator_choice);
+        const unsigned random_parent(popsize/2 - 2 + 1);
+        unsigned random_mut(mut_rate);
+        const unsigned random_choice(1 + 1);
+        const unsigned random_cross(AllEqualGeneticAlgorithmData::crossover_choice + 1);
+        const unsigned random_mutator(AllEqualGeneticAlgorithmData::mutator_choice + 1);
 
         std::vector<Individual> new_generation_original;
         new_generation_original.assign(popsize, ind);
@@ -192,7 +192,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                 
                 if(mut_rate-1 >= 1) {
                     --mut_rate;
-                    random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                    --random_mut;
                 }
 
                 for (; i < s; ++i) {
@@ -224,7 +224,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                         repeated = 0;
                         if(mut_rate < 6) {
                             ++mut_rate;
-                            random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                            ++random_mut;
                         }
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
@@ -233,7 +233,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                             printStats();
                             best_individual.print_tour();
 #endif
-                            cout << best_time << " " << best_iteration << " ";
+                            cout << setprecision(2) << best_time << " " << best_iteration << " ";
                             return best_individual.get_cost();
                         }
                     }
@@ -256,17 +256,22 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                     //scelta dei parent per il crossover
                     //il primo è in range [0, popsize/2]
-                    p1 = random_parent(mt);
+
+                    //cout << "dies after this 1";
+
+                    p1 = mt() % random_parent + 1;
                     //il secondo è in range [0, popsize-1]
-                    std::uniform_int_distribution<unsigned> left(0, p1-1);
-                    std::uniform_int_distribution<unsigned> right(p1 + 1, popsize - 1);
-                    if(random_choice(mt))
-                        p2 = left(mt);
+                    const unsigned left = p1;
+                    const unsigned right = popsize - p1 - 1;
+                    //cout << "| " << left << " " << right << "|";
+                    if(mt() % random_choice)
+                        p2 = mt() % left;
                     else
-                        p2 = right(mt);
+                        p2 = mt() % right + p1 + 1;
         
+                    //cout << "dies before here 1";
 #ifdef PRINT
-                    switch (random_cross(mt))
+                    switch (mt() % random_cross)
                     {
                     case 0:
 
@@ -318,15 +323,15 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             printStats();
                             best_individual.print_tour(); 
-                            cout << best_time << " " << best_iteration << " " << endl;
+                            cout << setprecision(2) << best_time << " " << best_iteration << " " << endl;
                             return best_individual.get_cost();
                         }
                     } else {
                         
                         //mutazione genetica solo con un certo rateo
-                        if (random_mut(mt) == 1)
+                        if (mt() % random_mut == 0)
                         {
-                            switch (random_mutator(mt))
+                            switch (mt() % random_mutator)
                             {
                             case 0:
 
@@ -384,7 +389,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 printStats();
                                 best_individual.print_tour();
-                                cout << best_time << " " << best_iteration << " ";
+                                cout << setprecision(2) << best_time << " " << best_iteration << " ";
                                 return best_individual.get_cost();
                             }
                         } else {
@@ -426,14 +431,14 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                                 {
                                     printStats();
                                     best_individual.print_tour(); 
-                                    cout << best_time << " " << best_iteration << " ";
+                                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
                                     return best_individual.get_cost();
                                 }
                             }
                         }                        
                     }                   
 #else
-                    switch (random_cross(mt))
+                    switch (mt() % random_cross)
                     {
                     case 0:
                         spare_son = new_generation[ D[i] ].one_point_cross_over(individuals[ D[p1] ], individuals[ D[p2] ]);
@@ -447,6 +452,8 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                     default:
                         break;
                     }
+
+                    //cout << "dies before here 2";
 
                     new_generation[ D[i] ].calculate_cost();
                     spare_son.calculate_cost();
@@ -471,21 +478,21 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                         repeated = 0;
                         if(mut_rate < original_mut_rate) {
                             ++mut_rate;
-                            random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                            ++random_mut;
                         }
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
                         {
-                            cout << best_time << " " << best_iteration << " ";
+                            cout << setprecision(2) << best_time << " " << best_iteration << " ";
                             return best_individual.get_cost();
                         }
                     } 
                     else 
                     {
                         //mutazione genetica solo con un certo rateo
-                        if (random_mut(mt) == 1)
+                        if (mt() % random_mut == 0)
                         {
-                            switch (random_mutator(mt))
+                            switch (mt() % random_mutator)
                             {
                             case 0:
 
@@ -511,6 +518,8 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                                 break;
                             }
                         }
+
+                        //cout << "dies before here 3";
                         
                         new_generation[ D[i] ].calculate_cost();
                         spare_son.calculate_cost();
@@ -535,12 +544,12 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                             repeated = 0;
                             if(mut_rate < original_mut_rate) {
                                 ++mut_rate;
-                                random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                ++random_mut;
                             }
 
                             if ((unsigned)best_individual.get_cost() == instance.known_solution)
                             {
-                                cout << best_time << " " << best_iteration << " ";
+                                cout << setprecision(2) << best_time << " " << best_iteration << " ";
                                 return best_individual.get_cost();
                             }
                         } else {
@@ -575,16 +584,18 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                                 repeated = 0;
                                 if(mut_rate < original_mut_rate) {
                                     ++mut_rate;
-                                    random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                    ++random_mut;
                                 }
 
                                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                                 {
-                                    cout << best_time << " " << best_iteration << " ";
+                                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
                                     return best_individual.get_cost();
                                 }
                             }
                         }  
+
+                        //cout << "dies before here 4";
                     }
 #endif
                 }
@@ -634,7 +645,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                 printStats();
                 best_individual.print_tour();
 #endif
-                cout << best_time << " " << best_iteration << " ";
+                cout << setprecision(2) << best_time << " " << best_iteration << " ";
                 return cost;
             }
         } 
@@ -645,7 +656,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
     printStats();
     best_individual.print_tour();
 #endif
-    cout << best_time << " " << best_iteration << " ";
+    cout << setprecision(2) << best_time << " " << best_iteration << " ";
     return cost;
 }
 

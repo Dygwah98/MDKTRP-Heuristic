@@ -15,10 +15,10 @@ struct GeneticAlgorithmData {
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
     //timelimit minimo (a seconda dell'istanza, può essere fino a 20 volte più grande)
-    static constexpr double timelimit = 30.0;
+    static constexpr double timelimit = 90.0;
 #endif
     //numero massimo di iterazioni
-    static constexpr unsigned max_evaluations_GA = 10000; 
+    static constexpr unsigned max_evaluations_GA = 100000; 
     //probabilità di mutazione, va letto: 1/mut_rate
     static constexpr unsigned mut_rate = 6; 
     //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
@@ -129,7 +129,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     printStats();
                     best_individual.print_tour();
 #endif
-                    cout << best_time << " " << best_iteration << " ";
+                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
                     return cost;                    
                 }
             }
@@ -150,9 +150,9 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         const double elite_ratio = GeneticAlgorithmData::elite_ratio;
         const unsigned s  = elite_ratio * (double)popsize;
         
-        std::uniform_int_distribution<unsigned> random_parent(1, popsize/2 - 2);
-        std::uniform_int_distribution<unsigned> random_mut(1, mut_rate);
-        std::uniform_int_distribution<unsigned> random_choice(0, 1);
+        const unsigned random_parent(popsize/2 - 2 + 1);
+        unsigned random_mut(mut_rate);
+        const unsigned random_choice(1 + 1);
 
         std::vector<Individual> new_generation_original;
         new_generation_original.assign(popsize, ind);
@@ -191,7 +191,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 
                 if(mut_rate-1 >= 1) {
                     --mut_rate;
-                    random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                    --random_mut;
                 }
 
                 for (; i < s; ++i) {
@@ -223,7 +223,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         repeated = 0;
                         if(mut_rate < 6) {
                             ++mut_rate;
-                            random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                            ++random_mut;
                         }
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
@@ -232,7 +232,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             printStats();
                             best_individual.print_tour();
 #endif
-                            cout << best_time << " " << best_iteration << " ";
+                            cout << setprecision(2) << best_time << " " << best_iteration << " ";
                             return best_individual.get_cost();
                         }
                     }
@@ -255,17 +255,22 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                     //scelta dei parent per il crossover
                     //il primo è in range [0, popsize/2]
-                    p1 = random_parent(mt);
+
+                    //cout << "dies after this 1";
+
+                    p1 = mt() % random_parent + 1;
                     //il secondo è in range [0, popsize-1]
-                    std::uniform_int_distribution<unsigned> left(0, p1-1);
-                    std::uniform_int_distribution<unsigned> right(p1 + 1, popsize - 1);
-                    if(random_choice(mt))
-                        p2 = left(mt);
+                    const unsigned left = p1;
+                    const unsigned right = popsize - p1 - 1;
+                    //cout << "| " << left << " " << right << "|";
+                    if(mt() % random_choice)
+                        p2 = mt() % left;
                     else
-                        p2 = right(mt);
+                        p2 = mt() % right + p1 + 1;
         
+                    //cout << "dies before here 1";
 #ifdef PRINT
-                    switch (GeneticAlgorithmData::crossover)
+                    switch (mt() % random_cross)
                     {
                     case 0:
 
@@ -317,15 +322,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             printStats();
                             best_individual.print_tour(); 
-                            cout << best_time << " " << best_iteration << " " << endl;
+                            cout << setprecision(2) << best_time << " " << best_iteration << " " << endl;
                             return best_individual.get_cost();
                         }
                     } else {
                         
                         //mutazione genetica solo con un certo rateo
-                        if (random_mut(mt) == 1)
+                        if (mt() % random_mut == 0)
                         {
-                            switch (GeneticAlgorithmData::mutator)
+                            switch (mt() % random_mutator)
                             {
                             case 0:
 
@@ -383,7 +388,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 printStats();
                                 best_individual.print_tour();
-                                cout << best_time << " " << best_iteration << " ";
+                                cout << setprecision(2) << best_time << " " << best_iteration << " ";
                                 return best_individual.get_cost();
                             }
                         } else {
@@ -425,7 +430,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                                 {
                                     printStats();
                                     best_individual.print_tour(); 
-                                    cout << best_time << " " << best_iteration << " ";
+                                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
                                     return best_individual.get_cost();
                                 }
                             }
@@ -446,6 +451,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     default:
                         break;
                     }
+
+                    //cout << "dies before here 2";
 
                     new_generation[ D[i] ].calculate_cost();
                     spare_son.calculate_cost();
@@ -470,19 +477,19 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         repeated = 0;
                         if(mut_rate < original_mut_rate) {
                             ++mut_rate;
-                            random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                            ++random_mut;
                         }
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
                         {
-                            cout << best_time << " " << best_iteration << " ";
+                            cout << setprecision(2) << best_time << " " << best_iteration << " ";
                             return best_individual.get_cost();
                         }
                     } 
                     else 
                     {
                         //mutazione genetica solo con un certo rateo
-                        if (random_mut(mt) == 1)
+                        if (mt() % random_mut == 0)
                         {
                             switch (GeneticAlgorithmData::mutator)
                             {
@@ -510,6 +517,8 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                                 break;
                             }
                         }
+
+                        //cout << "dies before here 3";
                         
                         new_generation[ D[i] ].calculate_cost();
                         spare_son.calculate_cost();
@@ -534,12 +543,12 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             repeated = 0;
                             if(mut_rate < original_mut_rate) {
                                 ++mut_rate;
-                                random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                ++random_mut;
                             }
 
                             if ((unsigned)best_individual.get_cost() == instance.known_solution)
                             {
-                                cout << best_time << " " << best_iteration << " ";
+                                cout << setprecision(2) << best_time << " " << best_iteration << " ";
                                 return best_individual.get_cost();
                             }
                         } else {
@@ -574,16 +583,18 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                                 repeated = 0;
                                 if(mut_rate < original_mut_rate) {
                                     ++mut_rate;
-                                    random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                    ++random_mut;
                                 }
 
                                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                                 {
-                                    cout << best_time << " " << best_iteration << " ";
+                                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
                                     return best_individual.get_cost();
                                 }
                             }
                         }  
+
+                        //cout << "dies before here 4";
                     }
 #endif
                 }
@@ -633,7 +644,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 printStats();
                 best_individual.print_tour();
 #endif
-                cout << best_time << " " << best_iteration << " ";
+                cout << setprecision(2) << best_time << " " << best_iteration << " ";
                 return cost;
             }
         } 
@@ -644,7 +655,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     printStats();
     best_individual.print_tour();
 #endif
-    cout << best_time << " " << best_iteration << " ";
+    cout << setprecision(2) << best_time << " " << best_iteration << " ";
     return cost;
 }
 
