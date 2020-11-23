@@ -15,8 +15,9 @@
 using namespace std;
 
 //seed
-std::uint_least64_t seed(11363585407706497491U);     
-std::mt19937 mt(seed);
+//std::uint_least64_t seed(11363585407706497491U);     
+//std::mt19937 mt(seed);
+std::mt19937 mt(std::random_device{}());
 
 using distTable = unordered_map<unsigned, double>;
 
@@ -1104,7 +1105,36 @@ class Individual {
         }
 
         inline bool is_feasible() const {
-            return !needs_repair;
+            
+            if(tours_start.size() > vehicles)
+                return false;
+            
+            if(tours_start.find(0) == tours_start.end())
+                return false;
+
+            //vettore di bool per tenere traccia di quali customers sono stati inseriti
+            std::vector<bool> found(customers, false);
+
+            unsigned *const tours = this->tours;
+            for(unsigned i = 0; i < customers; ++i) {
+
+                const unsigned node = tours[i];
+                //se il nodo non è stato ancora trovato, found va a true
+                if(!found[node]) {
+                    found[node] = true;
+                //se è già stato trovato, allora return false
+                } else {
+                    return false;
+                }
+            }
+
+            //a questo punto, found[i] == true per ogni customer presente nel giant tour
+            for(unsigned i = 0; i < customers; ++i)
+                //se un customer non è presente
+                if(!found[i])
+                    return false;
+
+            return true;
         }
 
         inline double get_cost() const {
