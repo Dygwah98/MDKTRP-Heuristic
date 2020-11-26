@@ -37,10 +37,12 @@ class AlgorithmSelector {
                 TestInstances test;
                 AlgorithmContainer choice = instance.funcs.at(key);
                 
-                cout << "seed "; 
+                cout << "seeds: ";
+                for(auto& i : seed)
+                    cout << i << " ";
                 cout << endl;
                 cout << instance.names.at(key) << endl;
-                cout << "convergence_time convergence_iteration instance cost time" << endl;
+                cout << "time iteration seed instance cost total_time" << endl;
                 //esegue l'algoritmo scelto
                 choice.execute(test);
 

@@ -15,10 +15,10 @@ struct GeneticAlgorithmData {
     static constexpr unsigned crossover = TWO_POINT;
 #ifdef TIMELIMIT
     //timelimit minimo (a seconda dell'istanza, può essere fino a 20 volte più grande)
-    static constexpr double timelimit = 90.0;
+    static constexpr double timelimit = 30.0;
 #endif
     //numero massimo di iterazioni
-    static constexpr unsigned max_evaluations_GA = 100000; 
+    static constexpr unsigned max_evaluations_GA = 10000; 
     //probabilità di mutazione, va letto: 1/mut_rate
     static constexpr unsigned mut_rate = 6; 
     //numero di iterazioni senza miglioramenti prima di attivare random retart/hypermutation
@@ -44,14 +44,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     
 #ifdef TIMELIMIT    
     double timelimit = 
-        (GeneticAlgorithmData::timelimit / GeneticAlgorithmData::tries) 
-      * ( (instance.factor_valuations) );
+        (GeneticAlgorithmData::timelimit) * ( (instance.factor_valuations) );
     
     if(timelimit > 7200)
         timelimit = 7200;
+#else
+    double timelimit = 7200.0;
 #endif
     const unsigned max_evaluations = GeneticAlgorithmData::max_evaluations_GA * instance.factor_valuations;
-    const unsigned max_g = (max_evaluations / GeneticAlgorithmData::tries) / GeneticAlgorithmData::population_size;
+    const unsigned max_g = (max_evaluations) / GeneticAlgorithmData::population_size;
 
     const unsigned original_mut_rate = GeneticAlgorithmData::mut_rate;
     unsigned mut_rate = GeneticAlgorithmData::mut_rate;
@@ -80,18 +81,16 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     
     const unsigned max_repeated = (mut_rate * mut_update_window)*2;
 
-#ifndef TIMELIMIT
-    double best_time = 7200;
-#else
     double best_time = timelimit;
-#endif
     unsigned best_iteration = max_evaluations;
-
-    for (unsigned tries_i = 1; tries_i <= max_tries; ++tries_i)
+    unsigned best_seed = 5;
+    
+    for (unsigned tries_i = 0; tries_i < max_tries; ++tries_i)
     {
         unsigned repeated = 0;
-
         std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+
+        mt = std::mt19937(seed[tries_i]);
 
         double best_cost = std::numeric_limits<double>::max();
 
@@ -119,9 +118,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 best_time = (double)std::chrono::duration_cast
                             <std::chrono::nanoseconds>(end_time - start_time)
-                            .count() / (double)1000000000;
+                            .count() / (double)1000000000 + timelimit * tries_i;
                 
-                best_iteration = tries_i;
+                best_iteration = 0;
+                best_seed = tries_i;
 
                 if (cost == instance.known_solution)
                 {
@@ -129,7 +129,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     printStats();
                     best_individual.print_tour();
 #endif
-                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                    cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                     return cost;                    
                 }
             }
@@ -178,7 +178,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         double time_elapsed = 0;
 
-        while (g < max_g && time_elapsed < 7200) {
+        while (g < max_g && time_elapsed < timelimit) {
 
             ++repeated;
         
@@ -216,9 +216,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                         best_time = (double)std::chrono::duration_cast
                                     <std::chrono::nanoseconds>(end_time - start_time)
-                                    .count() / (double)1000000000;
+                                    .count() / (double)1000000000 + timelimit * tries_i;
                         
-                        best_iteration = tries_i*g;
+                        best_iteration = g;
+                        best_seed = tries_i;
 
                         repeated = 0;
                         if(mut_rate < 6) {
@@ -232,7 +233,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                             printStats();
                             best_individual.print_tour();
 #endif
-                            cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                            cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                             return best_individual.get_cost();
                         }
                     }
@@ -270,7 +271,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
         
                     //cout << "dies before here 1";
 #ifdef PRINT
-                    switch (mt() % random_cross)
+                    switch (GeneticAlgorithmData::crossover)
                     {
                     case 0:
 
@@ -307,14 +308,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                         best_time = (double)std::chrono::duration_cast
                                     <std::chrono::nanoseconds>(end_time - start_time)
-                                    .count() / (double)1000000000;
+                                    .count() / (double)1000000000 + timelimit * tries_i;
                         
-                        best_iteration = tries_i*g;
+                        best_iteration = g;
+                        best_seed = tries_i;
 
                         repeated = 0;
                         if(mut_rate < original_mut_rate) {
                             ++mut_rate;
-                            random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                            ++random_mut;
                         }
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
@@ -322,7 +324,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             printStats();
                             best_individual.print_tour(); 
-                            cout << setprecision(2) << best_time << " " << best_iteration << " " << endl;
+                            cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                             return best_individual.get_cost();
                         }
                     } else {
@@ -330,7 +332,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                         //mutazione genetica solo con un certo rateo
                         if (mt() % random_mut == 0)
                         {
-                            switch (mt() % random_mutator)
+                            switch (GeneticAlgorithmData::mutator)
                             {
                             case 0:
 
@@ -373,14 +375,15 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             best_time = (double)std::chrono::duration_cast
                                         <std::chrono::nanoseconds>(end_time - start_time)
-                                        .count() / (double)1000000000;
+                                        .count() / (double)1000000000 + timelimit * tries_i;
                             
-                            best_iteration = tries_i*g;
+                            best_iteration = g;
+                            best_seed = tries_i;
 
                             repeated = 0;
                             if(mut_rate < original_mut_rate) {
                                 ++mut_rate;
-                                random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                ++random_mut;                            
                             }
 
                             if ((unsigned)best_individual.get_cost() == instance.known_solution)
@@ -388,7 +391,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 printStats();
                                 best_individual.print_tour();
-                                cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                                cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                                 return best_individual.get_cost();
                             }
                         } else {
@@ -416,21 +419,22 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 best_time = (double)std::chrono::duration_cast
                                             <std::chrono::nanoseconds>(end_time - start_time)
-                                            .count() / (double)1000000000;
+                                            .count() / (double)1000000000 + timelimit * tries_i;
                                 
-                                best_iteration = tries_i*g;
+                                best_iteration = g;
+                                best_seed = tries_i;
 
                                 repeated = 0;
                                 if(mut_rate < original_mut_rate) {
                                     ++mut_rate;
-                                    random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                    ++random_mut;
                                 }
 
                                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                                 {
                                     printStats();
                                     best_individual.print_tour(); 
-                                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                                    cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                                     return best_individual.get_cost();
                                 }
                             }
@@ -470,9 +474,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                         best_time = (double)std::chrono::duration_cast
                                     <std::chrono::nanoseconds>(end_time - start_time)
-                                    .count() / (double)1000000000;
+                                    .count() / (double)1000000000 + timelimit * tries_i;
                         
-                        best_iteration = tries_i*g;
+                        best_iteration = g;
+                        best_seed = tries_i;
 
                         repeated = 0;
                         if(mut_rate < original_mut_rate) {
@@ -482,7 +487,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
                         {
-                            cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                            cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                             return best_individual.get_cost();
                         }
                     } 
@@ -536,9 +541,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             best_time = (double)std::chrono::duration_cast
                                         <std::chrono::nanoseconds>(end_time - start_time)
-                                        .count() / (double)1000000000;
+                                        .count() / (double)1000000000 + timelimit * tries_i;
                             
-                            best_iteration = tries_i*g;
+                            best_iteration = g;
+                            best_seed = tries_i;
 
                             repeated = 0;
                             if(mut_rate < original_mut_rate) {
@@ -548,7 +554,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             if ((unsigned)best_individual.get_cost() == instance.known_solution)
                             {
-                                cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                                cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                                 return best_individual.get_cost();
                             }
                         } else {
@@ -576,9 +582,10 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 best_time = (double)std::chrono::duration_cast
                                             <std::chrono::nanoseconds>(end_time - start_time)
-                                            .count() / (double)1000000000;
+                                            .count() / (double)1000000000 + timelimit * tries_i;
                                 
-                                best_iteration = tries_i*g;
+                                best_iteration = g;
+                                best_seed = tries_i;
 
                                 repeated = 0;
                                 if(mut_rate < original_mut_rate) {
@@ -588,7 +595,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                                 {
-                                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                                    cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                                     return best_individual.get_cost();
                                 }
                             }
@@ -625,10 +632,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
             time_elapsed = (double)std::chrono::duration_cast
                         <std::chrono::nanoseconds>(end_time - start_time)
                         .count() / (double)1000000000;
-#ifdef TIMELIMIT             
-            if(time_elapsed > timelimit)
-                break;
-#endif
+                        
             ++g;
 
         }
@@ -644,7 +648,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                 printStats();
                 best_individual.print_tour();
 #endif
-                cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                 return cost;
             }
         } 
@@ -655,7 +659,7 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     printStats();
     best_individual.print_tour();
 #endif
-    cout << setprecision(2) << best_time << " " << best_iteration << " ";
+    cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
     return cost;
 }
 

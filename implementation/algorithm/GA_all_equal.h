@@ -43,14 +43,15 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
     
 #ifdef TIMELIMIT    
     double timelimit = 
-        (AllEqualGeneticAlgorithmData::timelimit / AllEqualGeneticAlgorithmData::tries) 
-      * ( (instance.factor_valuations) );
+        (AllEqualGeneticAlgorithmData::timelimit *  (instance.factor_valuations) );
     
     if(timelimit > 7200)
         timelimit = 7200;
+#else
+    double timelimit = 7200.0;
 #endif
     const unsigned max_evaluations = AllEqualGeneticAlgorithmData::max_evaluations_GA * instance.factor_valuations;
-    const unsigned max_g = (max_evaluations / AllEqualGeneticAlgorithmData::tries) / AllEqualGeneticAlgorithmData::population_size;
+    const unsigned max_g = (max_evaluations) / AllEqualGeneticAlgorithmData::population_size;
 
     const unsigned original_mut_rate = AllEqualGeneticAlgorithmData::mut_rate;
     unsigned mut_rate = AllEqualGeneticAlgorithmData::mut_rate;
@@ -79,18 +80,18 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
     
     const unsigned max_repeated = (mut_rate * mut_update_window)*2;
 
-#ifndef TIMELIMIT
-    double best_time = 7200;
-#else
     double best_time = timelimit;
-#endif
     unsigned best_iteration = max_evaluations;
-
-    for (unsigned tries_i = 1; tries_i <= max_tries; ++tries_i)
+    unsigned best_seed = 5;
+    
+    
+    for (unsigned tries_i = 0; tries_i < max_tries; ++tries_i)
     {
         unsigned repeated = 0;
-
         std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+    
+        if(tries_i > 0)
+            mt = std::mt19937(seed[tries_i]);        
 
         double best_cost = std::numeric_limits<double>::max();
 
@@ -118,9 +119,10 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                 best_time = (double)std::chrono::duration_cast
                             <std::chrono::nanoseconds>(end_time - start_time)
-                            .count() / (double)1000000000;
+                            .count() / (double)1000000000 + timelimit*tries_i;
                 
-                best_iteration = tries_i;
+                best_iteration = 0;
+                best_seed = tries_i;
 
                 if (cost == instance.known_solution)
                 {
@@ -128,7 +130,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                     printStats();
                     best_individual.print_tour();
 #endif
-                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                    cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                     return cost;                    
                 }
             }
@@ -179,7 +181,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
         double time_elapsed = 0;
 
-        while (g < max_g && time_elapsed < 7200) {
+        while (g < max_g && time_elapsed < timelimit) {
 
             ++repeated;
         
@@ -217,9 +219,10 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                         best_time = (double)std::chrono::duration_cast
                                     <std::chrono::nanoseconds>(end_time - start_time)
-                                    .count() / (double)1000000000;
+                                    .count() / (double)1000000000 + timelimit*tries_i;
                         
-                        best_iteration = tries_i*g;
+                        best_iteration = g;
+                        best_seed = tries_i;
 
                         repeated = 0;
                         if(mut_rate < 6) {
@@ -233,7 +236,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                             printStats();
                             best_individual.print_tour();
 #endif
-                            cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                            cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                             return best_individual.get_cost();
                         }
                     }
@@ -308,14 +311,15 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                         best_time = (double)std::chrono::duration_cast
                                     <std::chrono::nanoseconds>(end_time - start_time)
-                                    .count() / (double)1000000000;
+                                    .count() / (double)1000000000 + timelimit*tries_i;
                         
-                        best_iteration = tries_i*g;
+                        best_iteration = g;
+                        best_seed = tries_i;
 
                         repeated = 0;
                         if(mut_rate < original_mut_rate) {
                             ++mut_rate;
-                            random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                            ++random_mut;
                         }
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
@@ -323,7 +327,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             printStats();
                             best_individual.print_tour(); 
-                            cout << setprecision(2) << best_time << " " << best_iteration << " " << endl;
+                            cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                             return best_individual.get_cost();
                         }
                     } else {
@@ -374,14 +378,15 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             best_time = (double)std::chrono::duration_cast
                                         <std::chrono::nanoseconds>(end_time - start_time)
-                                        .count() / (double)1000000000;
+                                        .count() / (double)1000000000 + timelimit*tries_i;
                             
-                            best_iteration = tries_i*g;
+                            best_iteration = g;
+                            best_seed = tries_i;
 
                             repeated = 0;
                             if(mut_rate < original_mut_rate) {
                                 ++mut_rate;
-                                random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                ++random_mut;
                             }
 
                             if ((unsigned)best_individual.get_cost() == instance.known_solution)
@@ -389,7 +394,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 printStats();
                                 best_individual.print_tour();
-                                cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                                cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                                 return best_individual.get_cost();
                             }
                         } else {
@@ -417,21 +422,22 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 best_time = (double)std::chrono::duration_cast
                                             <std::chrono::nanoseconds>(end_time - start_time)
-                                            .count() / (double)1000000000;
+                                            .count() / (double)1000000000 + timelimit*tries_i;
                                 
-                                best_iteration = tries_i*g;
+                                best_iteration = g;
+                                best_seed = tries_i;
 
                                 repeated = 0;
                                 if(mut_rate < original_mut_rate) {
                                     ++mut_rate;
-                                    random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                                    ++random_mut;
                                 }
 
                                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                                 {
                                     printStats();
                                     best_individual.print_tour(); 
-                                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                                    cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                                     return best_individual.get_cost();
                                 }
                             }
@@ -471,9 +477,10 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                         best_time = (double)std::chrono::duration_cast
                                     <std::chrono::nanoseconds>(end_time - start_time)
-                                    .count() / (double)1000000000;
+                                    .count() / (double)1000000000 + timelimit*tries_i;
                         
-                        best_iteration = tries_i*g;
+                        best_iteration = g;
+                        best_seed = tries_i;
 
                         repeated = 0;
                         if(mut_rate < original_mut_rate) {
@@ -483,7 +490,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                         if ((unsigned)best_individual.get_cost() == instance.known_solution)
                         {
-                            cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                            cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                             return best_individual.get_cost();
                         }
                     } 
@@ -537,9 +544,10 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             best_time = (double)std::chrono::duration_cast
                                         <std::chrono::nanoseconds>(end_time - start_time)
-                                        .count() / (double)1000000000;
+                                        .count() / (double)1000000000 + timelimit*tries_i;
                             
-                            best_iteration = tries_i*g;
+                            best_iteration = g;
+                            best_seed = tries_i;
 
                             repeated = 0;
                             if(mut_rate < original_mut_rate) {
@@ -549,7 +557,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                             if ((unsigned)best_individual.get_cost() == instance.known_solution)
                             {
-                                cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                                cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                                 return best_individual.get_cost();
                             }
                         } else {
@@ -577,9 +585,10 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 best_time = (double)std::chrono::duration_cast
                                             <std::chrono::nanoseconds>(end_time - start_time)
-                                            .count() / (double)1000000000;
+                                            .count() / (double)1000000000 + timelimit*tries_i;
                                 
-                                best_iteration = tries_i*g;
+                                best_iteration = g;
+                                best_seed = tries_i;
 
                                 repeated = 0;
                                 if(mut_rate < original_mut_rate) {
@@ -589,7 +598,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
 
                                 if ((unsigned)best_individual.get_cost() == instance.known_solution)
                                 {
-                                    cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                                    cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                                     return best_individual.get_cost();
                                 }
                             }
@@ -626,10 +635,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
             time_elapsed = (double)std::chrono::duration_cast
                         <std::chrono::nanoseconds>(end_time - start_time)
                         .count() / (double)1000000000;
-#ifdef TIMELIMIT             
-            if(time_elapsed > timelimit)
-                break;
-#endif
+
             ++g;
 
         }
@@ -645,7 +651,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
                 printStats();
                 best_individual.print_tour();
 #endif
-                cout << setprecision(2) << best_time << " " << best_iteration << " ";
+                cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
                 return cost;
             }
         } 
@@ -656,7 +662,7 @@ double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {
     printStats();
     best_individual.print_tour();
 #endif
-    cout << setprecision(2) << best_time << " " << best_iteration << " ";
+    cout << setprecision(2) << best_time << " " << best_iteration << " " << best_seed << " ";
     return cost;
 }
 
