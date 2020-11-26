@@ -37,9 +37,15 @@ class AlgorithmSelector {
                 TestInstances test;
                 AlgorithmContainer choice = instance.funcs.at(key);
                 
-                cout << "seed "; 
+                cout << "seed ";
+                cout << seed;
                 cout << endl;
                 cout << instance.names.at(key) << endl;
+                cout << "parameters: \n";
+                if(key == 0)
+                    GeneticAlgorithmData::print();
+                else if(key == 1)
+                    AllEqualGeneticAlgorithmData::print();
                 cout << "convergence_time convergence_iteration instance cost time" << endl;
                 //esegue l'algoritmo scelto
                 choice.execute(test);

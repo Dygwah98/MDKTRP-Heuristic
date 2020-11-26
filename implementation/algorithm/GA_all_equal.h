@@ -25,6 +25,20 @@ struct AllEqualGeneticAlgorithmData {
     static constexpr unsigned mut_update_window = 100;
     //frazione di individui mantenuti durante l'esecuzione
     static constexpr double elite_ratio = 0.4;
+
+    static void print() {
+        cout << "   Tries: " << AllEqualGeneticAlgorithmData::tries << endl;
+        cout << "   Population size: " << AllEqualGeneticAlgorithmData::population_size << endl;
+        cout << "   Different mutators: " << AllEqualGeneticAlgorithmData::mutator_choice << endl;
+        cout << "   Different crossovers: " << AllEqualGeneticAlgorithmData::crossover_choice << endl;
+#ifdef TIMELIMIT
+        cout << "   Timelimit: " << AllEqualGeneticAlgorithmData::timelimit << endl;
+#endif
+        cout << "   Max iterations: " << AllEqualGeneticAlgorithmData::max_evaluations_GA << endl;
+        cout << "   Mutation rate: " << AllEqualGeneticAlgorithmData::mut_rate << endl;
+        cout << "   Iterations to restart: " << AllEqualGeneticAlgorithmData::mut_update_window << endl;
+        cout << "   Elite ratio: " << AllEqualGeneticAlgorithmData::elite_ratio << endl;
+    }
 };
 
 double AllEqualGeneticAlgorithm(const Test& instance, const Individual& ind) {

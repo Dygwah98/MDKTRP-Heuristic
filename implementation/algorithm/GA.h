@@ -25,7 +25,22 @@ struct GeneticAlgorithmData {
     static constexpr unsigned mut_update_window = 100;
     //frazione di individui mantenuti durante l'esecuzione
     static constexpr double elite_ratio = 0.4;
+
+    static void print() {
+        cout << "   Tries: " << GeneticAlgorithmData::tries << endl;
+        cout << "   Population size: " << GeneticAlgorithmData::population_size << endl;
+        cout << "   Mutator operator: " << GeneticAlgorithmData::mutator << endl;
+        cout << "   Crossover operator: " << GeneticAlgorithmData::crossover << endl;
+#ifdef TIMELIMIT
+        cout << "   Timelimit: " << GeneticAlgorithmData::timelimit << endl;
+#endif
+        cout << "   Max iterations: " << GeneticAlgorithmData::max_evaluations_GA << endl;
+        cout << "   Mutation rate: " << GeneticAlgorithmData::mut_rate << endl;
+        cout << "   Iterations to restart: " << GeneticAlgorithmData::mut_update_window << endl;
+        cout << "   Elite ratio: " << GeneticAlgorithmData::elite_ratio << endl;
+    }
 };
+    
 
 double GeneticAlgorithm(const Test& instance, const Individual& ind) {
 
@@ -44,14 +59,13 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
     
 #ifdef TIMELIMIT    
     double timelimit = 
-        (GeneticAlgorithmData::timelimit / GeneticAlgorithmData::tries) 
-      * ( (instance.factor_valuations) );
+        (GeneticAlgorithmData::timelimit * instance.factor_valuations);
     
     if(timelimit > 7200)
         timelimit = 7200;
 #endif
     const unsigned max_evaluations = GeneticAlgorithmData::max_evaluations_GA * instance.factor_valuations;
-    const unsigned max_g = (max_evaluations / GeneticAlgorithmData::tries) / GeneticAlgorithmData::population_size;
+    const unsigned max_g = (max_evaluations) / GeneticAlgorithmData::population_size;
 
     const unsigned original_mut_rate = GeneticAlgorithmData::mut_rate;
     unsigned mut_rate = GeneticAlgorithmData::mut_rate;

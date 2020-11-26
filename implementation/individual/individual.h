@@ -14,10 +14,8 @@
 #include "../utils.h"
 using namespace std;
 
-//seed
-//std::uint_least64_t seed(11363585407706497491U);     
-//std::mt19937 mt(seed);
-std::mt19937 mt(std::random_device{}());
+std::uint_least64_t seed = std::random_device{}();
+std::mt19937 mt(seed);
 
 using distTable = unordered_map<unsigned, double>;
 
@@ -288,7 +286,7 @@ class Individual {
 
                 first_cutting_point = crossing_point1(mt);
                 
-                std::uniform_int_distribution<unsigned> crossing_point2(first_cutting_point, customers-1);
+                std::uniform_int_distribution<unsigned> crossing_point2(first_cutting_point+1, customers-1);
 
                 second_cutting_point = crossing_point2(mt);
 
