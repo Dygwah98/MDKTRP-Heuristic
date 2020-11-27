@@ -212,45 +212,48 @@ double GeneticAlgorithm(const Test& instance, const Individual& ind) {
                     new_generation[ D[i] ] = individuals[ D[i] ];
                 }
 
-                for(; i < popsize; ++i) {
-#ifdef PRINT
-                    initialize.measure_time(new_generation[ D[i] ], &Individual::random_restart);
-                    costs.measure_time(new_generation[ D[i] ], &Individual::calculate_cost);
-#else
-                    new_generation[ D[i] ].random_restart();
-                    new_generation[ D[i] ].calculate_cost();
-#endif
+                if(repeated % 5 * mut_update_window == 0) {
+                    for(; i < popsize; ++i) {
+    #ifdef PRINT
+                        initialize.measure_time(new_generation[ D[i] ], &Individual::random_restart);
+                        costs.measure_time(new_generation[ D[i] ], &Individual::calculate_cost);
+    #else
+                        new_generation[ D[i] ].random_restart();
+                        new_generation[ D[i] ].calculate_cost();
+    #endif
 
-                    if (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon())
-                    {
-                        best_cost = new_generation[ D[i] ].get_cost();
-                        best_individual = new_generation[ D[i] ];
-
-                        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
-
-                        best_time = (double)std::chrono::duration_cast
-                                    <std::chrono::nanoseconds>(end_time - start_time)
-                                    .count() / (double)1000000000;
-                        
-                        best_iteration = tries_i*g;
-
-                        repeated = 0;
-                        if(mut_rate < 6) {
-                            ++mut_rate;
-                            random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
-                        }
-
-                        if ((unsigned)best_individual.get_cost() == instance.known_solution)
+                        if (best_cost - new_generation[ D[i] ].get_cost() > std::numeric_limits<double>::epsilon())
                         {
-#ifdef PRINT
-                            printStats();
-                            best_individual.print_tour();
-#endif
-                            cout << best_time << " " << best_iteration << " ";
-                            return best_individual.get_cost();
+                            best_cost = new_generation[ D[i] ].get_cost();
+                            best_individual = new_generation[ D[i] ];
+
+                            std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+                            best_time = (double)std::chrono::duration_cast
+                                        <std::chrono::nanoseconds>(end_time - start_time)
+                                        .count() / (double)1000000000;
+                            
+                            best_iteration = tries_i*g;
+
+                            repeated = 0;
+                            if(mut_rate < 6) {
+                                ++mut_rate;
+                                random_mut = std::uniform_int_distribution<unsigned>(1, mut_rate);
+                            }
+
+                            if ((unsigned)best_individual.get_cost() == instance.known_solution)
+                            {
+    #ifdef PRINT
+                                printStats();
+                                best_individual.print_tour();
+    #endif
+                                cout << best_time << " " << best_iteration << " ";
+                                return best_individual.get_cost();
+                            }
                         }
                     }
                 }
+
 
                 if(repeated == max_repeated) {
                     repeated = 0;
