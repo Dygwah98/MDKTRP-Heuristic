@@ -1,2 +1,2 @@
 # MDKTRP-Heuristic
-MDKTRP heuristic for an university project
+Naive MDKTRP heuristic. Not recommended except for testing purposes.
